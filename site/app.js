@@ -126,7 +126,7 @@ function viewHome() {
     ${courseSections()}
 
     <h2>最近のコード解説 <a class="more" href="#/explanations">すべて見る →</a></h2>
-    ${explCards(DATA.explanations.slice(0, 3))}
+    ${groupCards(groupExplanations(DATA.explanations).slice(0, 3))}
 
     <section class="howto">
       <h2>コード解説の増やし方</h2>
@@ -269,14 +269,84 @@ function viewLesson(courseId, lessonId) {
 
 function explCards(list) {
   if (!list.length) return `<p class="muted">まだありません。Claude にコードを貼って「解説して」と頼むと、ここに追加されます。</p>`;
-  return `<div class="cards">${list.map((e) => `
+  return `<div class="cards">${list.map(explCardHtml).join("")}</div>`;
+}
+
+function explCardHtml(e) {
+  return `
     <a class="card expl-card ${isDone(explKey(e.id)) ? "done" : ""}" href="#/explanation/${e.id}">
       <div class="card-body">
         <div class="muted small"><span class="tag">${esc(e.language)}</span>${e.series ? ` <span class="tag">📚 ${esc(e.series)} ${e.part ?? ""}</span>` : ""} ${esc(e.date ?? "")} ${e.level ? `・ Lv${e.level}` : ""} ${isDone(explKey(e.id)) ? "・ ✓ 理解した" : ""}</div>
         <h3>${esc(e.title)}</h3>
         <p>${esc(e.summary ?? "")}</p>
       </div>
-    </a>`).join("")}</div>`;
+    </a>`;
+}
+
+// シリーズ（リポジトリ）ごとに 1 枚にまとめる。シリーズでない解説はそのまま 1 枚
+function groupExplanations(list) {
+  const groups = [];
+  const bySeries = {};
+  for (const e of list) {
+    if (!e.series) { groups.push({ type: "single", e }); continue; }
+    if (!bySeries[e.series]) {
+      bySeries[e.series] = { type: "series", name: e.series, pages: [] };
+      groups.push(bySeries[e.series]);
+    }
+    bySeries[e.series].pages.push(e);
+  }
+  groups.forEach((g) => g.type === "series" && g.pages.sort((a, b) => (a.part ?? 999) - (b.part ?? 999)));
+  return groups;
+}
+
+function seriesStats(pages) {
+  const done = pages.filter((p) => isDone(explKey(p.id))).length;
+  return { done, total: pages.length, pct: Math.round((done / pages.length) * 100) };
+}
+
+function groupCards(groups) {
+  if (!groups.length) return explCards([]);
+  return `<div class="cards">${groups.map((g) => {
+    if (g.type === "single") return explCardHtml(g.e);
+    const first = g.pages[0];
+    const st = seriesStats(g.pages);
+    const langs = [...new Set(g.pages.map((p) => p.language))];
+    return `<a class="card expl-card series-card ${st.done === st.total ? "done" : ""}" href="#/series/${encodeURIComponent(g.name)}">
+      <div class="course-icon">📚</div>
+      <div class="card-body">
+        <div class="muted small">${langs.map((l) => `<span class="tag">${esc(l)}</span>`).join(" ")} ${esc(first.date ?? "")}</div>
+        <h3>${esc(g.name)} <span class="muted small">（${g.pages.length} ページ）</span></h3>
+        <p>${esc(first.summary ?? "")}</p>
+        <div class="muted small">${st.done} / ${st.total} ページ 理解済み</div>${bar(st.pct)}
+      </div>
+    </a>`;
+  }).join("")}</div>`;
+}
+
+function viewSeries(name) {
+  const pages = DATA.explanations.filter((e) => e.series === name)
+    .sort((a, b) => (a.part ?? 999) - (b.part ?? 999));
+  if (!pages.length) return viewNotFound();
+  const st = seriesStats(pages);
+  const next = pages.find((p) => !isDone(explKey(p.id))) || pages[0];
+  app.innerHTML = `
+    <nav class="crumbs"><a href="#/explanations">コード解説</a> / ${esc(name)}</nav>
+    <h1>📚 ${esc(name)}</h1>
+    <p>${esc(pages[0].summary ?? "")}</p>
+    <div class="muted small">${st.done} / ${st.total} ページ 理解済み</div>${bar(st.pct)}
+    <p><a class="btn primary" href="#/explanation/${next.id}">${st.done ? "続きから" : "1 ページ目から読む"}：${esc(next.title)} →</a></p>
+    <h2>ページ一覧</h2>
+    <div class="lesson-list">
+      ${pages.map((p, i) => {
+        const done = isDone(explKey(p.id));
+        return `<a class="lesson-row ${done ? "done" : ""}" href="#/explanation/${p.id}">
+          <span class="check">${done ? "✓" : i + 1}</span>
+          <span class="lesson-title">${esc(p.title)}<small>${esc(p.summary ?? "")}</small></span>
+          <span class="muted small">${esc(p.language)}${p.level ? ` ・ Lv${p.level}` : ""}</span>
+        </a>`;
+      }).join("")}
+    </div>`;
+  afterRender();
 }
 
 // シリーズ（1 つのプロジェクトを複数ページで解説したもの）
@@ -289,7 +359,7 @@ function seriesOf(e) {
 function seriesNav(e) {
   const list = seriesOf(e);
   if (list.length < 2) return "";
-  return `<details class="series" ${e.part === 1 ? "open" : ""}>
+  return `<details class="series">
     <summary>📚 シリーズ「${esc(e.series)}」（全 ${list.length} ページ）・ ${list.indexOf(e) + 1} ページ目</summary>
     <ol>${list.map((x) => `<li>${x.id === e.id ? `<b>${esc(x.title)}</b>` :
       `<a href="#/explanation/${x.id}">${esc(x.title)}</a>`}${isDone(explKey(x.id)) ? " ✓" : ""}</li>`).join("")}</ol>
@@ -311,7 +381,7 @@ function viewExplanations() {
   const langs = [...new Set(DATA.explanations.map((e) => e.language))];
   app.innerHTML = `
     <h1>コード解説</h1>
-    <p class="muted">AI が書いたコードを Claude が解説したページです。コードを貼って頼むたびに増えていきます。</p>
+    <p class="muted">AI が書いたコードを Claude が解説したページです。リポジトリ全体の解説は 📚 のカードにまとまっていて、開くとページの一覧が見られます。</p>
     <div class="filters">
       <input id="q" type="search" placeholder="タイトル・説明で検索">
       <select id="lang"><option value="">すべての言語</option>${langs.map((l) => `<option>${esc(l)}</option>`).join("")}</select>
@@ -322,8 +392,9 @@ function viewExplanations() {
     const lang = document.getElementById("lang").value;
     const items = DATA.explanations.filter((e) =>
       (!lang || e.language === lang) &&
-      (!q || `${e.title} ${e.summary}`.toLowerCase().includes(q)));
-    document.getElementById("list").innerHTML = explCards(items);
+      (!q || `${e.title} ${e.summary} ${e.series ?? ""}`.toLowerCase().includes(q)));
+    // 検索中はページを 1 枚ずつ、ふだんはリポジトリ（シリーズ）ごとにまとめて表示
+    document.getElementById("list").innerHTML = q ? explCards(items) : groupCards(groupExplanations(items));
   };
   document.getElementById("q").addEventListener("input", render);
   document.getElementById("lang").addEventListener("change", render);
@@ -343,7 +414,7 @@ function viewExplanation(id) {
   }).filter(Boolean);
 
   app.innerHTML = `
-    <nav class="crumbs"><a href="#/explanations">コード解説</a> / ${esc(e.title)}</nav>
+    <nav class="crumbs"><a href="#/explanations">コード解説</a> / ${e.series ? `<a href="#/series/${encodeURIComponent(e.series)}">${esc(e.series)}</a> / ` : ""}${esc(e.title)}</nav>
     <article class="lesson">
       <header class="lesson-head">
         <div class="muted small"><span class="tag">${esc(e.language)}</span>${e.series ? ` <span class="tag">📚 ${esc(e.series)} ${e.part ?? ""}</span>` : ""} ${esc(e.date ?? "")} ${e.level ? `・ Lv${e.level}` : ""}</div>
@@ -421,7 +492,7 @@ function viewNotFound() {
 function route() {
   const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
   const [page, a, b] = parts;
-  const nav = { course: "courses", lesson: "courses", explanation: "explanations" }[page] ?? (page || "home");
+  const nav = { course: "courses", lesson: "courses", explanation: "explanations", series: "explanations" }[page] ?? (page || "home");
   document.querySelectorAll("[data-nav]").forEach((el) => el.classList.toggle("active", el.dataset.nav === nav));
 
   if (!page) return viewHome();
@@ -430,6 +501,7 @@ function route() {
   if (page === "lesson") return viewLesson(a, b);
   if (page === "explanations") return viewExplanations();
   if (page === "explanation") return viewExplanation(a);
+  if (page === "series") return viewSeries(a);
   if (page === "concepts") return viewConcepts(a);
   return viewNotFound();
 }

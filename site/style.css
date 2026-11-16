@@ -200,3 +200,5 @@ code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
 .series summary { cursor: pointer; font-weight: 600; color: var(--accent); }
 .series ol { margin: 8px 0 0; padding-left: 24px; }
 .series li { margin: 2px 0; }
+.series-card { border-left: 4px solid var(--accent); }
+.series-card.done { border-left-color: var(--good); }
