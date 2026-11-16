@@ -1,10 +1,9 @@
-# main ブランチに push されたら、サイトをビルドして GitHub Pages に公開する。
-# 使うには: GitHub のリポジトリ → Settings → Pages → Source を「GitHub Actions」にする。
+# サイトをビルドして GitHub Pages に公開する（今は手動実行のみ）。
+# 使うには: リポジトリを公開にして Settings → Pages → Source を「GitHub Actions」にし、
+# 下の on: に「push: branches: [main]」を戻す。
 name: Deploy site
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
