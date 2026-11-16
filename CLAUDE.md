@@ -26,7 +26,7 @@
 4. `python tools/build.py` を実行して `site/data.js` を更新する（⚠️ が出たら直す）
 5. コミットして push する（ブランチの指示がある場合はそれに従う）
 6. 返信では、解説の要点を 3〜5 行でまとめ、サイトのどこに追加されたかを伝える。解説全文をチャットに貼り直さない
-7. 返信の最後に「GitHub Desktop で Fetch → Pull してからサイトを再読み込みしてください」と添える
+7. 返信の最後に「Code Reading Dojo のアイコン（open-site.bat）でサイトを開き直すと表示されます」と添える
 
 ### B. 「◯◯のレッスンを追加して」「◯◯コースを作って」
 
@@ -146,6 +146,7 @@ site/                        サイト本体（index.html をブラウザで開�
 
 `claude/` で始まるブランチに push すると、GitHub Actions（`.github/workflows/auto-merge-claude.yml`）が
 自動で main に取り込む（利用者の了承済み）。利用者に「main に反映して」と頼んでもらう必要はない。
-利用者は GitHub Desktop で main を Pull し、手元の `site/index.html` を開いてサイトを見ている。
+利用者は Windows で、リポジトリ直下の `open-site.bat`（git pull してから `site/index.html` を開く）を
+タスクバーに固定して使っている。
 試しの作業など main に入れたくないものは、`claude/` 以外の名前のブランチで行う。
 自動取り込みが失敗した（衝突した）と分かったときは、利用者に伝えて対処を相談する。
