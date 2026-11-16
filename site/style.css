@@ -194,3 +194,9 @@ code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
 .concept b { display: block; }
 .concept small { color: var(--muted); line-height: 1.5; display: block; }
 .concept .count { float: right; font-size: 0.8em; color: var(--muted); }
+
+/* ---- シリーズ ---- */
+.series { background: var(--soft); border-radius: 12px; padding: 10px 16px; margin: 16px 0; }
+.series summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+.series ol { margin: 8px 0 0; padding-left: 24px; }
+.series li { margin: 2px 0; }

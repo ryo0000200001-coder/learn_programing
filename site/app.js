@@ -272,11 +272,39 @@ function explCards(list) {
   return `<div class="cards">${list.map((e) => `
     <a class="card expl-card ${isDone(explKey(e.id)) ? "done" : ""}" href="#/explanation/${e.id}">
       <div class="card-body">
-        <div class="muted small"><span class="tag">${esc(e.language)}</span> ${esc(e.date ?? "")} ${e.level ? `・ Lv${e.level}` : ""} ${isDone(explKey(e.id)) ? "・ ✓ 理解した" : ""}</div>
+        <div class="muted small"><span class="tag">${esc(e.language)}</span>${e.series ? ` <span class="tag">📚 ${esc(e.series)} ${e.part ?? ""}</span>` : ""} ${esc(e.date ?? "")} ${e.level ? `・ Lv${e.level}` : ""} ${isDone(explKey(e.id)) ? "・ ✓ 理解した" : ""}</div>
         <h3>${esc(e.title)}</h3>
         <p>${esc(e.summary ?? "")}</p>
       </div>
     </a>`).join("")}</div>`;
+}
+
+// シリーズ（1 つのプロジェクトを複数ページで解説したもの）
+function seriesOf(e) {
+  if (!e.series) return [];
+  return DATA.explanations.filter((x) => x.series === e.series)
+    .sort((a, b) => (a.part ?? 999) - (b.part ?? 999));
+}
+
+function seriesNav(e) {
+  const list = seriesOf(e);
+  if (list.length < 2) return "";
+  return `<details class="series" ${e.part === 1 ? "open" : ""}>
+    <summary>📚 シリーズ「${esc(e.series)}」（全 ${list.length} ページ）・ ${list.indexOf(e) + 1} ページ目</summary>
+    <ol>${list.map((x) => `<li>${x.id === e.id ? `<b>${esc(x.title)}</b>` :
+      `<a href="#/explanation/${x.id}">${esc(x.title)}</a>`}${isDone(explKey(x.id)) ? " ✓" : ""}</li>`).join("")}</ol>
+  </details>`;
+}
+
+function seriesPager(e) {
+  const list = seriesOf(e);
+  const i = list.indexOf(e);
+  if (i < 0 || list.length < 2) return "";
+  const prev = list[i - 1], next = list[i + 1];
+  return `<div class="pager">
+    ${prev ? `<a class="btn" href="#/explanation/${prev.id}">← ${esc(prev.title)}</a>` : "<span></span>"}
+    ${next ? `<a class="btn" href="#/explanation/${next.id}">${esc(next.title)} →</a>` : "<span></span>"}
+  </div>`;
 }
 
 function viewExplanations() {
@@ -318,15 +346,17 @@ function viewExplanation(id) {
     <nav class="crumbs"><a href="#/explanations">コード解説</a> / ${esc(e.title)}</nav>
     <article class="lesson">
       <header class="lesson-head">
-        <div class="muted small"><span class="tag">${esc(e.language)}</span> ${esc(e.date ?? "")} ${e.level ? `・ Lv${e.level}` : ""}</div>
+        <div class="muted small"><span class="tag">${esc(e.language)}</span>${e.series ? ` <span class="tag">📚 ${esc(e.series)} ${e.part ?? ""}</span>` : ""} ${esc(e.date ?? "")} ${e.level ? `・ Lv${e.level}` : ""}</div>
         <h1>${esc(e.title)}</h1>
         <div class="chips">${chips(e.concepts)}</div>
       </header>
-      ${lessons.length ? `<div class="callout"><b>📚 先に読むと理解しやすいレッスン：</b>
+      ${seriesNav(e)}
+      ${lessons.length ? `<div class="callout"><b>📖 先に読むと理解しやすいレッスン：</b>
         ${lessons.map(({ c, l }) => `<a href="#/lesson/${c.id}/${l.id}">${esc(c.icon)} ${esc(l.title)}${isDone(lessonKey(c.id, l.id)) ? " ✓" : ""}</a>`).join("　")}</div>` : ""}
       <div class="markdown">${md(e.body)}</div>
       <div class="lesson-foot">
         <button id="done-btn" class="btn ${isDone(key) ? "" : "primary"}">${isDone(key) ? "✓ 理解した（取り消す）" : "人に説明できる！"}</button>
+        ${seriesPager(e)}
       </div>
     </article>`;
   const btn = document.getElementById("done-btn");

@@ -113,6 +113,9 @@ def build() -> dict:
         e["id"] = f.stem
         e.setdefault("concepts", [])
         explanations.append(e)
+    # 新しい日付が先。同じ日付のシリーズは part の番号順（part の無いものは後ろ）
+    explanations.sort(key=lambda e: e.get("part", 999))
+    explanations.sort(key=lambda e: str(e.get("date", "")), reverse=True)
 
     # 未知の概念 ID をチェック
     for item in [l for c in courses for l in c["lessons"]] + explanations:

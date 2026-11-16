@@ -2416,6 +2416,574 @@ window.SITE_DATA = {
  ],
  "explanations": [
   {
+   "title": "fashion_news の全体像 ― ニュースを集めて Notion にまとめるロボット",
+   "language": "Python",
+   "date": "2026-11-16",
+   "level": 2,
+   "series": "fashion_news",
+   "part": 1,
+   "concepts": [
+    "reading",
+    "modules",
+    "http_api",
+    "data_formats",
+    "testing",
+    "tooling"
+   ],
+   "lessons": [
+    "00-basics/02-how-to-read-code",
+    "10-python/08-modules",
+    "10-python/11-files-and-json",
+    "100-ai-dev/08-testing"
+   ],
+   "summary": "毎日 2 回、ファッションニュースの RSS を集めてジャンル分けし、Notion に「朝刊・夕刊」ページを作るプログラムの全体像。",
+   "body": "> 📚 このページは **fashion_news シリーズの 1 ページ目（全体像）** です。ここで地図をつかんでから、2 ページ目以降でファイルを 1 つずつ読んでいきます。\n\n## 📄 解説するコード（ファイルの一覧）\n\n```text\nfashion_news/\n├── README.md                     使い方の説明書\n├── REQUIREMENTS.md               要件定義書（何を作るかの設計図）\n├── requirements.txt              必要なライブラリの一覧\n├── config/\n│   ├── sources.yaml              ニュースを集める先（RSS）の一覧        → 3 ページ目\n│   └── categories.yaml           ジャンル分けのキーワード辞書           → 3 ページ目\n├── src/fashion_news/\n│   ├── __main__.py               「python -m fashion_news」の入口        → 2 ページ目\n│   ├── models.py                 記事 1 件のデータの形（Article）        → 2 ページ目\n│   ├── fetch.py                  RSS を取ってくる                        → 4 ページ目\n│   ├── classify.py               ジャンルに分ける                        → 5 ページ目\n│   ├── dedupe.py                 古い記事・重複を取り除く                → 6 ページ目\n│   ├── notion.py                 Notion にページを作る                   → 7 ページ目\n│   └── main.py                   全体の司令塔（上の部品を順に呼ぶ）      → 8 ページ目\n├── data/seen_urls.json           これまでに載せた記事の URL の記録\n├── .github/workflows/daily.yml   毎日 2 回、自動で動かす設定             → 9 ページ目\n└── tests/test_pipeline.py        部品が正しく動くか確かめるテスト        → 10 ページ目\n```\n\n## 🧭 ひとことで言うと\n\n**Python** で書かれた、**毎朝・毎夕、日本語のファッションニュースを自動で集め、ジャンル別に整理して Notion に「朝刊」「夕刊」ページを作るロボット** です。\nGitHub Actions（GitHub の自動実行サービス）が決まった時刻に起動するので、パソコンの電源が切れていても動きます。\n\n## 🗺️ 全体の流れ\n\n工場の流れ作業（ベルトコンベア）をイメージすると分かりやすいです。\n\n1. **起動**：毎日 6:30 と 17:30（日本時間）に GitHub Actions がプログラムを動かす（`daily.yml`）\n2. **準備**：設定ファイル（どのサイトから集めるか・ジャンルのキーワード）と、過去に載せた記事の記録を読み込む（`main.py`）\n3. **集める（入力）**：8 つのニュースサイトの RSS を取ってきて、記事のリストにする（`fetch.py`）\n4. **ふるいにかける**：36 時間より古い記事、ファッションと関係ない記事、重複している記事、過去に載せた記事を取り除く（`classify.py`・`dedupe.py`）\n5. **仕分ける**：タイトルのキーワードで 6 つのジャンルに分け、各ジャンル新しい順に最大 20 件にする（`classify.py`・`main.py`）\n6. **届ける（出力）**：Notion に「2026-11-16 朝刊」のようなページを作り、ジャンルごとに見出し＋リンクを並べる（`notion.py`）\n7. **記録する**：載せた記事の URL を `seen_urls.json` に書き足し、GitHub に保存する（次回の重複防止）\n\n## 🔍 ブロックごとの解説\n\n### 部品ごとに 1 ファイル\n\nこのプロジェクトは、**1 つのファイルに 1 つの役割** を持たせています。\n\n| 役割 | ファイル | たとえ |\n|---|---|---|\n| データの形 | `models.py` | 伝票の書式 |\n| 集める | `fetch.py` | 仕入れ担当 |\n| 仕分ける | `classify.py` | 仕分け担当 |\n| 選別する | `dedupe.py` | 検品担当 |\n| 届ける | `notion.py` | 配送担当 |\n| 指示を出す | `main.py` | 工場長 |\n\nこう分けておくと、「Notion の代わりに LINE に送りたい」となっても `notion.py` の部分だけ取り替えればよく、他は触らずに済みます。\n\n### 設定とコードを分けている\n\nニュースを集めるサイトや、ジャンル分けのキーワードは **コードではなく YAML ファイル** に書いてあります。\nそのため「このサイトも追加したい」「このキーワードも『スニーカー』扱いにしたい」は、Python を書き換えずに設定ファイルを直すだけでできます。\n\n### 記録をファイルに残して、重複を防ぐ\n\nプログラムは毎回まっさらな状態で起動するので、「昨日どの記事を載せたか」を覚えていません。\nそこで `data/seen_urls.json` に **載せた記事の URL と日付** を書いておき（30 日分）、次回はそこに載っている記事を除外します。\n\n### テストがある\n\n`tests/test_pipeline.py` に、各部品が期待どおり動くかを確かめるテストが 11 個あります。AI に修正を頼んだときに、前の機能を壊していないかすぐに確かめられます。\n\n## 🐍 Python の書き方で見落としやすい点\n\n| 見かけるもの | 意味 |\n|---|---|\n| `src/fashion_news/` というフォルダ構成 | プログラム本体を `src` の下の「パッケージ」（フォルダ単位のモジュール）にまとめる、よくある形 |\n| `from .models import Article` の `.` | 「同じパッケージ（フォルダ）の中の models から」という意味（相対 import） |\n| `python -m fashion_news` | ファイル名ではなくパッケージ名で実行する方法。`__main__.py` が入口になる |\n| `PYTHONPATH=src` | 「`src` フォルダの中もライブラリとして探して」と Python に伝える環境変数 |\n\n## 🔑 キーワード\n\n- **RSS**：ニュースサイトが「新着記事の一覧」を機械向けに配っている形式（XML というデータ形式）\n- **Notion API**：プログラムから Notion を操作するための窓口\n- **GitHub Actions**：GitHub が決まった時刻やきっかけでプログラムを動かしてくれる仕組み\n- **YAML**：設定ファイルによく使われる、人が読み書きしやすいデータ形式\n- **パイプライン**：集める → ふるう → 仕分ける → 届ける、のように処理を順番につなげた流れ\n- **ドライラン（dry run）**：本番の書き込みをせず、結果を画面に表示するだけの試し運転\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ 役割ごとにファイルが分かれていて、テストもある。とても読みやすい構成\n- ✅ 1 つのサイトの取得に失敗しても、他のサイトは続けて処理する\n- ✅ Notion のトークン（パスワードのようなもの）は GitHub の Secrets に置いていて、コードには書いていない\n- ⚠️ このリポジトリは **公開（Public）** になっている。README に Notion の親ページ ID が書かれており、`seen_urls.json` から読んだ記事の履歴も誰でも見られる。トークンが無ければページ ID だけでは操作できないが、気になるなら非公開にするとよい\n- ⚠️ 要件定義書では「1 つの記事に複数のジャンルを付けてよい」となっているが、実装は **最初に当たった 1 ジャンルだけ** に入れる。仕様と実装のずれ（意図的に簡単にした可能性もある）\n- 必要な準備：Notion のインテグレーション（連携用の設定）と、GitHub Secrets への `NOTION_TOKEN`・`NOTION_PARENT_PAGE_ID` の登録\n\n## 🗣️ 30 秒で人に説明するなら\n\n「これは毎朝と毎夕、ファッション系ニュースサイトの RSS を自動で集めて、Notion に朝刊・夕刊のページを作るプログラムです。\nGitHub Actions で定時に動いて、記事を集めたら古いものや重複を取り除き、タイトルのキーワードでハイブランドやスニーカーなどのジャンルに分けています。\n一度載せた記事は JSON ファイルに記録しておいて、次の回には出ないようにしています。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "このプログラムを毎日決まった時刻に動かしているのは？",
+      "choices": [
+       "自分のパソコンのタイマー",
+       "GitHub Actions",
+       "Notion の自動化機能"
+      ],
+      "answer": 1,
+      "explain": "`.github/workflows/daily.yml` に時刻が書かれていて、GitHub のサーバーで動きます。"
+     },
+     {
+      "question": "「この記事は昨日もう載せた」と判断するために使っているのは？",
+      "choices": [
+       "Notion のページを毎回すべて読む",
+       "data/seen_urls.json に記録した URL",
+       "記事の公開日だけ"
+      ],
+      "answer": 1,
+      "explain": "載せた記事の URL を 30 日分ファイルに記録し、次回はそこにある記事を除外します。"
+     },
+     {
+      "question": "ニュースを集めるサイトを 1 つ追加したい。主に書き換えるのは？",
+      "choices": [
+       "fetch.py",
+       "main.py",
+       "config/sources.yaml"
+      ],
+      "answer": 2,
+      "explain": "情報源は設定ファイルで管理しているので、コードを変えずに追加できます。"
+     }
+    ]
+   ],
+   "id": "2026-11-16-fashion-news-01-overview"
+  },
+  {
+   "title": "models.py と __main__.py ― 記事 1 件の「伝票の書式」とプログラムの入口",
+   "language": "Python",
+   "date": "2026-11-16",
+   "level": 2,
+   "series": "fashion_news",
+   "part": 2,
+   "concepts": [
+    "classes",
+    "type_hints",
+    "modules"
+   ],
+   "lessons": [
+    "10-python/10-classes",
+    "10-python/12-type-hints-dataclass",
+    "10-python/08-modules"
+   ],
+   "summary": "記事データの形を決める dataclass と、python -m で実行したときの入口。",
+   "body": "## 📄 解説するコード\n\n`src/fashion_news/models.py`\n\n```python\nfrom __future__ import annotations\n\nfrom dataclasses import dataclass\nfrom datetime import datetime\n\n\n@dataclass\nclass Article:\n    title: str\n    url: str\n    source: str\n    kind: str  # media / official / sns\n    published: datetime | None = None  # UTC。不明なら None\n    category: str = \"\"\n```\n\n`src/fashion_news/__main__.py`\n\n```python\nfrom .main import main\n\nmain()\n```\n\n（`__init__.py` は中身が空のファイルです）\n\n## 🧭 ひとことで言うと\n\n**Python** のファイル 2 つです。`models.py` は「記事 1 件がどんな情報を持つか」という **データの形（Article）** を決め、`__main__.py` は `python -m fashion_news` で実行されたときの **入口** です。\n\n## 🗺️ 全体の流れ\n\n1. `python -m fashion_news` と実行すると、Python は `fashion_news` フォルダの `__main__.py` を探して実行する\n2. `__main__.py` は `main.py` の `main()` 関数を呼ぶだけ\n3. プログラムのあちこちで、記事は `Article` の形で受け渡しされる\n\n## 🔍 ブロックごとの解説\n\n### @dataclass：データを入れるための箱を簡単に作る\n\n```python\n@dataclass\nclass Article:\n    title: str\n    url: str\n```\n\n`@dataclass` を付けると、`__init__`（作るときの初期化処理）を Python が自動で作ってくれます。\nなので、次のように 1 行で記事を作れます。\n\n```python\na = Article(\"パリコレ開幕\", \"https://...\", \"WWDJAPAN\", \"media\")\na.title   # \"パリコレ開幕\"\n```\n\n辞書 `{\"title\": ..., \"url\": ...}` でも同じ情報は持てますが、クラスにしておくと\n**キーのタイプミスに気づける**、**どんな項目があるか一目で分かる** という利点があります。\n\n### 各項目の意味\n\n| 項目 | 型 | 意味 |\n|---|---|---|\n| `title` | `str` | 記事のタイトル |\n| `url` | `str` | 記事のリンク |\n| `source` | `str` | どのサイトから来たか（例：WWDJAPAN） |\n| `kind` | `str` | 情報源の種類。`media`（メディア）/ `official`（公式発表）/ `sns`（SNS の話題） |\n| `published` | `datetime \\| None` | 公開日時。分からなければ `None` |\n| `category` | `str` | あとで付けるジャンル名。最初は空文字 |\n\n`= None` や `= \"\"` のように **初期値があるものは、作るときに省略できます**。\n`published` は RSS によっては日付が無いことがあるので、`None`（なし）も許しています。\n\n### from __future__ import annotations\n\n型ヒントの書き方を新しいルールで扱うための 1 行です。`datetime | None` のような新しめの書き方を、古い Python でも使えるようにするためのお守りだと思っておけば十分です。\n\n### __main__.py と __init__.py\n\n| ファイル | 役割 |\n|---|---|\n| `__init__.py` | 「このフォルダは Python のパッケージです」という目印。中身は空でもよい |\n| `__main__.py` | `python -m パッケージ名` で実行されたときに最初に動くファイル |\n\n`from .main import main` の `.` は「同じフォルダの」という意味（相対 import）です。\n\n## 🐍 Python の書き方で見落としやすい点\n\n| 書き方 | ポイント |\n|---|---|\n| `datetime \\| None` | 「datetime か None のどちらか」。使う側は None のときの処理が必要になる（実際 `main.py` で `a.published or oldest` と対処している） |\n| `kind: str  # media / official / sns` | 型は `str` なので、実は何の文字列でも入ってしまう。コメントで決まりごとを伝えている |\n| `@dataclass` | 自動で `__init__` に加え、表示用の `__repr__`、比較用の `__eq__` も作ってくれる（テストで `==` 比較できるのはこのおかげ） |\n\n## 🔑 キーワード\n\n- **dataclass**：データを入れるためのクラスを簡単に作る仕組み\n- **型ヒント**：`title: str` のように、どんな値が入るかを書いた注釈\n- **None**：「値が無い」ことを表す特別な値\n- **パッケージ**：Python のファイルをまとめたフォルダ\n- **相対 import**：`from .main import ...` のように、同じパッケージ内から読み込む書き方\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ データの形が 1 か所にまとまっていて、どのファイルからも同じ `Article` を使っている\n- ✅ 日付が無い場合を `None` で表し、型ヒントにも明記している\n- ⚠️ `kind` は自由な文字列なので、`sources.yaml` で `\"medai\"` のように打ち間違えてもエラーにならない（`Literal[\"media\", \"official\", \"sns\"]` という型にすれば防げる）\n\n## 🗣️ 30 秒で人に説明するなら\n\n「models.py では、記事 1 件が持つ情報を Article という dataclass で決めています。タイトル・URL・出典・種類・公開日時・ジャンルの 6 つです。\n公開日時は分からないこともあるので None を許していて、ジャンルは後から入れるので最初は空です。\n__main__.py は、python -m fashion_news で起動したときに main 関数を呼ぶだけの入口です。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "`Article(\"見出し\", \"https://x\", \"WWD\", \"media\")` で作った記事の `published` は？",
+      "choices": [
+       "今の日時",
+       "None",
+       "エラーになる"
+      ],
+      "answer": 1,
+      "explain": "初期値が None なので、省略するとそのまま None になります。"
+     },
+     {
+      "question": "`@dataclass` を付けると何が楽になる？",
+      "choices": [
+       "`__init__` などを自動で作ってくれる",
+       "自動でデータベースに保存される",
+       "型が違うと必ずエラーになる"
+      ],
+      "answer": 0,
+      "explain": "型ヒントは注釈なので、dataclass でも型の強制はされません。"
+     },
+     {
+      "question": "`python -m fashion_news` で最初に実行されるファイルは？",
+      "choices": [
+       "main.py",
+       "__main__.py",
+       "__init__.py"
+      ],
+      "answer": 1,
+      "explain": "-m でパッケージを実行すると __main__.py が入口になります（その前に __init__.py も読まれます）。"
+     }
+    ]
+   ],
+   "id": "2026-11-16-fashion-news-02-models"
+  },
+  {
+   "title": "sources.yaml と categories.yaml ― 集める先と仕分けルールの設定ファイル",
+   "language": "YAML",
+   "date": "2026-11-16",
+   "level": 1,
+   "series": "fashion_news",
+   "part": 3,
+   "concepts": [
+    "data_formats",
+    "collections"
+   ],
+   "lessons": [
+    "10-python/04-lists-and-dicts",
+    "10-python/11-files-and-json"
+   ],
+   "summary": "コードを書き換えずに情報源やジャンルの辞書を変えられる、2 つの YAML 設定ファイル。",
+   "body": "## 📄 解説するコード\n\n`config/sources.yaml`（抜粋）\n\n```yaml\nsources:\n  - {name: WWDJAPAN, url: \"https://www.wwdjapan.com/feed\", kind: media}\n  - {name: FASHIONSNAP, url: \"https://www.fashionsnap.com/rss.xml\", kind: media}\n  - name: Googleニュース(SNSで話題)\n    url: \"https://news.google.com/rss/search?q=...+when:1d&hl=ja&gl=JP&ceid=JP:ja\"\n    kind: sns\n  - {name: はてブ(ライフスタイル), url: \"https://b.hatena.ne.jp/hotentry/life.rss\", kind: sns, require_fashion: true}\n```\n\n`config/categories.yaml`（抜粋）\n\n```yaml\nmax_per_category: 20\nfashion_keywords: [ファッション, 服, コーデ, スニーカー, ブランド, ...]\nniche_category: 公式発表・ニッチ\nniche_kinds: [official, sns]\nfallback_category: その他\ncategories:\n  - name: ハイブランド/コレクション\n    keywords: [コレクション, ランウェイ, パリ, ミラノ, シャネル, ...]\n  - name: ストリート/スニーカー\n    keywords: [スニーカー, ストリート, コラボ, ナイキ, Nike, ...]\n  - name: 業界・ビジネス\n    keywords: [決算, 売上, 買収, 就任, ...]\n  - name: トレンド/スタイリング\n    keywords: [トレンド, 着こなし, コーデ, ...]\n```\n\n## 🧭 ひとことで言うと\n\n**YAML**（ヤムル）という形式で書かれた 2 つの設定ファイルです。`sources.yaml` は **ニュースを集める 8 つのサイトの一覧**、`categories.yaml` は **ジャンル分けのキーワード辞書と件数の上限** を決めています。\n\n## 🗺️ 全体の流れ\n\n1. `main.py` が起動時にこの 2 つを読み込み、Python の辞書・リストに変換する\n2. `sources` の一覧は `fetch.py` に渡され、上から順に RSS を取りに行く\n3. `categories.yaml` の内容は `classify.py` に渡され、記事のタイトルとキーワードを照らし合わせる\n\n## 🔍 ブロックごとの解説\n\n### YAML の読み方\n\nYAML は「人が読み書きしやすい JSON」のような形式です。Python に読み込むと、そのまま辞書とリストになります。\n\n| YAML | 意味 | Python では |\n|---|---|---|\n| `max_per_category: 20` | キー: 値 | `{\"max_per_category\": 20}` |\n| `- name: ...`（行頭の `-`） | リストの 1 項目 | `[ {...}, {...} ]` |\n| `[ファッション, 服]` | 1 行で書いたリスト | `[\"ファッション\", \"服\"]` |\n| `{name: WWDJAPAN, url: ...}` | 1 行で書いた辞書 | `{\"name\": \"WWDJAPAN\", \"url\": ...}` |\n| `# ...` | コメント | `# ...` |\n| インデント（字下げ） | 入れ子の関係 | Python と同じく字下げが意味を持つ |\n\n`sources.yaml` では 1 行で書く書き方と、複数行で書く書き方が混ざっていますが、**どちらも同じ辞書** です。URL が長いものだけ複数行にして読みやすくしています。\n\n### sources.yaml：情報源の一覧\n\n| 項目 | 意味 |\n|---|---|\n| `name` | 表示用の名前（Notion に「— WWDJAPAN」のように出る） |\n| `url` | RSS の URL |\n| `kind` | `media`（メディア）/ `sns`（SNS の話題）など。`sns` は「公式発表・ニッチ」ジャンルに入る |\n| `require_fashion: true` | ファッションと関係ない記事も混ざる情報源用。タイトルにファッション系のキーワードがある記事だけ残す |\n\nGoogle ニュースの URL の `q=%E3%83%95...` は、日本語の検索キーワード（「ファッション コレクション」など）を URL 用に変換したものです。`when:1d` は「直近 1 日」の意味です。\n\n### categories.yaml：仕分けのルール\n\n- **上から順に判定し、最初に当たったジャンルに入れる**。「パリでスニーカーのコラボ」は「パリ」が先に当たるので「ハイブランド/コレクション」になる\n- `kind` が `sns` か `official` の記事は、キーワードに関係なく **先に「公式発表・ニッチ」** に入る\n- どこにも当たらなければ「その他」\n- `max_per_category: 20`：各ジャンル最大 20 件\n\n## 🐍 Python と比べると\n\n`main.py` ではこう読み込んでいます。\n\n```python\nimport yaml\nconfig = yaml.safe_load(open(\"config/categories.yaml\", encoding=\"utf-8\"))\nconfig[\"max_per_category\"]            # 20\nconfig[\"categories\"][0][\"name\"]       # \"ハイブランド/コレクション\"\n```\n\n`yaml.safe_load` は JSON の `json.loads` にあたります。`safe_` が付いているのは、YAML の危険な機能（プログラムを実行させる書き方）を無効にした **安全な読み込み方** だからです。\n\n## 🔑 キーワード\n\n- **YAML**：設定ファイルでよく使われる、字下げで構造を表すデータ形式（GitHub Actions の設定も YAML）\n- **設定ファイル**：プログラムの動きを、コードを変えずに調整するためのファイル\n- **キーワード辞書**：ジャンルごとに「この言葉があればこのジャンル」と決めた一覧\n- **URL エンコード**：日本語などを `%E3%83...` の形にして URL に入れられるようにすること\n- **safe_load**：YAML を安全に読み込む関数\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ 情報源とキーワードをコードから切り離していて、変更しやすい\n- ✅ コメントで「上から順に判定」「URL は未確認なので初回のログを見ること」と注意点が書かれている\n- ⚠️ 「上から順に最初の 1 つ」なので、**キーワードの並び順で結果が変わる**。「コラボ」を含むハイブランドの記事は、ハイブランドの方に入る\n- ⚠️ 「人気」「秋冬」のような広い言葉は、ファッション以外の記事も拾いやすい（ただし情報源がファッション系なので実害は小さい）\n- ⚠️ 英語キーワードは大文字・小文字を区別しない（`classify.py` で小文字にそろえている）が、全角・半角の違いはそろえていない\n\n## 🗣️ 30 秒で人に説明するなら\n\n「config フォルダには YAML の設定ファイルが 2 つあります。sources.yaml はニュースを集めるサイトの RSS 一覧で、種類やファッション記事だけに絞るかどうかも書けます。\ncategories.yaml はジャンル分けのキーワード辞書で、上から順にタイトルと照らし合わせて最初に当たったジャンルに入れます。\nコードを触らずに、情報源やキーワードを増やせるのがポイントです。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "YAML の `- {name: A, url: B}` を Python で読み込むと？",
+      "choices": [
+       "文字列 \"name: A, url: B\"",
+       "辞書 {\"name\": \"A\", \"url\": \"B\"} を 1 つ含むリスト",
+       "タプル (\"A\", \"B\")"
+      ],
+      "answer": 1,
+      "explain": "行頭の - はリストの項目、{ } は辞書です。"
+     },
+     {
+      "question": "タイトル「ミラノで話題のスニーカーコラボ」はどのジャンルになる？（kind は media）",
+      "choices": [
+       "ハイブランド/コレクション",
+       "ストリート/スニーカー",
+       "その他"
+      ],
+      "answer": 0,
+      "explain": "上から順に判定するので、先にある「ミラノ」に当たります。"
+     },
+     {
+      "question": "`require_fashion: true` が付いた情報源の記事はどうなる？",
+      "choices": [
+       "すべて「公式発表・ニッチ」に入る",
+       "タイトルにファッション系のキーワードがある記事だけ残る",
+       "必ず 20 件まで載る"
+      ],
+      "answer": 1,
+      "explain": "はてブのように話題が幅広い情報源から、ファッション記事だけを残すための設定です。"
+     }
+    ]
+   ],
+   "id": "2026-11-16-fashion-news-03-config"
+  },
+  {
+   "title": "fetch.py ― ニュースサイトの RSS を取ってくる「仕入れ担当」",
+   "language": "Python",
+   "date": "2026-11-16",
+   "level": 2,
+   "series": "fashion_news",
+   "part": 4,
+   "concepts": [
+    "http_api",
+    "data_formats",
+    "errors",
+    "functions",
+    "loops"
+   ],
+   "lessons": [
+    "10-python/05-functions",
+    "10-python/07-exceptions",
+    "10-python/03-loops",
+    "10-python/08-modules"
+   ],
+   "summary": "8 つのサイトから RSS を取ってきて Article のリストにする。1 つ失敗しても他は続ける。",
+   "body": "## 📄 解説するコード\n\n`src/fashion_news/fetch.py`\n\n```python\nfrom __future__ import annotations\n\nimport calendar\nimport logging\nfrom datetime import datetime, timezone\n\nimport feedparser\nimport requests\n\nfrom .models import Article\n\nlog = logging.getLogger(__name__)\nUSER_AGENT = \"fashion-news-bot/1.0 (personal RSS reader)\"\n\n\ndef parse_feed(content: bytes | str, source: str, kind: str) -> list[Article]:\n    parsed = feedparser.parse(content)\n    articles: list[Article] = []\n    for e in parsed.entries:\n        title = (e.get(\"title\") or \"\").strip()\n        link = (e.get(\"link\") or \"\").strip()\n        if not title or not link:\n            continue\n        ts = e.get(\"published_parsed\") or e.get(\"updated_parsed\")\n        published = (\n            datetime.fromtimestamp(calendar.timegm(ts), tz=timezone.utc) if ts else None\n        )\n        articles.append(Article(title, link, source, kind, published))\n    return articles\n\n\ndef fetch_source(src: dict, timeout: int = 20) -> list[Article]:\n    resp = requests.get(src[\"url\"], headers={\"User-Agent\": USER_AGENT}, timeout=timeout)\n    resp.raise_for_status()\n    return parse_feed(resp.content, src[\"name\"], src.get(\"kind\", \"media\"))\n\n\ndef fetch_all(sources: list[dict]) -> list[Article]:\n    \"\"\"1つの情報源が失敗しても他は続ける。\"\"\"\n    result: list[Article] = []\n    for src in sources:\n        try:\n            items = fetch_source(src)\n            log.info(\"%s: %d件\", src[\"name\"], len(items))\n            result.extend(items)\n        except Exception as exc:  # noqa: BLE001\n            log.warning(\"%s の取得に失敗: %s\", src[\"name\"], exc)\n    return result\n```\n\n## 🧭 ひとことで言うと\n\n**Python** で書かれた、**各ニュースサイトの RSS をインターネットから取ってきて、記事（Article）のリストに変換する** ファイルです。3 つの関数が「全部 → 1 サイト → 中身の読み取り」と役割を分けています。\n\n## 🗺️ 全体の流れ\n\n1. `main.py` が `fetch_all(sources)` に情報源の一覧（8 サイト分）を渡す\n2. `fetch_all` が 1 サイトずつ `fetch_source` を呼ぶ\n3. `fetch_source` が `requests` で RSS をダウンロードし、`parse_feed` に渡す\n4. `parse_feed` が RSS の中身を 1 記事ずつ `Article` にする\n5. 全サイト分をまとめたリストを返す（失敗したサイトは飛ばして警告を出す）\n\n## 🔍 ブロックごとの解説\n\n### parse_feed：RSS の中身を Article にする\n\n```python\nparsed = feedparser.parse(content)\nfor e in parsed.entries:\n    title = (e.get(\"title\") or \"\").strip()\n```\n\n- `feedparser` は RSS を読み解いてくれる外部ライブラリ。`parsed.entries` が記事の一覧\n- `e.get(\"title\") or \"\"`：タイトルが無い・`None` のときは空文字にする。`.strip()` で前後の空白を取る\n- `if not title or not link: continue`：タイトルかリンクが空の記事は **飛ばす**（壊れたデータへの備え）\n\n```python\nts = e.get(\"published_parsed\") or e.get(\"updated_parsed\")\npublished = (\n    datetime.fromtimestamp(calendar.timegm(ts), tz=timezone.utc) if ts else None\n)\n```\n\n- 公開日時が無ければ更新日時を使う（`or` で「左が無ければ右」）\n- `feedparser` の日付は特殊な形なので、`calendar.timegm` で数値にしてから、**UTC（世界標準時）** の `datetime` に変換している\n- 日付がどちらも無ければ `None`（1 行の if 式：`値 if 条件 else 別の値`）\n\n### fetch_source：1 サイト分をダウンロード\n\n```python\nresp = requests.get(src[\"url\"], headers={\"User-Agent\": USER_AGENT}, timeout=timeout)\nresp.raise_for_status()\n```\n\n- `User-Agent`：「私は fashion-news-bot です」と名乗る。サイトに対する **マナー**\n- `timeout=20`：20 秒応答が無ければ諦める（無いと永遠に待つことがある）\n- `raise_for_status()`：404 や 500 などのエラーなら例外を起こす\n- `src.get(\"kind\", \"media\")`：`kind` が書かれていなければ `media` 扱い\n\n### fetch_all：全サイトを回す。失敗しても止まらない\n\n```python\nfor src in sources:\n    try:\n        items = fetch_source(src)\n        result.extend(items)\n    except Exception as exc:\n        log.warning(\"%s の取得に失敗: %s\", src[\"name\"], exc)\n```\n\n`try / except` を **ループの中** に置いているのがポイントです。1 つのサイトが落ちていても、警告を出して次のサイトへ進みます。\n`result.extend(items)` は、リストに **リストの中身を全部** 足す（`append` だとリストごと 1 つの要素として入ってしまう）。\n\n### logging：記録を残す\n\n`print` の代わりに `log.info(...)` や `log.warning(...)` を使っています。GitHub Actions の実行ログに「WWDJAPAN: 30件」のように残るので、あとから「どのサイトが取れていないか」を確認できます。\n\n## 🐍 Python の書き方で見落としやすい点\n\n| 書き方 | ポイント |\n|---|---|\n| `x or \"\"` | x が None や空なら \"\" を使う。「デフォルト値」の定番 |\n| `continue` | その記事だけ飛ばして次へ |\n| `except Exception` | ほぼすべてのエラーを受け止める。普通は避けたいが、ここは **ログを残して** 次に進むので妥当 |\n| `# noqa: BLE001` | 「広すぎる except だと警告するツールに、わざとだと伝える」ためのコメント |\n| `extend` と `append` | `[1].extend([2,3])` → `[1,2,3]`、`[1].append([2,3])` → `[1,[2,3]]` |\n\n## 🔑 キーワード\n\n- **RSS**：サイトの新着記事の一覧を機械向けに配る形式\n- **feedparser**：RSS を読み解く外部ライブラリ\n- **requests**：Web からデータを取ってくる外部ライブラリ\n- **User-Agent**：アクセスするときの「名札」\n- **タイムアウト**：一定時間応答が無ければ諦める仕組み\n- **UTC**：世界標準時。日本時間は UTC＋9 時間\n- **logging**：プログラムの動きを記録する標準ライブラリ\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ タイムアウト、ステータスのチェック、User-Agent の明示と、通信まわりが丁寧\n- ✅ 1 サイトの失敗で全体が止まらない\n- ✅ タイトルやリンクが無い壊れた記事を飛ばしている\n- ⚠️ サイトを 1 つずつ順番に取りに行くので、遅いサイトがあると全体も遅くなる（最大 20 秒 × 8 サイト）。今の規模なら問題なし\n- ⚠️ 全サイトの取得に失敗したときは、`main.py` 側でエラー終了するようになっている（このファイル単体では空のリストを返すだけ）\n\n## 🗣️ 30 秒で人に説明するなら\n\n「fetch.py はニュースの仕入れ担当です。設定ファイルにある 8 つのサイトの RSS を requests で順番にダウンロードして、feedparser で読み解き、タイトル・URL・公開日時を Article にして返します。\nタイムアウトや User-Agent も付けていて、どこか 1 サイトが失敗しても警告をログに出して他のサイトは続けます。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "3 つ目のサイトの取得でエラーが起きた。4 つ目以降はどうなる？",
+      "choices": [
+       "プログラム全体が止まる",
+       "警告をログに出して、4 つ目以降も取りに行く",
+       "1 つ目からやり直す"
+      ],
+      "answer": 1,
+      "explain": "try / except がループの中にあるので、失敗はそのサイトだけで済みます。"
+     },
+     {
+      "question": "`e.get(\"published_parsed\") or e.get(\"updated_parsed\")` の意味は？",
+      "choices": [
+       "公開日時があればそれを、無ければ更新日時を使う",
+       "両方の日時を足す",
+       "両方そろっていないとエラー"
+      ],
+      "answer": 0,
+      "explain": "or は「左が無い（None など）なら右」という意味で使われています。"
+     },
+     {
+      "question": "`timeout=20` を付けない場合に起こりうる問題は？",
+      "choices": [
+       "記事が 20 件に制限される",
+       "応答しないサイトがあると、いつまでも待ち続ける",
+       "RSS が読めなくなる"
+      ],
+      "answer": 1,
+      "explain": "requests は既定ではタイムアウトしないので、明示するのが定番です。"
+     }
+    ]
+   ],
+   "id": "2026-11-16-fashion-news-04-fetch"
+  },
+  {
+   "title": "classify.py ― タイトルのキーワードでジャンルに分ける「仕分け担当」",
+   "language": "Python",
+   "date": "2026-11-16",
+   "level": 2,
+   "series": "fashion_news",
+   "part": 5,
+   "concepts": [
+    "conditionals",
+    "loops",
+    "collections",
+    "strings",
+    "functions"
+   ],
+   "lessons": [
+    "10-python/02-conditionals",
+    "10-python/03-loops",
+    "10-python/09-comprehensions-lambda",
+    "10-python/06-strings"
+   ],
+   "summary": "記事のタイトルに含まれるキーワードでジャンルを決め、ファッションと関係ない記事を取り除く。",
+   "body": "## 📄 解説するコード\n\n`src/fashion_news/classify.py`\n\n```python\nfrom __future__ import annotations\n\nfrom .models import Article\n\n\ndef classify(article: Article, config: dict) -> str:\n    if article.kind in config.get(\"niche_kinds\", []):\n        return config[\"niche_category\"]\n    text = article.title.lower()\n    for cat in config[\"categories\"]:\n        if any(k.lower() in text for k in cat[\"keywords\"]):\n            return cat[\"name\"]\n    return config[\"fallback_category\"]\n\n\ndef category_order(config: dict) -> list[str]:\n    return (\n        [c[\"name\"] for c in config[\"categories\"]]\n        + [config[\"niche_category\"], config[\"fallback_category\"]]\n    )\n\n\ndef is_fashion(article: Article, config: dict) -> bool:\n    text = article.title.lower()\n    return any(k.lower() in text for k in config.get(\"fashion_keywords\", []))\n\n\ndef apply_source_filters(articles: list[Article], sources: list[dict], config: dict) -> list[Article]:\n    strict = {s[\"name\"] for s in sources if s.get(\"require_fashion\")}\n    return [a for a in articles if a.source not in strict or is_fashion(a, config)]\n```\n\n## 🧭 ひとことで言うと\n\n**Python** で書かれた、**記事のタイトルに含まれるキーワードを見て、ジャンル（ハイブランド・スニーカーなど）を決める** ファイルです。AI は使わず、`categories.yaml` の辞書との単純な照らし合わせ（ルールベース）で分けています。\n\n## 🗺️ 全体の流れ\n\n1. `apply_source_filters`：`require_fashion` の情報源から来た記事のうち、ファッションと関係ないものを取り除く\n2. `classify`：1 記事ごとにジャンル名を決める\n3. `category_order`：Notion に並べるジャンルの順番を作る\n\n## 🔍 ブロックごとの解説\n\n### classify：ジャンルを 1 つ決める\n\n```python\nif article.kind in config.get(\"niche_kinds\", []):\n    return config[\"niche_category\"]\n```\n\nまず情報源の種類を見ます。`sns` か `official` なら、キーワードに関係なく **「公式発表・ニッチ」で即決** です。`return` した時点で関数は終わります。\n\n```python\ntext = article.title.lower()\nfor cat in config[\"categories\"]:\n    if any(k.lower() in text for k in cat[\"keywords\"]):\n        return cat[\"name\"]\nreturn config[\"fallback_category\"]\n```\n\n- `.lower()`：英字を小文字にそろえる。「Nike」も「NIKE」も「nike」として比べられる\n- `for cat in ...`：ジャンルを **上から順に** 調べる\n- `any(k.lower() in text for k in cat[\"keywords\"])`：「キーワードのうち **どれか 1 つでも** タイトルに含まれていれば True」\n- 当たった時点で `return` するので、**最初に当たったジャンル 1 つ** に決まる\n- 最後まで当たらなければ「その他」\n\n### any(...) の読み方\n\n```python\nany(k.lower() in text for k in cat[\"keywords\"])\n```\n\nこれは次の for 文と同じ意味です。\n\n```python\nfound = False\nfor k in cat[\"keywords\"]:\n    if k.lower() in text:\n        found = True\n        break\n```\n\n`any` は「1 つでも True があれば True」、`all` は「全部 True なら True」。AI のコードで頻出の短い書き方です。\n\n### category_order：並べる順番\n\n```python\n[c[\"name\"] for c in config[\"categories\"]] + [config[\"niche_category\"], config[\"fallback_category\"]]\n```\n\nリスト内包表記で 4 つのジャンル名を取り出し、最後に「公式発表・ニッチ」「その他」を足しています。Notion のページはこの順に見出しが並びます。\n\n### apply_source_filters：ファッションと関係ない記事を除く\n\n```python\nstrict = {s[\"name\"] for s in sources if s.get(\"require_fashion\")}\nreturn [a for a in articles if a.source not in strict or is_fashion(a, config)]\n```\n\n- `strict`：`require_fashion: true` が付いた情報源の名前の **セット**（`{ }` の内包表記はセットになる）\n- 残す条件：「厳しくしない情報源から来た記事」**または**「ファッション系のキーワードを含む記事」\n- はてなブックマークのように話題が幅広い情報源だけ、ファッション記事に絞り込むしくみ\n\n## 🐍 Python の書き方で見落としやすい点\n\n| 書き方 | ポイント |\n|---|---|\n| `\"コレクション\" in text` | 文字列の中に含まれるか（部分一致）。「コレクションズ」でも当たる |\n| `config.get(\"niche_kinds\", [])` | キーが無ければ空のリスト。設定の書き忘れでも止まらない |\n| `{... for s in sources}` | `[ ]` ならリスト、`{ }` ならセット（重複なし・`in` の判定が速い） |\n| `return` を途中に書く | 当たった時点で即終了。「早期リターン」と呼ばれる読みやすい書き方 |\n\n## 🔑 キーワード\n\n- **ルールベース**：決めたルール（キーワード辞書）で判断する方式。AI を使う方式との対比\n- **any / all**：「どれか 1 つ」「全部」を判定する組み込み関数\n- **部分一致**：文字列の一部に含まれているかで判定すること\n- **セット（set）**：重複を持たない入れ物。`in` の判定が速い\n- **早期リターン**：条件が決まった時点で関数を抜ける書き方\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ 関数が小さく、それぞれテストされている（10 ページ目）\n- ✅ 大文字・小文字の違いを吸収している\n- ⚠️ 部分一致なので、意図しない記事にも当たる。例：キーワード「パリ」は「パリッと焼けたパン」にも当たる\n- ⚠️ 1 記事 1 ジャンルなので、要件定義書の「複数ジャンルを付けてよい」とは違う\n- ⚠️ 全角・半角（「ＮＩＫＥ」と「NIKE」）は同じ扱いにならない。`dedupe.py` で使っている `unicodedata.normalize(\"NFKC\", ...)` を使えばそろえられる\n\n## 🗣️ 30 秒で人に説明するなら\n\n「classify.py は記事の仕分け担当です。SNS や公式発表から来た記事はまず『公式発表・ニッチ』に入れて、それ以外はタイトルにキーワード辞書の言葉が含まれるかを上から順に調べ、最初に当たったジャンルに入れます。\nどれにも当たらなければ『その他』です。はてブのような幅広い情報源は、ファッション系の言葉を含む記事だけ残すフィルターもかけています。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "`any(k in \"nikeの新作\" for k in [\"adidas\", \"nike\"])` の結果は？",
+      "choices": [
+       "True",
+       "False",
+       "\"nike\""
+      ],
+      "answer": 0,
+      "explain": "\"nike\" が含まれているので、1 つでも当たれば True です。"
+     },
+     {
+      "question": "kind が sns の記事「ナイキの新作スニーカー」のジャンルは？",
+      "choices": [
+       "ストリート/スニーカー",
+       "公式発表・ニッチ",
+       "その他"
+      ],
+      "answer": 1,
+      "explain": "種類（kind）の判定がキーワードより先に行われます。"
+     },
+     {
+      "question": "`{s[\"name\"] for s in sources}` が作るのは？",
+      "choices": [
+       "リスト",
+       "辞書",
+       "セット"
+      ],
+      "answer": 2,
+      "explain": "{ } の内包表記で「キー: 値」の形でなければセットになります。"
+     }
+    ]
+   ],
+   "id": "2026-11-16-fashion-news-05-classify"
+  },
+  {
+   "title": "dedupe.py ― 古い記事・同じ記事を取り除く「検品担当」",
+   "language": "Python",
+   "date": "2026-11-16",
+   "level": 3,
+   "series": "fashion_news",
+   "part": 6,
+   "concepts": [
+    "strings",
+    "collections",
+    "loops",
+    "functions"
+   ],
+   "lessons": [
+    "10-python/06-strings",
+    "10-python/04-lists-and-dicts",
+    "10-python/09-comprehensions-lambda",
+    "10-python/05-functions"
+   ],
+   "summary": "URL とタイトルを「比べやすい形」に整えてから、古い記事・掲載済みの記事・ほぼ同じ記事を除く。",
+   "body": "## 📄 解説するコード\n\n`src/fashion_news/dedupe.py`\n\n```python\nfrom __future__ import annotations\n\nimport re\nimport unicodedata\nfrom datetime import datetime, timedelta\nfrom difflib import SequenceMatcher\nfrom urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit\n\nfrom .models import Article\n\n_TRACKING = re.compile(r\"^(utm_|fbclid|gclid|ref$|ref_)\")\n\n\ndef normalize_url(url: str) -> str:\n    p = urlsplit(url.strip())\n    query = [(k, v) for k, v in parse_qsl(p.query) if not _TRACKING.match(k)]\n    path = p.path.rstrip(\"/\") or \"/\"\n    return urlunsplit((p.scheme.lower(), p.netloc.lower(), path, urlencode(query), \"\"))\n\n\ndef normalize_title(title: str) -> str:\n    t = unicodedata.normalize(\"NFKC\", title).lower()\n    t = re.sub(r\"\\s+[-–|｜]\\s+[^-–|｜]+$\", \"\", t)  # 末尾の「 - 媒体名」を除く\n    return re.sub(r\"[\\W_]+\", \"\", t)\n\n\ndef filter_recent(articles: list[Article], now: datetime, hours: int = 36) -> list[Article]:\n    \"\"\"日付のない記事は残す（重複除去に任せる）。\"\"\"\n    cutoff = now - timedelta(hours=hours)\n    return [a for a in articles if a.published is None or a.published >= cutoff]\n\n\ndef dedupe(\n    articles: list[Article], seen_urls: set[str], similarity: float = 0.9\n) -> list[Article]:\n    kept: list[Article] = []\n    kept_titles: list[str] = []\n    for a in articles:\n        url = normalize_url(a.url)\n        if url in seen_urls:\n            continue\n        nt = normalize_title(a.title)\n        if not nt:\n            continue\n        if any(nt == t or SequenceMatcher(None, nt, t).ratio() >= similarity for t in kept_titles):\n            continue\n        kept.append(a)\n        kept_titles.append(nt)\n        seen_urls = seen_urls | {url}\n    return kept\n```\n\n## 🧭 ひとことで言うと\n\n**Python** で書かれた、**同じニュースが何度も載らないようにする** ファイルです。URL とタイトルを「比べやすい形」に整えてから、古い記事・掲載済みの記事・タイトルがほぼ同じ記事を取り除きます。このシリーズで一番むずかしいファイルなので、ゆっくり読みましょう。\n\n## 🗺️ 全体の流れ\n\n1. `filter_recent`：36 時間より前の記事を取り除く\n2. `dedupe`：1 記事ずつ見て、次のどれかに当たれば捨てる\n   - URL が過去に載せたもの（`seen_urls`）に入っている\n   - タイトルが空\n   - すでに残した記事とタイトルが 90% 以上似ている\n3. 比べる前に、`normalize_url` と `normalize_title` で「表記ゆれ」をそろえる\n\n## 🔍 ブロックごとの解説\n\n### なぜ「そろえる（正規化）」が必要？\n\n同じ記事でも、URL やタイトルの書き方が少し違うことがよくあります。\n\n| 同じ記事なのに… | 例 |\n|---|---|\n| URL に追跡用の文字がついている | `https://ex.com/a?utm_source=x` と `https://ex.com/a` |\n| 最後の `/` の有無 | `https://ex.com/a/` と `https://ex.com/a` |\n| タイトルの後ろに媒体名 | `新作スニーカー発売 - 某メディア` と `新作スニーカー発売` |\n| 全角・半角、大文字・小文字 | `ＮＩＫＥ` と `nike` |\n\nそのまま比べると「別の記事」と判定されてしまうので、**比べる前に同じ形に整える** のが正規化です。\n\n### normalize_url：URL を整える\n\n```python\np = urlsplit(url.strip())\nquery = [(k, v) for k, v in parse_qsl(p.query) if not _TRACKING.match(k)]\npath = p.path.rstrip(\"/\") or \"/\"\nreturn urlunsplit((p.scheme.lower(), p.netloc.lower(), path, urlencode(query), \"\"))\n```\n\n1. `urlsplit`：URL を「https」「ex.com」「/a/」「utm_source=x&id=1」などの部品に分ける\n2. `?` 以降の項目（クエリ）から、`utm_`・`fbclid` など **広告の追跡用の項目だけ** 取り除く\n3. 最後の `/` を取る（全部取れて空になったら `/` にする）\n4. 小文字にそろえて組み立て直す。最後の `\"\"` は `#top` のような **ページ内の位置（フラグメント）を捨てる** という意味\n\n例：`https://EX.com/a/?utm_source=x&id=1#top` → `https://ex.com/a?id=1`\n\n### 正規表現（re）の読み方\n\n```python\n_TRACKING = re.compile(r\"^(utm_|fbclid|gclid|ref$|ref_)\")\n```\n\n正規表現は「文字のパターン」を書くための小さな言語です。\n\n| 記号 | 意味 |\n|---|---|\n| `^` | 先頭から |\n| `( A \\| B )` | A または B |\n| `$` | そこで終わり |\n\nなので「`utm_` で始まる」「`fbclid` で始まる」「ちょうど `ref`」「`ref_` で始まる」のどれかに一致します。\n\n### normalize_title：タイトルを整える\n\n```python\nt = unicodedata.normalize(\"NFKC\", title).lower()\nt = re.sub(r\"\\s+[-–|｜]\\s+[^-–|｜]+$\", \"\", t)\nreturn re.sub(r\"[\\W_]+\", \"\", t)\n```\n\n1. `NFKC`：全角英数字を半角に、半角カナを全角に…と **文字の種類をそろえる**。そのあと小文字に\n2. 1 つ目の `re.sub`：末尾の「` - 媒体名`」を消す。`\\s+` は空白、`[-–|｜]` は区切り記号のどれか、`[^-–|｜]+$` は「区切り記号以外の文字が最後まで続く」\n3. 2 つ目の `re.sub`：記号・空白（`\\W` は「文字でも数字でもないもの」）を全部消す\n\n例：`新作スニーカー発売！ - 某メディア` → `新作スニーカー発売`\n\n### filter_recent：新しい記事だけ残す\n\n```python\ncutoff = now - timedelta(hours=hours)\nreturn [a for a in articles if a.published is None or a.published >= cutoff]\n```\n\n「今から 36 時間前」を境目にして、それより新しい記事を残します。**日付が無い記事は残す**（あとの重複チェックや掲載済みチェックに任せる）という判断です。\n要件では「直近 24 時間」ですが、少し余裕を持って 36 時間にしているようです（掲載済みチェックがあるので、重なっても二重には載りません）。\n\n### dedupe：重複を取り除く本体\n\n```python\nif any(nt == t or SequenceMatcher(None, nt, t).ratio() >= similarity for t in kept_titles):\n    continue\n```\n\n`SequenceMatcher(...).ratio()` は、2 つの文字列が **どれくらい似ているかを 0〜1 で返す** 標準ライブラリの機能です。0.9 以上なら「ほぼ同じ記事」として捨てます。\n別のサイトが同じニュースを少し違うタイトルで出していても、まとめられます。\n\n```python\nseen_urls = seen_urls | {url}\n```\n\n残した記事の URL も「見たもの」に足して、同じ実行の中で同じ URL が 2 回出ても捨てられるようにしています。`|` はセットの合体です。\n\n## 🐍 Python の書き方で見落としやすい点\n\n| 書き方 | ポイント |\n|---|---|\n| `r\"...\"` | raw 文字列。`\\s` などの `\\` をそのまま正規表現に渡すため |\n| `re.compile(...)` | 正規表現を前もって準備しておく。何度も使うときに速い |\n| `p.path.rstrip(\"/\") or \"/\"` | 空文字になったら `/` を使う、という `or` の定番の使い方 |\n| `seen_urls = seen_urls \\| {url}` | 元のセットを変えずに **新しいセットを作る**。呼び出し元の `seen` を書き換えないための書き方 |\n| `_TRACKING` の先頭の `_` | 「このファイルの中だけで使う」という慣習 |\n\n## 🔑 キーワード\n\n- **正規化**：比べやすいように表記ゆれをそろえること\n- **正規表現**：文字のパターンを表す書き方（`re` モジュール）\n- **クエリ**：URL の `?` 以降の部分。`key=value` が `&` でつながる\n- **トラッキングパラメータ**：`utm_source` など、どこから来たかを計測するための追跡用の項目\n- **NFKC**：全角・半角などの文字の種類をそろえる Unicode の正規化方式\n- **類似度（ratio）**：2 つの文字列がどれだけ似ているかを 0〜1 で表した値\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ 表記ゆれに丁寧に対処していて、テストもある（10 ページ目）\n- ✅ 呼び出し元のデータを書き換えないように作られている\n- ⚠️ 記事が増えると遅くなる：残した記事全部とタイトルを比べるので、記事数の 2 乗に比例して時間がかかる。今の規模（数百件）なら問題なし\n- ⚠️ 似ているけれど別のニュース（例：「〇〇 春夏コレクション発表」と「〇〇 秋冬コレクション発表」）が 90% 以上似ていると、片方が消える可能性がある\n- ⚠️ `seen_urls | {url}` は毎回セットをまるごと作り直すので少し無駄がある（`set.add` を使えば速いが、元のデータを守るために最初に一度コピーする必要がある）\n\n## 🗣️ 30 秒で人に説明するなら\n\n「dedupe.py は同じニュースを二重に載せないための検品担当です。まず 36 時間より古い記事を落とし、URL は追跡用のパラメータや末尾のスラッシュを取って、タイトルは全角半角や記号、末尾の媒体名を取ってそろえます。\nそのうえで、過去に載せた URL や、すでに残したタイトルと 90% 以上似ている記事を捨てています。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "`normalize_url(\"https://Ex.com/news/?utm_source=x\")` の結果は？",
+      "choices": [
+       "https://Ex.com/news/?utm_source=x",
+       "https://ex.com/news",
+       "https://ex.com/news/"
+      ],
+      "answer": 1,
+      "explain": "ドメインを小文字にし、utm_ の項目と末尾の / を取り除きます。"
+     },
+     {
+      "question": "公開日時が分からない（None の）記事は filter_recent でどうなる？",
+      "choices": [
+       "残される",
+       "捨てられる",
+       "エラーになる"
+      ],
+      "answer": 0,
+      "explain": "「日付のない記事は残す（重複除去に任せる）」と書かれています。"
+     },
+     {
+      "question": "`SequenceMatcher(None, a, b).ratio()` が返すのは？",
+      "choices": [
+       "a と b の文字数の差",
+       "a と b の似ている度合い（0〜1）",
+       "a が b に含まれるかどうか"
+      ],
+      "answer": 1,
+      "explain": "1 に近いほど似ています。このコードでは 0.9 以上を同じ記事とみなします。"
+     }
+    ]
+   ],
+   "id": "2026-11-16-fashion-news-06-dedupe"
+  },
+  {
+   "title": "notion.py ― Notion にページを作る「配送担当」",
+   "language": "Python",
+   "date": "2026-11-16",
+   "level": 3,
+   "series": "fashion_news",
+   "part": 7,
+   "concepts": [
+    "http_api",
+    "classes",
+    "data_formats",
+    "errors",
+    "security"
+   ],
+   "lessons": [
+    "10-python/10-classes",
+    "10-python/04-lists-and-dicts",
+    "10-python/07-exceptions",
+    "100-ai-dev/06-secrets-env"
+   ],
+   "summary": "Notion API を使って、ジャンル見出しと記事リンクの箇条書きでページを作る。失敗時のリトライ付き。",
+   "body": "## 📄 解説するコード\n\n`src/fashion_news/notion.py`\n\n```python\nfrom __future__ import annotations\n\nimport logging\nimport time\n\nimport requests\n\nfrom .models import Article\n\nlog = logging.getLogger(__name__)\nAPI = \"https://api.notion.com/v1\"\nVERSION = \"2022-06-28\"\nMAX_CHILDREN = 100  # 1回のリクエストで送れるブロック数の上限\n\n\ndef build_blocks(grouped: dict[str, list[Article]]) -> list[dict]:\n    blocks: list[dict] = []\n    for category, items in grouped.items():\n        if not items:\n            continue\n        blocks.append(\n            {\n                \"type\": \"heading_2\",\n                \"heading_2\": {\"rich_text\": [{\"type\": \"text\", \"text\": {\"content\": category}}]},\n            }\n        )\n        for a in items:\n            blocks.append(\n                {\n                    \"type\": \"bulleted_list_item\",\n                    \"bulleted_list_item\": {\n                        \"rich_text\": [\n                            {\n                                \"type\": \"text\",\n                                \"text\": {\"content\": a.title[:1900], \"link\": {\"url\": a.url}},\n                            },\n                            {\"type\": \"text\", \"text\": {\"content\": f\" — {a.source}\"}},\n                        ]\n                    },\n                }\n            )\n    return blocks\n\n\nclass NotionClient:\n    def __init__(self, token: str):\n        self.s = requests.Session()\n        self.s.headers.update(\n            {\n                \"Authorization\": f\"Bearer {token}\",\n                \"Notion-Version\": VERSION,\n                \"Content-Type\": \"application/json\",\n            }\n        )\n\n    def _request(self, method: str, path: str, **kw) -> dict:\n        for attempt in range(4):\n            r = self.s.request(method, f\"{API}{path}\", timeout=30, **kw)\n            if r.status_code == 429 or r.status_code >= 500:\n                time.sleep(float(r.headers.get(\"Retry-After\", 2 ** attempt)))\n                continue\n            if not r.ok:\n                raise RuntimeError(f\"Notion API {r.status_code}: {r.text[:300]}\")\n            return r.json()\n        raise RuntimeError(f\"Notion API が繰り返し失敗: {method} {path}\")\n\n    def find_child_page(self, parent_id: str, title: str) -> str | None:\n        cursor = None\n        while True:\n            params = {\"page_size\": 100, **({\"start_cursor\": cursor} if cursor else {})}\n            data = self._request(\"GET\", f\"/blocks/{parent_id}/children\", params=params)\n            for b in data[\"results\"]:\n                if b[\"type\"] == \"child_page\" and b[\"child_page\"][\"title\"] == title:\n                    return b[\"id\"]\n            if not data.get(\"has_more\"):\n                return None\n            cursor = data[\"next_cursor\"]\n\n    def create_daily_page(self, parent_id: str, title: str, blocks: list[dict]) -> str:\n        page = self._request(\n            \"POST\",\n            \"/pages\",\n            json={\n                \"parent\": {\"page_id\": parent_id},\n                \"properties\": {\"title\": {\"title\": [{\"text\": {\"content\": title}}]}},\n                \"children\": blocks[:MAX_CHILDREN],\n            },\n        )\n        for i in range(MAX_CHILDREN, len(blocks), MAX_CHILDREN):\n            self._request(\n                \"PATCH\",\n                f\"/blocks/{page['id']}/children\",\n                json={\"children\": blocks[i : i + MAX_CHILDREN]},\n            )\n        return page[\"url\"]\n```\n\n## 🧭 ひとことで言うと\n\n**Python** で書かれた、**Notion API（プログラムから Notion を操作する窓口）を使って、ニュースのページを作る** ファイルです。ページの中身を Notion の形式に組み立てる関数と、Notion とやりとりするクラスの 2 つでできています。\n\n## 🗺️ 全体の流れ\n\n1. `build_blocks`：ジャンル別の記事を、Notion の「ブロック」（見出し・箇条書きなどの部品）のリストに変換する\n2. `NotionClient(token)`：トークン（合言葉）を持った通信係を作る\n3. `find_child_page`：同じタイトルのページ（例：「2026-11-16 朝刊」）がもう無いか調べる\n4. `create_daily_page`：ページを作り、ブロックを 100 個ずつ送り込む\n5. 通信が混雑・失敗したら、少し待ってやり直す（`_request`）\n\n## 🔍 ブロックごとの解説\n\n### Notion の「ブロック」は辞書の入れ子\n\nNotion のページは「ブロック」という部品の積み重ねです。API には、それを **辞書（JSON）** で送ります。\n\n```python\n{\"type\": \"heading_2\", \"heading_2\": {\"rich_text\": [{\"type\": \"text\", \"text\": {\"content\": \"ストリート/スニーカー\"}}]}}\n```\n\n入れ子が深くて読みにくいですが、外側から読むと「種類は見出し 2（`##`）で、文字は『ストリート/スニーカー』」というだけです。\n記事は箇条書き（`bulleted_list_item`）で、タイトルにリンクを付け、後ろに「 — 出典名」を付けています。\n`a.title[:1900]` は、Notion の 1 つの文字ブロックの上限（2000 文字）を超えないように、念のため切っています。\n\n### NotionClient：通信係のクラス\n\n```python\nself.s = requests.Session()\nself.s.headers.update({\"Authorization\": f\"Bearer {token}\", ...})\n```\n\n- `requests.Session()`：同じ相手と何度もやりとりするための「通信の窓口」。ヘッダーを一度設定すれば毎回付けてくれる\n- `Authorization: Bearer トークン`：「この合言葉を持っている者です」と名乗る。**トークンはコードに書かず、`main.py` が環境変数から受け取って渡している**\n- `Notion-Version`：どの版の API の仕様で話すかを指定\n\n### _request：混雑していたら待ってやり直す\n\n```python\nfor attempt in range(4):\n    r = self.s.request(method, f\"{API}{path}\", timeout=30, **kw)\n    if r.status_code == 429 or r.status_code >= 500:\n        time.sleep(float(r.headers.get(\"Retry-After\", 2 ** attempt)))\n        continue\n```\n\n- `429`：「アクセスが多すぎます」、`500` 番台：「サーバー側の不調」。どちらも **時間をおけば成功するかもしれない** エラー\n- `Retry-After`（何秒待てばいいか）が返ってくればその秒数、無ければ 1, 2, 4, 8 秒…と **だんだん長く待つ**（指数バックオフ）\n- 最大 4 回試してダメならエラーにする\n- 400 番台（リクエストの間違い・権限なし）は待っても直らないので、すぐにエラーにする\n- 名前の先頭の `_` は「クラスの中だけで使う」という慣習\n- `**kw` は「受け取ったキーワード引数を、そのまま次に渡す」（`params=` や `json=` を中継している）\n\n### find_child_page：ページの一覧を少しずつ読む\n\n```python\nwhile True:\n    data = self._request(\"GET\", f\"/blocks/{parent_id}/children\", params=params)\n    ...\n    if not data.get(\"has_more\"):\n        return None\n    cursor = data[\"next_cursor\"]\n```\n\nNotion は一度に 100 件までしか返さないので、「続きがある（`has_more`）なら、続きの目印（`cursor`）を付けてもう一度聞く」を繰り返します。これを **ページネーション** と呼び、多くの Web API で見る形です。\n\n### create_daily_page：100 個ずつ送る\n\n最初の 100 ブロックはページ作成と同時に送り、残りは `PATCH`（追加）で 100 個ずつ送ります。\n`range(100, len(blocks), 100)` は 100, 200, 300… と 100 刻みの数を作り、`blocks[i : i + 100]` でそこから 100 個を切り出します。\n\n## 🐍 Python の書き方で見落としやすい点\n\n| 書き方 | ポイント |\n|---|---|\n| `**({\"start_cursor\": cursor} if cursor else {})` | cursor があるときだけ辞書に項目を足す。`**` は辞書を展開して合体させる |\n| `**kw` | 受け取ったキーワード引数をまとめて受け取り、そのまま渡す |\n| `2 ** attempt` | 2 の attempt 乗（1, 2, 4, 8） |\n| `blocks[i : i + 100]` | スライス。範囲外でもエラーにならず、ある分だけ返る |\n| `raise RuntimeError(...)` | 自分でエラーを起こす。`main.py` まで伝わってプログラムが失敗として終わる |\n\n## 🔑 キーワード\n\n- **Notion API**：プログラムから Notion を操作する窓口\n- **ブロック**：Notion のページを作る部品（見出し・段落・箇条書きなど）\n- **トークン（Bearer）**：API を使う権利を示す合言葉。秘密情報\n- **セッション**：同じ相手とのやりとりをまとめて管理する仕組み\n- **リトライ・指数バックオフ**：失敗したら待ち時間を倍々に増やしてやり直すこと\n- **ページネーション**：データを何回かに分けて受け取る仕組み\n- **ステータスコード**：200（成功）、429（多すぎ）、500（サーバーの不調）など、結果を表す番号\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ トークンをコードに書かず、外から受け取っている\n- ✅ 混雑時は待ってやり直し、直らないエラーはすぐ止める、という使い分けができている\n- ✅ ブロック数や文字数の上限を考慮している\n- ⚠️ ページを作ったあと、残りのブロックの追加に失敗すると、**途中までのページが Notion に残る**。次の回は「作成済み」と判定されて作り直されない（`--force` で作り直せる）\n- ⚠️ `Notion-Version: 2022-06-28` は固定。Notion 側で古い版が使えなくなったら更新が必要になる\n\n## 🗣️ 30 秒で人に説明するなら\n\n「notion.py は Notion への配送担当です。ジャンルごとの記事を、Notion の見出しブロックとリンク付きの箇条書きブロックに組み立てて、Notion API でページを作ります。\nトークンはヘッダーに付けて送り、混雑やサーバーエラーのときは待ち時間を増やしながら最大 4 回やり直します。\n同じタイトルのページが既にあるかを調べる機能もあって、二重に作らないようにしています。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "Notion API が 429 を返したとき、このコードはどうする？",
+      "choices": [
+       "すぐにエラーで終了する",
+       "少し待ってからやり直す",
+       "別の API に切り替える"
+      ],
+      "answer": 1,
+      "explain": "429 は「多すぎる」の意味なので、待てば成功する可能性があります。"
+     },
+     {
+      "question": "Notion API が 401（認証エラー）を返したときは？",
+      "choices": [
+       "やり直さずにすぐエラーにする",
+       "4 回までやり直す",
+       "無視して次に進む"
+      ],
+      "answer": 0,
+      "explain": "400 番台は待っても直らないので、`raise RuntimeError` ですぐ止めます。"
+     },
+     {
+      "question": "ブロックが 250 個あるとき、create_daily_page は API を何回呼ぶ？",
+      "choices": [
+       "1 回",
+       "2 回",
+       "3 回"
+      ],
+      "answer": 2,
+      "explain": "ページ作成で 100 個、そのあと PATCH で 100 個と 50 個を送ります。"
+     }
+    ]
+   ],
+   "id": "2026-11-16-fashion-news-07-notion"
+  },
+  {
+   "title": "main.py ― すべての部品を順番に動かす「工場長」",
+   "language": "Python",
+   "date": "2026-11-16",
+   "level": 3,
+   "series": "fashion_news",
+   "part": 8,
+   "concepts": [
+    "functions",
+    "io",
+    "data_formats",
+    "errors",
+    "collections",
+    "security"
+   ],
+   "lessons": [
+    "10-python/05-functions",
+    "10-python/08-modules",
+    "10-python/11-files-and-json",
+    "100-ai-dev/06-secrets-env"
+   ],
+   "summary": "設定と履歴を読み込み、集める → ふるう → 仕分ける → Notion に作る → 履歴を保存する、を順に指示する司令塔。",
+   "body": "## 📄 解説するコード\n\n`src/fashion_news/main.py`\n\n```python\nfrom __future__ import annotations\n\nimport argparse\nimport json\nimport logging\nimport os\nfrom datetime import datetime, timedelta, timezone\nfrom pathlib import Path\n\nimport yaml\n\nfrom .classify import apply_source_filters, category_order, classify\nfrom .dedupe import dedupe, filter_recent, normalize_url\nfrom .fetch import fetch_all\nfrom .models import Article\nfrom .notion import NotionClient, build_blocks\n\nlog = logging.getLogger(\"fashion_news\")\nJST = timezone(timedelta(hours=9))\nROOT = Path(__file__).resolve().parents[2]\nSEEN_KEEP_DAYS = 30\n\n\ndef load_seen(path: Path) -> dict[str, str]:\n    if not path.exists():\n        return {}\n    return json.loads(path.read_text(encoding=\"utf-8\") or \"{}\")\n\n\ndef prune_seen(seen: dict[str, str], today: str) -> dict[str, str]:\n    limit = (datetime.fromisoformat(today) - timedelta(days=SEEN_KEEP_DAYS)).date().isoformat()\n    return {u: d for u, d in seen.items() if d >= limit}\n\n\ndef group_articles(articles: list[Article], config: dict) -> dict[str, list[Article]]:\n    grouped = {name: [] for name in category_order(config)}\n    for a in articles:\n        a.category = classify(a, config)\n        grouped[a.category].append(a)\n    limit = config.get(\"max_per_category\")\n    oldest = datetime.min.replace(tzinfo=timezone.utc)\n    for name, items in grouped.items():\n        items.sort(key=lambda a: a.published or oldest, reverse=True)  # 新しい順\n        if limit:\n            grouped[name] = items[:limit]\n    return grouped\n\n\ndef render_text(title: str, grouped: dict[str, list[Article]]) -> str:\n    lines = [f\"# {title}\"]\n    for cat, items in grouped.items():\n        if items:\n            lines.append(f\"\\n## {cat}\")\n            lines += [f\"- {a.title} ({a.source}) {a.url}\" for a in items]\n    return \"\\n\".join(lines)\n\n\ndef page_title(now: datetime) -> str:\n    \"\"\"JST の正午より前なら朝刊、それ以降は夕刊。\"\"\"\n    jst = now.astimezone(JST)\n    return f\"{jst.date().isoformat()} {'朝刊' if jst.hour < 12 else '夕刊'}\"\n\n\ndef run(dry_run: bool, force: bool, now: datetime | None = None) -> int:\n    now = now or datetime.now(timezone.utc)\n    today = now.astimezone(JST).date().isoformat()\n    title = page_title(now)\n\n    sources = yaml.safe_load((ROOT / \"config/sources.yaml\").read_text(encoding=\"utf-8\"))[\"sources\"]\n    config = yaml.safe_load((ROOT / \"config/categories.yaml\").read_text(encoding=\"utf-8\"))\n    seen_path = ROOT / \"data/seen_urls.json\"\n    seen = load_seen(seen_path)\n\n    client = parent_id = None\n    if not dry_run:\n        token = (os.environ.get(\"NOTION_TOKEN\") or \"\").strip()\n        parent_id = (os.environ.get(\"NOTION_PARENT_PAGE_ID\") or \"\").strip()\n        if not token or not parent_id:\n            log.error(\"NOTION_TOKEN と NOTION_PARENT_PAGE_ID が必要です\")\n            return 1\n        if not token.isascii() or not token.isprintable() or \" \" in token:\n            log.error(\n                \"NOTION_TOKEN に半角英数字以外の文字（日本語・記号・空白・改行など）が含まれています。\"\n                \"Notion のインテグレーション画面のコピーアイコンでトークンをコピーし直して登録してください\"\n            )\n            return 1\n        client = NotionClient(token)\n        if not force and client.find_child_page(parent_id, title):\n            log.info(\"%s は作成済みのため終了します（--force で再作成）\", title)\n            return 0\n\n    fetched = fetch_all(sources)\n    if not fetched:\n        log.error(\"全ての情報源の取得に失敗しました\")\n        return 1\n    candidates = apply_source_filters(filter_recent(fetched, now), sources, config)\n    grouped = group_articles(dedupe(candidates, set(seen)), config)\n    articles = [a for items in grouped.values() for a in items]  # 上限で落とした記事は履歴に入れない\n    log.info(\"取得 %d件 → 掲載 %d件\", len(fetched), len(articles))\n\n    if dry_run:\n        print(render_text(title, grouped))\n        return 0\n\n    blocks = build_blocks(grouped) or [\n        {\n            \"type\": \"paragraph\",\n            \"paragraph\": {\"rich_text\": [{\"type\": \"text\", \"text\": {\"content\": \"本日の新着記事はありませんでした。\"}}]},\n        }\n    ]\n    url = client.create_daily_page(parent_id, title, blocks)\n    log.info(\"Notion に作成しました: %s\", url)\n\n    seen.update({normalize_url(a.url): today for a in articles})\n    seen_path.write_text(\n        json.dumps(prune_seen(seen, today), ensure_ascii=False, indent=0, sort_keys=True) + \"\\n\",\n        encoding=\"utf-8\",\n    )\n    return 0\n\n\ndef main() -> None:\n    ap = argparse.ArgumentParser(description=\"毎朝のファッションニュースを Notion に作成する\")\n    ap.add_argument(\"--dry-run\", action=\"store_true\", help=\"Notion に書かず標準出力に表示\")\n    ap.add_argument(\"--force\", action=\"store_true\", help=\"同じ日のページがあっても作成する\")\n    args = ap.parse_args()\n    logging.basicConfig(level=logging.INFO, format=\"%(levelname)s %(message)s\")\n    raise SystemExit(run(args.dry_run, args.force))\n\n\nif __name__ == \"__main__\":\n    main()\n```\n\n## 🧭 ひとことで言うと\n\n**Python** で書かれた、このプログラムの **司令塔** です。自分ではあまり細かい作業をせず、ここまでに読んだ部品（fetch・classify・dedupe・notion）を **正しい順番で呼び出す** ことが主な仕事です。130 行ほどありますが、一番大事なのは `run` 関数です。\n\n## 🗺️ 全体の流れ\n\n`main()` → `run()` の順に動きます。`run` の中身はこうです。\n\n1. **準備**：今の日時から「2026-11-16 朝刊」のようなタイトルを決め、設定ファイル 2 つと掲載履歴を読む\n2. **確認**：Notion のトークンがあるか・おかしな文字が混ざっていないかを確かめ、同じタイトルのページが既にあれば終わる\n3. **集める**：`fetch_all` で全サイトの記事を取る（全滅ならエラー終了）\n4. **ふるう**：古い記事・ファッションと関係ない記事・重複・掲載済みを除く\n5. **仕分ける**：`group_articles` でジャンル分けし、新しい順に各 20 件まで\n6. **届ける**：Notion にページを作る（記事 0 件なら「新着はありませんでした」と書く）\n7. **記録する**：載せた記事の URL を履歴に追加し、30 日より古い履歴を消して保存\n\n## 🔍 ブロックごとの解説\n\n### 定数：プログラム全体で使う決まった値\n\n```python\nJST = timezone(timedelta(hours=9))\nROOT = Path(__file__).resolve().parents[2]\n```\n\n- `JST`：日本時間（UTC＋9 時間）\n- `ROOT`：このファイル（`src/fashion_news/main.py`）から 2 つ上のフォルダ＝リポジトリの一番上。ここを基準に `config/` や `data/` を探すので、どこから実行しても同じファイルを読める\n\n### page_title：朝刊か夕刊か\n\n```python\njst = now.astimezone(JST)\nreturn f\"{jst.date().isoformat()} {'朝刊' if jst.hour < 12 else '夕刊'}\"\n```\n\nサーバーの時計は UTC なので、**日本時間に直してから** 日付と時刻を判断しています。日本時間 6:30 は UTC では前日の 21:30 なので、直さないと日付が 1 日ずれます。\n\n### 安全チェック：トークンのコピーミスを見つける\n\n```python\nif not token.isascii() or not token.isprintable() or \" \" in token:\n```\n\nトークンに日本語や空白・改行が混ざっていないか確かめています。GitHub の Secrets に貼り付けるときのコピーミスを、分かりやすいメッセージで知らせるための工夫です。\n\n### パイプラインの本体（3 行）\n\n```python\ncandidates = apply_source_filters(filter_recent(fetched, now), sources, config)\ngrouped = group_articles(dedupe(candidates, set(seen)), config)\narticles = [a for items in grouped.values() for a in items]\n```\n\n関数の中に関数を入れているので、**内側から読む** のがコツです。\n\n1. `filter_recent(fetched, now)`：新しい記事だけ\n2. `apply_source_filters(...)`：ファッションと関係ない記事を除く\n3. `dedupe(candidates, set(seen))`：重複・掲載済みを除く\n4. `group_articles(...)`：ジャンル分けして各 20 件まで\n5. 最後の行：ジャンル別に分かれた記事を 1 本のリストに戻す（二重の内包表記）\n\n### group_articles：仕分けと並べ替え\n\n```python\nitems.sort(key=lambda a: a.published or oldest, reverse=True)\n```\n\n公開日時の新しい順に並べます。日時が無い記事は「一番古い日時」として扱い、一番後ろへ。そのあと `items[:limit]` で上位 20 件だけ残します。\n\n### 履歴の保存\n\n```python\nseen.update({normalize_url(a.url): today for a in articles})\nseen_path.write_text(json.dumps(prune_seen(seen, today), ensure_ascii=False, ...))\n```\n\n- 載せた記事の URL と今日の日付を、辞書に追加する\n- `prune_seen`：30 日より前の記録を消す（ファイルが大きくなりすぎないように）\n- JSON にしてファイルに書き戻す。このあと GitHub Actions がコミットして保存する（9 ページ目）\n- **上限の 20 件からあふれた記事は履歴に入れない**ので、次の回に載るチャンスが残る\n\n### main：コマンドの受け付け口\n\n```python\nap.add_argument(\"--dry-run\", action=\"store_true\", ...)\nraise SystemExit(run(args.dry_run, args.force))\n```\n\n- `argparse`：`python -m fashion_news --dry-run` のような **コマンドのオプション** を読み取る標準ライブラリ\n- `--dry-run`：Notion に書かず、結果を画面に表示するだけ（試し運転）\n- `--force`：同じタイトルのページがあっても作る\n- `run` は成功なら `0`、失敗なら `1` を返し、`SystemExit` でそれを **終了コード** として外に伝える。GitHub Actions は 1 を見て「失敗」と判断し、メールで知らせてくれる\n\n## 🐍 Python の書き方で見落としやすい点\n\n| 書き方 | ポイント |\n|---|---|\n| `now = now or datetime.now(...)` | 引数で日時が渡されなければ今の日時。**テストで日時を固定できる** ようにする工夫 |\n| `client = parent_id = None` | 2 つの変数をまとめて None にする |\n| `build_blocks(grouped) or [...]` | 空のリストなら代わりに「新着なし」のブロックを使う |\n| `[a for items in ... for a in items]` | 二重のループの内包表記。左の for が外側 |\n| `return 1` / `return 0` | 終了コード。0 が成功、それ以外が失敗という OS の慣習 |\n\n## 🔑 キーワード\n\n- **司令塔（オーケストレーション）**：部品を順番に呼び出して全体を動かす役\n- **argparse**：コマンドラインのオプションを読み取る標準ライブラリ\n- **環境変数**：プログラムの外から渡す設定値（ここではトークン）\n- **タイムゾーン**：UTC と JST（日本時間）のような時差の扱い\n- **終了コード**：プログラムが成功（0）か失敗（1 など）かを外に伝える番号\n- **ドライラン**：本番の書き込みをしない試し運転\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ 部品の呼び出し順が `run` にまとまっていて、全体の流れが追いやすい\n- ✅ トークンが無い・壊れている場合に、分かりやすいメッセージで止まる\n- ✅ 時刻を引数で渡せるので、テストで「朝刊／夕刊」の切り替えを確かめられる\n- ✅ 記事が 0 件でもページを作る（要件どおり）\n- ⚠️ `run` が「設定の読み込み」から「保存」まで多くの役割を持っていて長め。今は読める長さだが、機能を足すなら分けたい\n- ⚠️ 設定ファイルの書き間違い（`sources` キーが無いなど）は、分かりにくいエラー（KeyError）で止まる\n\n## 🗣️ 30 秒で人に説明するなら\n\n「main.py は全体の司令塔です。日本時間でページのタイトルを決めて、設定と掲載履歴を読み、Notion のトークンを確認してから、記事を集める、古いものと重複を除く、ジャンル分けして 20 件ずつにする、Notion にページを作る、という順に部品を呼びます。\n最後に載せた URL を履歴ファイルに保存して、次の回に同じ記事が出ないようにしています。--dry-run を付ければ Notion に書かずに試せます。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "日本時間 2026-11-14 の 6:30 に実行したとき、ページのタイトルは？",
+      "choices": [
+       "2026-11-13 夕刊",
+       "2026-11-14 朝刊",
+       "2026-11-13 朝刊"
+      ],
+      "answer": 1,
+      "explain": "UTC では 11/13 21:30 ですが、日本時間に直してから判断するので 11/14 の朝刊です。"
+     },
+     {
+      "question": "`--dry-run` を付けて実行すると？",
+      "choices": [
+       "Notion には書かず、結果を画面に表示する",
+       "Notion のページを削除する",
+       "履歴ファイルだけ更新する"
+      ],
+      "answer": 0,
+      "explain": "dry_run のときは表示して return 0 で終わり、履歴も書き換えません。"
+     },
+     {
+      "question": "ジャンルの上限 20 件からあふれた記事はどうなる？",
+      "choices": [
+       "履歴に入り、二度と載らない",
+       "履歴に入らないので、次の回に載る可能性がある",
+       "「その他」に移される"
+      ],
+      "answer": 1,
+      "explain": "コメントの「上限で落とした記事は履歴に入れない」がその意図です。"
+     }
+    ]
+   ],
+   "id": "2026-11-16-fashion-news-08-main"
+  },
+  {
+   "title": "daily.yml ― 毎日 2 回、自動で動かす GitHub Actions の設定",
+   "language": "YAML",
+   "date": "2026-11-16",
+   "level": 2,
+   "series": "fashion_news",
+   "part": 9,
+   "concepts": [
+    "tooling",
+    "version_control",
+    "security",
+    "data_formats"
+   ],
+   "lessons": [
+    "100-ai-dev/04-git-basics",
+    "100-ai-dev/06-secrets-env",
+    "10-python/08-modules"
+   ],
+   "summary": "毎日 6:30 と 17:30（日本時間）に GitHub のサーバーでプログラムを動かし、掲載履歴をコミットする設定。",
+   "body": "## 📄 解説するコード\n\n`.github/workflows/daily.yml`\n\n```yaml\nname: daily-fashion-news\n\non:\n  schedule:\n    - cron: \"30 21 * * *\" # 毎日 6:30 JST（朝刊）。混雑時の遅れを見込んで 7:00 の30分前\n    - cron: \"30 8 * * *\" # 毎日 17:30 JST（夕刊）。18:00 の30分前\n  workflow_dispatch:\n    inputs:\n      force:\n        description: \"同じ日のページがあっても作成する\"\n        type: boolean\n        default: false\n\npermissions:\n  contents: write # data/seen_urls.json をコミットするため\n\nconcurrency:\n  group: daily-fashion-news\n  cancel-in-progress: false\n\njobs:\n  run:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@v5\n        with:\n          python-version: \"3.12\"\n          cache: pip\n      - run: pip install -r requirements.txt\n      - name: Notion にページを作成\n        env:\n          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}\n          NOTION_PARENT_PAGE_ID: ${{ secrets.NOTION_PARENT_PAGE_ID }}\n          PYTHONPATH: src\n        run: python -m fashion_news ${{ inputs.force && '--force' || '' }}\n      - name: 掲載済みURLの履歴をコミット\n        run: |\n          if [ -n \"$(git status --porcelain data/seen_urls.json)\" ]; then\n            git config user.name \"github-actions[bot]\"\n            git config user.email \"41898282+github-actions[bot]@users.noreply.github.com\"\n            git add data/seen_urls.json\n            git commit -m \"chore: 掲載済みURLの履歴を更新\"\n            git push\n          fi\n```\n\n## 🧭 ひとことで言うと\n\n**YAML** で書かれた **GitHub Actions の設定ファイル** です。「いつ」「どんなパソコンで」「どの順番で何を実行するか」を書いておくと、GitHub が自分のサーバーで代わりに動かしてくれます。このファイルのおかげで、あなたのパソコンが寝ていてもニュースが届きます。\n\n## 🗺️ 全体の流れ\n\n1. **きっかけ（on）**：毎日 6:30 と 17:30（日本時間）、または Actions の画面から手動で\n2. **準備**：GitHub が Ubuntu（Linux）のパソコンを 1 台用意する\n3. **手順（steps）**：\n   1. リポジトリのコードを取ってくる\n   2. Python 3.12 を入れる\n   3. 必要なライブラリを入れる\n   4. Secrets から Notion のトークンを受け取って、プログラムを実行する\n   5. 掲載履歴（`seen_urls.json`）が変わっていればコミットして GitHub に保存する\n4. 終わったらそのパソコンは捨てられる（だから履歴をファイルにして保存しておく必要がある）\n\n## 🔍 ブロックごとの解説\n\n### on：いつ動かすか\n\n```yaml\nschedule:\n  - cron: \"30 21 * * *\"\n```\n\n`cron` は「分 時 日 月 曜日」の順に時刻を書く書き方です。`*` は「毎」。\n**時刻は UTC（世界標準時）** なので、`30 21` は UTC の 21:30 ＝ 日本時間の翌朝 6:30 です（日本は 9 時間進んでいる）。\nGitHub は混雑すると数分〜数十分遅れることがあるので、7:00 に間に合うよう 30 分早めにしています。\n\n`workflow_dispatch` は「Actions の画面の Run workflow ボタンで手動実行できる」設定で、`force` というチェックボックスも付けています。\n\n### permissions と concurrency\n\n| 設定 | 意味 |\n|---|---|\n| `contents: write` | 履歴ファイルをコミットして push するために、書き込み権限をもらう |\n| `concurrency` | 同じ処理が 2 つ同時に動かないようにする。前の実行が終わるまで次は待つ（`cancel-in-progress: false`） |\n| `timeout-minutes: 10` | 10 分を超えたら打ち切る（固まったときの保険） |\n\n### steps：手順\n\n```yaml\n- uses: actions/checkout@v4\n- uses: actions/setup-python@v5\n```\n\n`uses:` は「誰かが作った便利な部品（アクション）を使う」。`@v4` はそのバージョンです。\n`run:` は「このコマンドを実行する」。\n\n```yaml\nenv:\n  NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}\n  PYTHONPATH: src\nrun: python -m fashion_news ${{ inputs.force && '--force' || '' }}\n```\n\n- `${{ secrets.NOTION_TOKEN }}`：リポジトリの Settings → Secrets に登録した値を、**環境変数** としてプログラムに渡す。ログには `***` と伏せて表示される\n- `${{ inputs.force && '--force' || '' }}`：手動実行で force にチェックしたときだけ `--force` を付ける（「条件 && A || B」で「条件なら A、でなければ B」）\n\n### 最後の step：履歴を保存する\n\n```bash\nif [ -n \"$(git status --porcelain data/seen_urls.json)\" ]; then\n  git add data/seen_urls.json\n  git commit -m \"chore: 掲載済みURLの履歴を更新\"\n  git push\nfi\n```\n\nこれは YAML の中に書かれた **シェル（Bash）のコマンド** です。\n\n- `git status --porcelain ファイル`：そのファイルが変わっていれば何か表示される\n- `[ -n \"...\" ]`：「文字が空でなければ」\n- 変わっていたときだけ、コミットして push する\n\nGitHub のコミット履歴に「chore: 掲載済みURLの履歴を更新」が毎日並んでいるのは、このステップのしわざです。\n\n## 🐍 Python と比べると\n\n| daily.yml | Python で言うと |\n|---|---|\n| `steps:` の並び | 上から順に実行される命令 |\n| `env:` | `os.environ[\"NOTION_TOKEN\"]` で読める値を用意しておく |\n| `if [ -n \"...\" ]; then ... fi` | `if 変更あり: ...` |\n| `${{ 条件 && 'A' \\|\\| 'B' }}` | `'A' if 条件 else 'B'` |\n\n## 🔑 キーワード\n\n- **GitHub Actions**：GitHub のサーバーでプログラムを自動実行する仕組み\n- **ワークフロー**：Actions で実行する一連の手順（このファイル 1 つ分）\n- **cron**：決まった時刻に実行するための時刻の書き方\n- **Secrets**：GitHub に保存する秘密の値。コードやログに出ない\n- **runner（ubuntu-latest）**：処理を実行するために GitHub が用意するパソコン\n- **アクション（uses）**：他の人が作った、再利用できる手順の部品\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ トークンを Secrets で渡していて、コードやリポジトリに書いていない\n- ✅ 同時実行の防止・タイムアウト・手動実行と、運用に必要なものがそろっている\n- ✅ 履歴ファイルに変更があるときだけコミットする\n- ⚠️ 実行中にあなたが同じブランチに別の変更を push していると、最後の `git push` が「先に進まれている」と失敗することがある（めったに起きない。次の回で取り戻せる）\n- ⚠️ GitHub は、**60 日間リポジトリに動きが無いと、スケジュール実行を自動で止める** ことがある。ただしこのワークフローは毎回コミットしているので、止まりにくい\n- ⚠️ 公開リポジトリなので、実行ログ（取得件数など）は誰でも見られる。Secrets の値は伏せられるので漏れない\n\n## 🗣️ 30 秒で人に説明するなら\n\n「daily.yml は GitHub Actions の設定です。cron で UTC の 21:30 と 8:30、つまり日本時間の 6:30 と 17:30 に、GitHub のサーバーで Python を準備してプログラムを動かします。\nNotion のトークンは Secrets から環境変数で渡していて、実行後に掲載履歴の JSON が変わっていれば、自動でコミットして保存します。手動実行用のボタンも付いています。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "`cron: \"30 8 * * *\"` は日本時間の何時？",
+      "choices": [
+       "8:30",
+       "17:30",
+       "23:30"
+      ],
+      "answer": 1,
+      "explain": "cron の時刻は UTC です。日本時間は 9 時間足して 17:30 になります。"
+     },
+     {
+      "question": "`${{ secrets.NOTION_TOKEN }}` の値はどこに保存されている？",
+      "choices": [
+       "daily.yml の中",
+       "README.md の中",
+       "GitHub のリポジトリ設定（Secrets）"
+      ],
+      "answer": 2,
+      "explain": "コードには名前だけを書き、値は GitHub の Secrets に安全に保存します。"
+     },
+     {
+      "question": "最後のステップで `seen_urls.json` をコミットする理由は？",
+      "choices": [
+       "実行用のパソコンは毎回捨てられるので、履歴を GitHub に残しておく必要があるから",
+       "Notion に履歴を送るため",
+       "テストを実行するため"
+      ],
+      "answer": 0,
+      "explain": "保存しておかないと、次の回は「何を載せたか」を覚えていられません。"
+     }
+    ]
+   ],
+   "id": "2026-11-16-fashion-news-09-workflow"
+  },
+  {
+   "title": "test_pipeline.py ― 部品が正しく動くかを確かめるテスト",
+   "language": "Python",
+   "date": "2026-11-16",
+   "level": 3,
+   "series": "fashion_news",
+   "part": 10,
+   "concepts": [
+    "testing",
+    "functions",
+    "modules"
+   ],
+   "lessons": [
+    "100-ai-dev/08-testing",
+    "10-python/05-functions",
+    "10-python/08-modules"
+   ],
+   "summary": "11 個のテストで、RSS の読み取り・URL とタイトルの正規化・重複除去・ジャンル分けなどを確かめる。",
+   "body": "## 📄 解説するコード\n\n`tests/conftest.py`\n\n```python\nimport sys\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).resolve().parents[1] / \"src\"))\n```\n\n`tests/test_pipeline.py`（抜粋）\n\n```python\nfrom datetime import datetime, timedelta, timezone\n\nimport yaml\n\nfrom fashion_news.classify import classify\nfrom fashion_news.dedupe import dedupe, filter_recent, normalize_title, normalize_url\nfrom fashion_news.fetch import parse_feed\nfrom fashion_news.main import group_articles, prune_seen, render_text\nfrom fashion_news.models import Article\nfrom fashion_news.notion import build_blocks\n\nRSS = \"\"\"<?xml version=\"1.0\"?><rss version=\"2.0\"><channel><title>t</title>\n<item><title>パリコレクション開幕</title><link>https://ex.com/a?utm_source=x</link>\n<pubDate>Fri, 13 Nov 2026 20:00:00 +0000</pubDate></item>\n<item><title></title><link>https://ex.com/empty</link></item>\n</channel></rss>\"\"\"\n\nCONFIG = yaml.safe_load(open(\"config/categories.yaml\", encoding=\"utf-8\"))\nNOW = datetime(2026, 11, 13, 21, 0, tzinfo=timezone.utc)\n\n\ndef art(title, url=\"https://ex.com/1\", kind=\"media\", pub=None):\n    return Article(title, url, \"src\", kind, pub)\n\n\ndef test_parse_feed_skips_empty_title_and_parses_date():\n    items = parse_feed(RSS, \"ex\", \"media\")\n    assert len(items) == 1\n    assert items[0].published == datetime(2026, 11, 13, 20, 0, tzinfo=timezone.utc)\n\n\ndef test_normalize_url_strips_tracking_and_fragment():\n    assert normalize_url(\"https://EX.com/a/?utm_source=x&id=1#top\") == \"https://ex.com/a?id=1\"\n\n\ndef test_dedupe_by_url_title_and_seen():\n    items = [\n        art(\"新作スニーカーが発売\", \"https://ex.com/1\"),\n        art(\"新作スニーカーが発売 - 別媒体\", \"https://other.com/2\"),\n        art(\"別の話題\", \"https://ex.com/3\"),\n        art(\"掲載済み\", \"https://ex.com/4\"),\n    ]\n    out = dedupe(items, {\"https://ex.com/4\"})\n    assert [a.title for a in out] == [\"新作スニーカーが発売\", \"別の話題\"]\n\n\ndef test_classify_priority_and_fallback():\n    assert classify(art(\"ミラノでコレクション発表\"), CONFIG) == \"ハイブランド/コレクション\"\n    assert classify(art(\"ナイキ新作スニーカー\"), CONFIG) == \"ストリート/スニーカー\"\n    assert classify(art(\"決算を発表\"), CONFIG) == \"業界・ビジネス\"\n    assert classify(art(\"何でもない記事\"), CONFIG) == \"その他\"\n    assert classify(art(\"ナイキ新作\", kind=\"official\"), CONFIG) == \"公式発表・ニッチ\"\n\n\ndef test_page_title_morning_and_evening():\n    from fashion_news.main import page_title\n\n    assert page_title(datetime(2026, 11, 13, 21, 45, tzinfo=timezone.utc)) == \"2026-11-14 朝刊\"\n    assert page_title(datetime(2026, 11, 14, 8, 45, tzinfo=timezone.utc)) == \"2026-11-14 夕刊\"\n```\n\n（実際のファイルにはこのほか、タイトルの正規化・古い記事の除外・Notion ブロックの組み立て・履歴の整理・20 件の上限・ファッション記事への絞り込みのテストがあり、全部で 11 個です）\n\n## 🧭 ひとことで言うと\n\n**Python**（pytest）で書かれた **テストコード** です。「この入力を渡したら、この結果になるはず」を 11 個書いておき、部品が期待どおり動くかを自動で確かめます。インターネットや Notion には一切つながず、手元だけで確かめられるように作られています。\n\n## 🗺️ 全体の流れ\n\n1. `PYTHONPATH=src python -m pytest` を実行する\n2. pytest が `tests/` の中の `test_` で始まる関数を全部見つけて、1 つずつ実行する\n3. 各テストの中の `assert` がすべて成り立てば「passed（成功）」、1 つでも違えば「failed（失敗）」\n4. `conftest.py` は、テストの前に自動で読まれる準備用のファイル\n\n## 🔍 ブロックごとの解説\n\n### conftest.py：import できるようにする準備\n\n```python\nsys.path.insert(0, str(Path(__file__).resolve().parents[1] / \"src\"))\n```\n\n`sys.path` は「Python がモジュールを探しに行く場所のリスト」です。その先頭に `src` フォルダを足すことで、テストから `import fashion_news...` と書けるようにしています。\n\n### 本物の代わりに「見本のデータ」を使う\n\n```python\nRSS = \"\"\"<?xml version=\"1.0\"?><rss ...>\n<item><title>パリコレクション開幕</title>...</item>\n<item><title></title><link>https://ex.com/empty</link></item>\n</channel></rss>\"\"\"\n```\n\n本物のサイトから RSS を取ってくると、ネットの状態や記事の中身でテスト結果が変わってしまいます。\nそこで **小さな見本の RSS を文字列で用意** し、`parse_feed` に直接渡しています。2 件目はわざとタイトルを空にしていて、「空のタイトルは飛ばす」ことを確かめています。\n\n```python\nNOW = datetime(2026, 11, 13, 21, 0, tzinfo=timezone.utc)\n```\n\n「今」も固定しています。`datetime.now()` を使うと、実行する日によって結果が変わるからです。`main.py` の `run` が `now` を引数で受け取れるように作られていたのは、このためでもあります。\n\n### art：テスト用の記事を手早く作る関数\n\n```python\ndef art(title, url=\"https://ex.com/1\", kind=\"media\", pub=None):\n    return Article(title, url, \"src\", kind, pub)\n```\n\n毎回 `Article(...)` に 5 つの値を書くのは大変なので、タイトルだけ渡せば作れる小さな関数を用意しています。\n\n### テストを 1 つ読んでみる\n\n```python\ndef test_dedupe_by_url_title_and_seen():\n    items = [\n        art(\"新作スニーカーが発売\", \"https://ex.com/1\"),\n        art(\"新作スニーカーが発売 - 別媒体\", \"https://other.com/2\"),\n        art(\"別の話題\", \"https://ex.com/3\"),\n        art(\"掲載済み\", \"https://ex.com/4\"),\n    ]\n    out = dedupe(items, {\"https://ex.com/4\"})\n    assert [a.title for a in out] == [\"新作スニーカーが発売\", \"別の話題\"]\n```\n\n| 記事 | 残る？ | 理由 |\n|---|---|---|\n| 新作スニーカーが発売 | ⭕ | 最初の記事 |\n| 新作スニーカーが発売 - 別媒体 | ❌ | 末尾の媒体名を取ると 1 つ目と同じタイトル |\n| 別の話題 | ⭕ | 新しい話題 |\n| 掲載済み | ❌ | URL が掲載済みの一覧に入っている |\n\nテストの名前（`by_url_title_and_seen`）と `assert` を読むだけで、**dedupe が何をするはずの関数か** が分かります。テストは「動く仕様書」でもあるのです。\n\n## 🐍 Python の書き方で見落としやすい点\n\n| 書き方 | ポイント |\n|---|---|\n| `assert 式 == 期待値` | 成り立たなければテスト失敗。pytest は違いを分かりやすく表示してくれる |\n| `\"\"\"...\"\"\"` | 複数行の文字列。見本の RSS をそのまま書くのに便利 |\n| 関数の中の `from ... import` | そのテストだけで使う import。動きは同じ |\n| `dict(CONFIG, max_per_category=2)` | CONFIG をコピーして 1 か所だけ変えた辞書を作る（元の CONFIG は変えない） |\n\n## 🔑 キーワード\n\n- **pytest**：Python で最もよく使われるテストのためのツール\n- **assert**：「この条件が成り立つはず」という確認\n- **テストデータ（フィクスチャ）**：テストのために用意した見本のデータ\n- **conftest.py**：pytest がテストの前に自動で読む準備用のファイル\n- **sys.path**：Python がモジュールを探す場所の一覧\n- **単体テスト**：部品（関数）ごとに動きを確かめるテスト\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ ネットや Notion につながずに確かめられるので、速く、何度でも同じ結果になる\n- ✅ 日時を固定していて、実行日に左右されない\n- ✅ 境界になる場合（空のタイトル、日付なし、上限ちょうど）を確かめている\n- ⚠️ `notion.py` の通信部分（リトライなど）や `fetch_all`（失敗しても続ける）はテストされていない。通信を「偽物」に差し替える仕組み（モック）を使えばテストできる\n- ⚠️ `open(\"config/categories.yaml\")` はリポジトリの一番上から実行する前提。別の場所から pytest を実行するとファイルが見つからない\n- ⚠️ GitHub Actions ではテストを実行していない（`daily.yml` は本番実行だけ）。push のたびにテストを自動で動かす設定を足すと安心\n\n## 🗣️ 30 秒で人に説明するなら\n\n「tests フォルダには pytest のテストが 11 個あります。見本の RSS や固定した日時を使って、ネットや Notion につながずに、RSS の読み取り、URL とタイトルの正規化、重複の除去、ジャンル分け、朝刊・夕刊の判定などが期待どおりかを assert で確かめています。\nAI に修正を頼んだあとにこれを実行すれば、前の機能を壊していないかすぐに分かります。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "テストで本物のサイトから RSS を取らず、見本の文字列を使う理由は？",
+      "choices": [
+       "本物の RSS は Python で読めないから",
+       "ネットの状態や記事の中身に左右されず、毎回同じ結果で確かめられるから",
+       "テストを長くするため"
+      ],
+      "answer": 1,
+      "explain": "テストは何度実行しても同じ結果になることが大切です。"
+     },
+     {
+      "question": "`assert len(items) == 1` が失敗するのはどんなとき？",
+      "choices": [
+       "items の数が 1 以外のとき",
+       "items の数が 1 のとき",
+       "items が空のときだけ"
+      ],
+      "answer": 0,
+      "explain": "assert の条件が成り立たないと失敗になります。"
+     },
+     {
+      "question": "`NOW = datetime(2026, 11, 13, 21, 0, ...)` のように「今」を固定している理由は？",
+      "choices": [
+       "2026 年に実行するため",
+       "実行する日によって結果が変わらないようにするため",
+       "時刻の計算を速くするため"
+      ],
+      "answer": 1,
+      "explain": "datetime.now() を使うと、日によってテストが通ったり通らなかったりしてしまいます。"
+     }
+    ]
+   ],
+   "id": "2026-11-16-fashion-news-10-tests"
+  },
+  {
    "title": "天気予報を取得して CSV に保存するスクリプト",
    "language": "Python",
    "date": "2026-11-16",
