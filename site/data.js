@@ -2416,6 +2416,459 @@ window.SITE_DATA = {
  ],
  "explanations": [
   {
+   "title": "popup2027 の全体像 ― チームでポップアップを準備する共有アプリ",
+   "language": "JavaScript",
+   "date": "2026-11-17",
+   "level": 2,
+   "series": "popup2027",
+   "part": 1,
+   "concepts": [
+    "reading",
+    "dom_ui",
+    "database",
+    "async"
+   ],
+   "lessons": [
+    "00-basics/02-how-to-read-code",
+    "20-javascript/06-dom-events",
+    "20-javascript/07-promise-async",
+    "100-ai-dev/06-secrets-env"
+   ],
+   "summary": "2027 年のポップアップに向けて、メンバーでタスク・予定・ログ・アイデア・お金を共有する、1 ファイルだけでできた Web アプリの全体像。",
+   "body": "> 📚 このページは **popup2027 シリーズの 1 ページ目（全体像）** です。ファイルは `index.html` の 1 つだけですが、中を 7 つの部分に分けて、2 ページ目から順番に読んでいきます。\n\n## 📄 解説するコード（ファイルと中身の地図）\n\n```text\npopup2027/\n├── .nojekyll        GitHub Pages で公開するための目印（中身は空）\n└── index.html       アプリのすべて（406 行）\n    ├── 1〜93 行     HTML の骨組み と CSS（見た目）                     → 2 ページ目\n    └── <script>     JavaScript（動き）\n        ├── 96〜143 行   データ層：Firebase / お試しモード              → 3 ページ目\n        ├── 145〜163 行  状態（S）と便利な小道具                         → 4 ページ目\n        ├── 165〜249 行  描画：ホーム・タスク・予定・ログの画面          → 5 ページ目\n        ├── 251〜291 行  描画：アイデア（いいね）・お金（精算）の画面    → 6 ページ目\n        ├── 293〜360 行  モーダルとイベント（クリック・送信）            → 7 ページ目\n        └── 362〜403 行  写真の縮小 と リアルタイム更新                  → 8 ページ目\n```\n\n## 🧭 ひとことで言うと\n\n**HTML・CSS・JavaScript** で書かれた、**2027 年のポップアップ（期間限定のお店・イベント）をメンバーで準備するための共有アプリ** です。\nタスク・予定・活動ログ・アイデア・立て替えたお金を記録でき、**Firebase**（Google のクラウドのデータベース）につながっているので、誰かが書き込むと他のメンバーの画面にもすぐ反映されます。\n\n## 🗺️ 全体の流れ\n\n1. ブラウザで `index.html` を開く（GitHub Pages で公開されている想定）\n2. Firebase に接続し、データ（タスクなど 5 種類と設定）を **「見張る（購読する）」** 状態にする\n3. 初めての人には「あなたは誰？」と名前を選んでもらう（この端末に記憶）\n4. 画面下のタブ（ホーム・タスク・予定・ログ・アイデア・お金）で表示を切り替える\n5. フォームで追加・ボタンで変更すると、Firebase に書き込まれる\n6. Firebase から「データが変わった」と知らせが来ると、画面全体を描き直す（自分の変更も、他の人の変更も同じ流れ）\n\n## 🔍 ブロックごとの解説\n\n### 6 つの画面\n\n| タブ | できること |\n|---|---|\n| 🏠 ホーム | 本番までのカウントダウン、タスクの進み具合、自分のやること、次の予定、最近のログ |\n| ✅ タスク | やることの追加、担当者・締め切り、未着手 → 進行中 → 完了 の切り替え |\n| 📅 予定 | マイルストーン（節目の予定）を日付順に。過ぎた予定は色が変わる |\n| 📝 ログ | 「今日やったこと・決まったこと」の記録 |\n| 💡 アイデア | 思いつきや写真の投稿、♥（いいね）。いいねの多い順に並ぶ |\n| 💰 お金 | 立て替えた支出の記録と、1 人あたりの精算額の自動計算 |\n\n### 1 ファイルにすべて入れる作り\n\nfashion_news（Python）は役割ごとにファイルを分けていましたが、こちらは **HTML・CSS・JavaScript を 1 つのファイルに全部入れて** います。\n\n- 良い点：サーバーもビルドも要らず、ファイルを置くだけで公開できる\n- 悪い点：長くなると読みにくい。だからこのシリーズでは、コメント `// ---------- 描画 ----------` などの区切りごとに分けて読みます\n\n### データの置き場所は 2 通り\n\n- **Firebase モード**：クラウドのデータベースに保存。メンバー全員で共有できる（本番はこちら）\n- **お試しモード**：Firebase の設定が無いときは、この端末のブラウザ（localStorage）だけに保存\n\n画面を描く側は「どちらに保存されているか」を気にしなくて済むように作られています（3 ページ目）。\n\n### 「状態 → 画面」の一方通行\n\nこの作り方の中心にある考え方です。\n\n```text\nデータ（S）が変わる → render() で画面を全部描き直す\n```\n\nボタンを押しても画面を直接いじらず、**データを変える → 知らせが来る → 描き直す** の順に流れます。React などのフレームワークと同じ考え方を、自分の手で小さく実装しています。\n\n## 🐍 Python と比べると\n\n| popup2027 | Python で言うと |\n|---|---|\n| `index.html` 1 ファイル | `app.py` 1 ファイルに全部書いたスクリプト |\n| Firebase（クラウドのデータベース） | サーバー上のデータベース。Python なら `firebase_admin` ライブラリで同じデータを読める |\n| `S`（状態をまとめたオブジェクト） | 状態をまとめた辞書 `S = {\"tab\": \"home\", ...}` |\n| `VIEWS.tasks()` が HTML の文字列を返す | 関数が f-string で文字列を組み立てて返すのと同じ |\n\n## 🔑 キーワード\n\n- **Firebase / Firestore**：Google のクラウドサービスと、その中のデータベース\n- **リアルタイム同期**：誰かがデータを変えると、他の人の画面にもすぐ反映されること\n- **購読（subscribe）**：データを「見張って」、変わったら知らせてもらうこと\n- **localStorage**：ブラウザの中に小さなデータを保存しておける場所\n- **シングルページアプリ（SPA）**：1 つのページの中で画面を切り替えるアプリ\n- **GitHub Pages**：GitHub のリポジトリをそのまま Web サイトとして公開する仕組み\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ サーバー不要・ファイル 1 つで動き、データはリアルタイムで共有される。小さなチーム用としてよくできている\n- ✅ ユーザーが入力した文字は `esc()` で無害化してから画面に出している\n- ✅ Firebase が無くても「お試しモード」で動く\n- ⚠️ **ログインの仕組みが無い**。「あなたは誰？」は名前を選ぶだけで、本人確認ではない。リポジトリも公開されているので、**データを守れるかは Firestore の「セキュリティルール」次第**（ルールがゆるいと、URL を知った誰でも読み書き・削除できる）。Firebase のコンソールでルールを確認したい\n- ⚠️ メンバーは設定画面で名前を変えられるが、**人数（3 人）は増やせない**作りになっている\n- ⚠️ 写真をデータベースの中に文字列として保存しているので、写真が多いと読み込みが重くなる（8 ページ目）\n\n## 🗣️ 30 秒で人に説明するなら\n\n「これは 2027 年のポップアップに向けて、メンバーで準備を共有するための Web アプリです。HTML 1 ファイルだけでできていて、タスク・予定・ログ・アイデア・お金の 5 種類のデータを Firebase のデータベースに保存しています。\nデータを購読しているので、誰かが書き込むと全員の画面がすぐ更新されます。お金のタブでは立て替えを記録すると、誰がいくら払えばいいかを自動で計算してくれます。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "メンバーの誰かがタスクを追加すると、他のメンバーの画面はどうなる？",
+      "choices": [
+       "再読み込みするまで変わらない",
+       "Firebase から知らせが来て、自動で描き直される",
+       "次の日に反映される"
+      ],
+      "answer": 1,
+      "explain": "データを購読（onSnapshot）しているので、変更がすぐに届きます。"
+     },
+     {
+      "question": "Firebase の設定が無いときはどうなる？",
+      "choices": [
+       "お試しモードになり、この端末のブラウザだけに保存される",
+       "アプリが動かない",
+       "GitHub にデータが保存される"
+      ],
+      "answer": 0,
+      "explain": "画面上部に「お試しモード」と表示されます。"
+     },
+     {
+      "question": "このアプリでデータを守る上で特に大事なのは？",
+      "choices": [
+       "「あなたは誰？」で名前を選ぶこと",
+       "Firebase（Firestore）のセキュリティルールの設定",
+       "ファイルを 1 つにまとめること"
+      ],
+      "answer": 1,
+      "explain": "名前の選択は本人確認ではないため、誰が読み書きできるかはデータベース側のルールで決まります。"
+     }
+    ]
+   ],
+   "id": "2026-11-17-popup2027-01-overview"
+  },
+  {
+   "title": "HTML の骨組みと CSS ― 画面の「入れ物」と見た目",
+   "language": "HTML/CSS",
+   "date": "2026-11-17",
+   "level": 1,
+   "series": "popup2027",
+   "part": 2,
+   "concepts": [
+    "dom_ui"
+   ],
+   "lessons": [
+    "20-javascript/06-dom-events",
+    "00-basics/01-what-is-a-program"
+   ],
+   "summary": "アプリの入れ物になる HTML（4 つの空の箱）と、色をまとめて管理する CSS 変数・ダークモード対応。",
+   "body": "## 📄 解説するコード（1〜93 行目・抜粋）\n\n```html\n<!doctype html>\n<html lang=\"ja\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,viewport-fit=cover\">\n<title>POP UP 2027</title>\n<link href=\"https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap\" rel=\"stylesheet\">\n<style>\n:root{\n  --bg:#f6f3ee; --card:#ffffff; --ink:#1f1d1a; --sub:#77716a; --line:#e6e0d7;\n  --accent:#e2553f; --accent-soft:#fbe4df; --ok:#2f8f5b; --ok-soft:#dff1e6; --warn:#c98a12; --warn-soft:#faefd7;\n  --radius:14px;\n}\n@media (prefers-color-scheme: dark){\n  :root{ --bg:#171614; --card:#22201d; --ink:#f2eee8; /* …略… */ }\n}\nbody{background:var(--bg);color:var(--ink);font-family:\"Zen Kaku Gothic New\",system-ui,sans-serif;padding-bottom:84px}\n.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px}\n.s-todo{background:var(--line);color:var(--sub)}\n.s-doing{background:var(--warn-soft);color:var(--warn)}\n.s-done{background:var(--ok-soft);color:var(--ok)}\nnav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom)}\n.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10}\n/* …ほか約 60 行… */\n</style>\n</head>\n<body>\n<header>\n  <h1 id=\"title\">POP UP 2027</h1>\n  <button class=\"me\" id=\"meBtn\">—</button>\n</header>\n<main id=\"main\"></main>\n<nav><div class=\"in\" id=\"nav\"></div></nav>\n<div id=\"modal\"></div>\n\n<script type=\"module\">\n  // ここから JavaScript（3 ページ目以降）\n</script>\n</body>\n</html>\n```\n\n## 🧭 ひとことで言うと\n\n**HTML** でアプリの **入れ物（空の箱）** を用意し、**CSS** で色・形・配置を決めている部分です。中身（タスクの一覧など）は後から JavaScript が箱に流し込みます。\n\n## 🗺️ 全体の流れ\n\n1. `<head>`：文字コード・スマホ対応・タイトル・フォント・CSS を読み込む\n2. `<body>`：4 つの箱（ヘッダー・メイン・下のタブ・モーダル）を置く。**ほとんど空っぽ**\n3. `<script type=\"module\">`：JavaScript が動き出し、空の箱に HTML を入れていく\n\n## 🔍 ブロックごとの解説\n\n### `<head>`：ページの設定\n\n| 行 | 意味 |\n|---|---|\n| `<meta charset=\"utf-8\">` | 日本語が文字化けしないための文字コード指定 |\n| `<meta name=\"viewport\" ...>` | スマホで見たときに、画面の幅に合わせて表示する |\n| `<link ... fonts.googleapis.com ...>` | Google Fonts から「Zen Kaku Gothic New」という日本語フォントを読み込む |\n| `<style> … </style>` | CSS（見た目のルール）をこのファイルの中に直接書いている |\n\n### `<body>`：4 つの空の箱\n\n```html\n<main id=\"main\"></main>\n<nav><div class=\"in\" id=\"nav\"></div></nav>\n<div id=\"modal\"></div>\n```\n\n`id=\"main\"` などの **名札** が付いた空の箱です。JavaScript は `document.getElementById(\"main\")` でこの箱を探し、中身を入れます（JavaScript コースの「DOM とイベント」）。\n\n| 箱 | 何が入る？ |\n|---|---|\n| `header` の `#title` / `#meBtn` | アプリのタイトルと「👤 自分の名前」ボタン |\n| `#main` | 今のタブの画面（ホーム、タスク一覧など） |\n| `#nav` | 画面下の 6 つのタブ |\n| `#modal` | 「あなたは誰？」や設定などの、上に重なる小窓 |\n\n### CSS 変数：色をまとめて管理\n\n```css\n:root{ --bg:#f6f3ee; --accent:#e2553f; ... }\nbody{ background:var(--bg); }\n```\n\n`--bg` のように `--` で始まる名前は **CSS 変数**（色などに付けた名前）です。`var(--bg)` で使います。\n色を 1 か所にまとめておくと、**変数の値を変えるだけでアプリ全体の色が変わる** ので便利です。\n\n### ダークモード対応\n\n```css\n@media (prefers-color-scheme: dark){\n  :root{ --bg:#171614; --card:#22201d; ... }\n}\n```\n\n「端末がダークモードなら、変数の値をこちらにする」という意味です。CSS 変数で作っているので、**変数を入れ替えるだけで** 画面全体が暗い配色になります。\n\n### タスクの状態ごとの色\n\n```css\n.s-todo{ ... }  .s-doing{ ... }  .s-done{ ... }\n```\n\nJavaScript がタスクのボタンに `class=\"chip s-doing\"` のようにクラスを付けると、その状態の色になります。**状態の名前と CSS のクラス名をそろえる** よくある工夫です。\n\n### 画面に固定された部品\n\n- `nav{position:fixed; bottom:0}`：タブを **画面の下に固定**。スクロールしても動かない\n- `body{padding-bottom:84px}`：固定したタブの裏に最後の項目が隠れないよう、下に余白を空ける\n- `env(safe-area-inset-bottom)`：iPhone の画面下のバー（ホームバー）にかからないようにする\n- `.modal{position:fixed; inset:0; background:rgba(0,0,0,.45)}`：画面全体を半透明の黒で覆い、真ん中に小窓を出す\n\n## 🐍 Python と比べると\n\n| HTML/CSS | Python で言うと |\n|---|---|\n| `id=\"main\"` の空の箱 | 後から値を入れる変数 `main = \"\"` |\n| CSS 変数 `--accent` | 定数 `ACCENT = \"#e2553f\"` を 1 か所に定義して使い回す |\n| `@media (prefers-color-scheme: dark)` | `if dark_mode: ACCENT = \"#ff7a63\"` |\n\n## 🔑 キーワード\n\n- **HTML**：ページの骨組み（何がどこにあるか）を書く言語\n- **CSS**：見た目（色・大きさ・配置）を書く言語\n- **id / class**：要素に付ける名札。id は 1 つだけ、class は何個にも付けられる\n- **CSS 変数**：`--名前` で値に名前を付け、`var(--名前)` で使う仕組み\n- **メディアクエリ（@media）**：画面の条件（ダークモード・画面幅など）によって CSS を切り替える仕組み\n- **position: fixed**：画面の決まった位置に固定する指定\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ 色を CSS 変数にまとめていて、ダークモードにも対応している\n- ✅ スマホ（iPhone のホームバー）まで考えた配置\n- ⚠️ CSS を 1 行に詰めて書いているので読みにくい。ブラウザの開発者ツール（F12）で要素を選ぶと、どの CSS が効いているか見やすく表示される\n- ⚠️ フォントを Google Fonts から読み込むので、オフラインでは別のフォントで表示される（動作には影響なし）\n\n## 🗣️ 30 秒で人に説明するなら\n\n「HTML の部分はほとんど空の箱で、ヘッダー・メイン・下のタブ・モーダルの 4 つに id を付けて置いているだけです。中身は JavaScript が後から入れます。\nCSS は色を CSS 変数にまとめていて、ダークモードのときは変数の値を入れ替えるだけで配色が変わるようになっています。タブは画面の下に固定されています。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "`<main id=\"main\"></main>` に最初から入っているものは？",
+      "choices": [
+       "何も入っていない（JavaScript が後から入れる）",
+       "タスクの一覧",
+       "ホーム画面"
+      ],
+      "answer": 0,
+      "explain": "HTML は入れ物だけを用意し、中身は render() が入れます。"
+     },
+     {
+      "question": "`color: var(--accent)` の意味は？",
+      "choices": [
+       "「--accent」という文字を表示する",
+       "CSS 変数 --accent に入っている色を使う",
+       "アクセント記号を付ける"
+      ],
+      "answer": 1,
+      "explain": ":root で定義した色の値が使われます。"
+     },
+     {
+      "question": "ダークモードの配色が切り替わる仕組みは？",
+      "choices": [
+       "JavaScript が全部の色を書き換えている",
+       "@media で、ダークモードのときだけ CSS 変数の値を入れ替えている",
+       "画像を入れ替えている"
+      ],
+      "answer": 1,
+      "explain": "変数を使っているので、値を変えるだけで全体の色が変わります。"
+     }
+    ]
+   ],
+   "id": "2026-11-17-popup2027-02-html-css"
+  },
+  {
+   "title": "データ層 ― Firebase とお試しモードを同じ使い方にする「窓口」",
+   "language": "JavaScript",
+   "date": "2026-11-17",
+   "level": 3,
+   "series": "popup2027",
+   "part": 3,
+   "concepts": [
+    "database",
+    "async",
+    "modules",
+    "higher_order",
+    "security"
+   ],
+   "lessons": [
+    "20-javascript/07-promise-async",
+    "20-javascript/08-modules-npm",
+    "20-javascript/03-arrays-objects",
+    "100-ai-dev/06-secrets-env"
+   ],
+   "summary": "Firebase（クラウド）と localStorage（端末）のどちらに保存しても、同じ 7 つの命令で使えるようにした「store」。",
+   "body": "## 📄 解説するコード（96〜143 行目）\n\n```javascript\nconst FIREBASE_CONFIG = {\n  apiKey: \"***\",\n  authDomain: \"popup-2027.firebaseapp.com\",\n  projectId: \"popup-2027\",\n  storageBucket: \"popup-2027.firebasestorage.app\",\n  messagingSenderId: \"***\",\n  appId: \"***\",\n};\n\nconst DEFAULT_SETTINGS = { title: \"POP UP 2027\", date: \"2027-09-01\", members: [\"メンバーA\", \"メンバーB\", \"メンバーC\"] };\nconst COLS = [\"tasks\", \"milestones\", \"logs\", \"ideas\", \"expenses\"];\n\n// ---------- データ層 ----------\nlet store;\nif (FIREBASE_CONFIG) {\n  const { initializeApp } = await import(\"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js\");\n  const fs = await import(\"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js\");\n  const db = fs.getFirestore(initializeApp(FIREBASE_CONFIG));\n  const onErr = e => { console.error(e); S.error = \"データベースに接続できません（\" + (e.code || e.message) + \"）。Firestore の作成とルールを確認してください。\"; render(); };\n  store = {\n    live: true,\n    sub(col, cb) { return fs.onSnapshot(fs.collection(db, col), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), onErr); },\n    subSettings(cb) { return fs.onSnapshot(fs.doc(db, \"meta\", \"settings\"), s => cb(s.exists() ? s.data() : null), onErr); },\n    add(col, d) { return fs.addDoc(fs.collection(db, col), { ...d, createdAt: Date.now() }); },\n    update(col, id, d) { return fs.updateDoc(fs.doc(db, col, id), d); },\n    remove(col, id) { return fs.deleteDoc(fs.doc(db, col, id)); },\n    saveSettings(d) { return fs.setDoc(fs.doc(db, \"meta\", \"settings\"), d); },\n  };\n} else {\n  const listeners = {};\n  const read = k => { try { return JSON.parse(localStorage.getItem(\"pu:\" + k)) } catch { return null } };\n  const write = (k, v) => { try { localStorage.setItem(\"pu:\" + k, JSON.stringify(v)) } catch {} ; (listeners[k] || []).forEach(f => f(v)); };\n  window.addEventListener(\"storage\", e => { if (e.key?.startsWith(\"pu:\")) { const k = e.key.slice(3); (listeners[k] || []).forEach(f => f(read(k))); } });\n  const on = (k, f) => { (listeners[k] ||= []).push(f); f(read(k)); };\n  store = {\n    live: false,\n    sub(col, cb) { on(col, v => cb(v || [])); },\n    subSettings(cb) { on(\"settings\", cb); },\n    add(col, d) { write(col, [...(read(col) || []), { ...d, id: crypto.randomUUID?.() || String(Math.random()), createdAt: Date.now() }]); },\n    update(col, id, d) { write(col, (read(col) || []).map(x => x.id === id ? { ...x, ...d } : x)); },\n    remove(col, id) { write(col, (read(col) || []).filter(x => x.id !== id)); },\n    saveSettings(d) { write(\"settings\", d); },\n  };\n}\n```\n\n（Firebase の設定値の一部は `***` に伏せています）\n\n## 🧭 ひとことで言うと\n\n**JavaScript** で書かれた、**データを保存・読み込みする窓口（`store`）** を作る部分です。Firebase（クラウド）を使う版と、localStorage（この端末だけ）を使う版の 2 種類を用意し、**どちらでも同じ名前の命令で使える** ようにしています。このシリーズで一番大事で、少しむずかしい部分です。\n\n## 🗺️ 全体の流れ\n\n1. `FIREBASE_CONFIG` があれば、Firebase のライブラリをネットから読み込み、データベースにつなぐ\n2. 無ければ、ブラウザの localStorage を使う「お試しモード」の窓口を作る\n3. どちらの場合も、`store` に同じ 7 つの命令（`sub`・`subSettings`・`add`・`update`・`remove`・`saveSettings`・`live`）をそろえる\n4. 以降のコードは `store.add(\"tasks\", {...})` のように書くだけで、保存先を気にしない\n\n## 🔍 ブロックごとの解説\n\n### 窓口の命令の一覧\n\n| 命令 | 意味 | 例 |\n|---|---|---|\n| `sub(col, cb)` | そのデータを **見張り**、変わるたびに `cb` を呼んでもらう | タスク一覧が変わったら描き直す |\n| `subSettings(cb)` | 設定（タイトル・日付・メンバー名）を見張る | |\n| `add(col, d)` | 1 件追加 | タスクを追加 |\n| `update(col, id, d)` | 1 件の一部を書き換え | 状態を「完了」に |\n| `remove(col, id)` | 1 件削除 | |\n| `saveSettings(d)` | 設定を保存 | |\n| `live` | Firebase につながっているか（true / false） | 「お試しモード」の表示に使う |\n\n`col` は **コレクション**（データの種類ごとの入れ物）の名前で、`COLS` の 5 つ（tasks・milestones・logs・ideas・expenses）のどれかです。\n\n### Firebase 版：ライブラリを後から読み込む\n\n```javascript\nconst fs = await import(\"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js\");\n```\n\n`import(...)` を **関数のように** 使うと、プログラムの途中でライブラリを読み込めます（動的インポート）。結果は Promise なので `await` で待ちます。\n普通は `await` は `async` 関数の中でしか使えませんが、`<script type=\"module\">` の一番外側では例外的に使えます（トップレベル await）。\n\n### onSnapshot：データを見張る\n\n```javascript\nsub(col, cb) { return fs.onSnapshot(fs.collection(db, col), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), onErr); }\n```\n\n`onSnapshot` は **「このデータが変わったら、毎回この関数を呼んで」と頼む** Firestore の機能です。自分の変更でも、他のメンバーの変更でも呼ばれます。これがリアルタイム同期の正体です。\n\n受け取ったデータ `s.docs` は扱いにくい形なので、`map` で `{ id: \"abc\", title: \"会場を探す\", ... }` という普通のオブジェクトの配列に変換して `cb` に渡しています。`...d.data()` はスプレッド構文で、中身を展開して `id` と合体させています。\n\n### お試し版：localStorage と「聞き手（listeners）」\n\n```javascript\nconst listeners = {};\nconst write = (k, v) => { localStorage.setItem(\"pu:\" + k, JSON.stringify(v)); (listeners[k] || []).forEach(f => f(v)); };\nconst on = (k, f) => { (listeners[k] ||= []).push(f); f(read(k)); };\n```\n\nlocalStorage には「変わったら知らせる」機能が無いので、**自分で作っています**。\n\n- `listeners`：`{ tasks: [関数, ...], ideas: [...] }` のように、データの種類ごとに「知らせてほしい関数」の一覧を持つ\n- `on`：関数を一覧に登録し、**すぐに一度** 今のデータで呼ぶ\n- `write`：保存したあと、登録された関数を全部呼ぶ（＝変わったことを知らせる）\n- `window.addEventListener(\"storage\", ...)`：**同じブラウザの別のタブ** で変更されたときも知らせる\n\nFirebase の `onSnapshot` と同じ動きを、小さく真似しているわけです。\n\n### 追加・更新・削除は「配列を作り直して保存」\n\n```javascript\nupdate(col, id, d) { write(col, (read(col) || []).map(x => x.id === id ? { ...x, ...d } : x)); }\nremove(col, id) { write(col, (read(col) || []).filter(x => x.id !== id)); }\n```\n\n- `update`：`map` で全件を見て、id が一致したものだけ `{ ...x, ...d }`（元の内容に変更を上書き）にする\n- `remove`：`filter` で、id が一致しないものだけ残す＝その 1 件を消す\n- `crypto.randomUUID?.()`：ランダムな ID を作る。`?.` は「この機能があれば呼ぶ」。無い古いブラウザでは `Math.random()` で代用\n\n## 🐍 Python と比べると\n\n| JavaScript | Python で言うと |\n|---|---|\n| `store = { add(col, d) {...}, ... }` | 同じメソッドを持つ 2 つのクラス `FirebaseStore` と `LocalStore` を作り、どちらかを `store` に入れる |\n| `await import(\"...\")` | `importlib.import_module(...)` で途中から読み込む |\n| `list.map(x => x.id === id ? {...x, ...d} : x)` | `[{**x, **d} if x[\"id\"] == id else x for x in lst]` |\n| `list.filter(x => x.id !== id)` | `[x for x in lst if x[\"id\"] != id]` |\n| `JSON.stringify` / `JSON.parse` | `json.dumps` / `json.loads` |\n\n**同じ使い方（インターフェース）で中身だけ取り替えられる** 設計は、fashion_news で「notion.py だけ取り替えれば LINE にも送れる」と話したのと同じ考え方です。\n\n## 🔑 キーワード\n\n- **データ層**：データの保存・読み込みだけを担当する部分\n- **Firestore**：Firebase のデータベース。コレクション（種類）とドキュメント（1 件）でデータを持つ\n- **onSnapshot**：データの変化を見張り、変わるたびに知らせてくれる Firestore の機能\n- **動的インポート**：`import()` で、プログラムの途中でライブラリを読み込むこと\n- **localStorage**：ブラウザにデータを保存する場所（文字列のみ。だから JSON に変換する）\n- **リスナー（listener）**：「何か起きたら呼んでほしい」と登録しておく関数\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ 保存先の違いを `store` の中に閉じ込めていて、画面側のコードがすっきりしている\n- ✅ 接続に失敗したら、画面上部に原因のヒント付きで表示する\n- ✅ localStorage が使えない環境でも止まらないよう `try / catch` で守っている\n- ⚠️ `apiKey` などの Firebase の設定は、**Web アプリでは公開される前提の値** で、パスワードではない（ブラウザに届く時点で誰でも見られる）。その代わり、**Firestore のセキュリティルール** で「誰が読み書きできるか」を決める必要がある。このアプリにはログインが無いので、ルールの設定がとても重要\n- ⚠️ `if (FIREBASE_CONFIG)` は設定が書かれている今は常に Firebase モード。お試しモードにするには `const FIREBASE_CONFIG = null;` にする\n- ⚠️ お試しモードの `update` や `remove` は、毎回全件を読み直して書き直すので、データが多いと遅くなる（お試し用なので問題ない）\n\n## 🗣️ 30 秒で人に説明するなら\n\n「データ層は、保存先が Firebase でも localStorage でも、同じ add・update・remove・sub の命令で使えるようにした窓口です。\nFirebase 版はライブラリを動的に読み込んで、onSnapshot でデータを見張り、変わるたびに画面側に知らせます。\nお試し版は localStorage には通知機能が無いので、知らせてほしい関数のリストを自分で持って、保存のたびに呼ぶことで同じ動きを再現しています。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "`store.add(\"tasks\", {...})` と書いたとき、保存先はどう決まる？",
+      "choices": [
+       "呼び出すたびに選ぶ",
+       "最初に FIREBASE_CONFIG があるかで決まった store の中身による",
+       "必ず両方に保存される"
+      ],
+      "answer": 1,
+      "explain": "画面側は保存先を気にせず、同じ命令を呼ぶだけです。"
+     },
+     {
+      "question": "`onSnapshot` の役割は？",
+      "choices": [
+       "データが変わるたびに、指定した関数を呼んでくれる",
+       "データを一度だけ読み込む",
+       "データを削除する"
+      ],
+      "answer": 0,
+      "explain": "自分の変更でも他の人の変更でも呼ばれるので、リアルタイムに画面が更新されます。"
+     },
+     {
+      "question": "`list.filter(x => x.id !== id)` は何をしている？",
+      "choices": [
+       "id が一致するものだけ残す",
+       "id が一致する 1 件を取り除いた新しい配列を作る",
+       "全件を削除する"
+      ],
+      "answer": 1,
+      "explain": "一致「しない」ものだけを残すので、結果としてその 1 件が消えます。"
+     }
+    ]
+   ],
+   "id": "2026-11-17-popup2027-03-data-layer"
+  },
+  {
+   "title": "状態（S）と小道具 ― アプリの「今」をまとめた箱と便利な関数",
+   "language": "JavaScript",
+   "date": "2026-11-17",
+   "level": 2,
+   "series": "popup2027",
+   "part": 4,
+   "concepts": [
+    "variables",
+    "functions",
+    "strings",
+    "security",
+    "collections"
+   ],
+   "lessons": [
+    "20-javascript/01-js-basics",
+    "20-javascript/04-functions-arrow",
+    "20-javascript/03-arrays-objects",
+    "20-javascript/06-dom-events"
+   ],
+   "summary": "アプリの今の状態をまとめたオブジェクト S と、無害化・日付・金額の表示などに使う小さな関数たち。",
+   "body": "## 📄 解説するコード（145〜163 行目）\n\n```javascript\n// ---------- 状態 ----------\nconst S = { settings: DEFAULT_SETTINGS, tab: \"home\", filter: \"all\" };\nCOLS.forEach(c => S[c] = []);\nconst lsGet = k => { try { return localStorage.getItem(k) } catch { return null } };\nconst lsSet = (k, v) => { try { localStorage.setItem(k, v) } catch {} };\nS.me = lsGet(\"pu-me\");\nS.tab = lsGet(\"pu-tab\") || \"home\";\n\nconst esc = s => String(s ?? \"\").replace(/[&<>\"']/g, c => ({ \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\", '\"': \"&quot;\", \"'\": \"&#39;\" }[c]));\nconst today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, \"0\")}-${String(d.getDate()).padStart(2, \"0\")}`; };\nconst fmtDate = s => s ? s.replace(/^(\\d{4})-(\\d{2})-(\\d{2})$/, (_, y, m, d) => `${y}/${+m}/${+d}`) : \"\";\nconst yen = n => \"¥\" + Math.round(n).toLocaleString(\"ja-JP\");\nconst byNew = (a, b) => (b.createdAt || 0) - (a.createdAt || 0);\nconst memberOpts = (sel, withNone) => (withNone ? `<option value=\"\">担当なし</option>` : \"\") + S.settings.members.map(m => `<option ${m === sel ? \"selected\" : \"\"}>${esc(m)}</option>`).join(\"\");\n\nconst TABS = [\n  [\"home\", \"🏠\", \"ホーム\"], [\"tasks\", \"✅\", \"タスク\"], [\"milestones\", \"📅\", \"予定\"],\n  [\"logs\", \"📝\", \"ログ\"], [\"ideas\", \"💡\", \"アイデア\"], [\"expenses\", \"💰\", \"お金\"],\n];\n```\n\n## 🧭 ひとことで言うと\n\n**JavaScript** で書かれた、**アプリの「今」を全部まとめた箱 `S`（State ＝状態）** と、あちこちで使う **小さな便利関数** の定義です。どれも 1 行関数（アロー関数）なので、1 つずつ分解して読めば怖くありません。\n\n## 🗺️ 全体の流れ\n\n1. `S` を作る：設定・今のタブ・絞り込みと、5 種類のデータ用の空の配列\n2. この端末に覚えてある「自分の名前」と「最後に開いていたタブ」を localStorage から読む\n3. 画面を作るときに使う便利関数（無害化・日付・金額・並べ替え・選択肢）を用意する\n4. 下のタブの一覧 `TABS` を定義する\n\n## 🔍 ブロックごとの解説\n\n### S：アプリの状態を 1 か所に\n\n```javascript\nconst S = { settings: DEFAULT_SETTINGS, tab: \"home\", filter: \"all\" };\nCOLS.forEach(c => S[c] = []);\n```\n\n最終的に `S` はこんな形になります。\n\n```javascript\n{\n  settings: { title: \"POP UP 2027\", date: \"2027-09-01\", members: [...] },\n  tab: \"home\",        // 今開いているタブ\n  filter: \"all\",      // タスクの絞り込み（全員 / メンバー名）\n  me: \"メンバーA\",     // 自分の名前\n  tasks: [], milestones: [], logs: [], ideas: [], expenses: [],  // データ\n  // 後から error・ideaPhoto・ideaDraft・busy なども入る\n}\n```\n\n**画面は S の中身だけを見て描かれます**。「画面を変えたいときは S を変えて render() を呼ぶ」のがこのアプリのルールです。\n`S[c] = []` の `[c]` は、変数 `c` の中身（\"tasks\" など）をキー名として使う書き方です。\n\n### lsGet / lsSet：失敗しても止まらない保存\n\nブラウザのプライベートモードなどでは localStorage が使えずエラーになることがあるので、`try / catch` で包んで「失敗したら何もしない」ようにしています。\n\n### esc：画面に出す前の無害化（とても大事）\n\n```javascript\nconst esc = s => String(s ?? \"\").replace(/[&<>\"']/g, c => ({ \"&\": \"&amp;\", ... }[c]));\n```\n\n`<` や `\"` などの記号を `&lt;` のような **ただの文字として表示される形** に置き換えます。\nこれをしないと、誰かがタスク名に `<img src=x onerror=...>` のような文字を入れたとき、**他のメンバーの画面でそのプログラムが動いてしまう**（XSS という攻撃）ことがあります。\nこのアプリは HTML を文字列で組み立てる作りなので、ユーザーが入力した文字には必ず `esc()` を通しています。\n\n- `s ?? \"\"`：s が null か undefined なら空文字\n- `/[&<>\"']/g`：正規表現。「この 5 つの記号のどれか」を、`g`（全部）探す\n- `{...}[c]`：見つかった記号 `c` を、その場で作った対応表から引いて置き換える\n\n### today / fmtDate：日付の形を整える\n\n```javascript\ntoday()                 // \"2026-11-17\"（今日を「年-月-日」の形で）\nfmtDate(\"2027-09-01\")   // \"2027/9/1\"（表示用に）\n```\n\n- `padStart(2, \"0\")`：1 桁の月日を `09` のように 2 桁にする\n- `getMonth() + 1`：JavaScript の月は **0 から始まる**（1 月が 0）ので 1 を足している。よくある落とし穴\n- `+m`：文字列 `\"09\"` の前に `+` を付けると数値 `9` になる（先頭の 0 が消える）\n\n### yen：金額の表示\n\n```javascript\nyen(1234.5)   // \"¥1,235\"\n```\n\n四捨五入して、`toLocaleString(\"ja-JP\")` で 3 桁ごとにカンマを入れています。\n\n### byNew / memberOpts：並べ替えと選択肢\n\n- `byNew`：`sort` に渡す比べ方の関数。作成日時の **新しい順**（`b - a` で大きい方が先）\n- `memberOpts`：メンバー名から `<option>` の HTML を作る。今の自分（`sel`）を最初から選ばれた状態にする\n\n### TABS：タブの一覧\n\n`[キー, アイコン, 表示名]` の配列の配列です。ここに 1 行足せばタブが増える（画面の関数も必要）ように、データとして持っています。\n\n## 🐍 Python と比べると\n\n| JavaScript | Python で言うと |\n|---|---|\n| `const S = {...}` | 辞書 `S = {...}`（中身は後から変えられる） |\n| `s ?? \"\"` | `s if s is not None else \"\"` |\n| `s.replace(/[&<>\"']/g, ...)` | `html.escape(s)`（Python の標準ライブラリにある） |\n| `` `${y}/${m}` `` | `f\"{y}/{m}\"` |\n| `String(n).padStart(2, \"0\")` | `str(n).zfill(2)` または `f\"{n:02d}\"` |\n| `Math.round(n).toLocaleString(\"ja-JP\")` | `f\"{round(n):,}\"` |\n| `getMonth()` が 0 始まり | Python の `date.month` は 1 始まり（JavaScript だけの注意点） |\n\n## 🔑 キーワード\n\n- **状態（state）**：アプリの「今」を表すデータ。画面はここから作られる\n- **エスケープ（無害化）**：記号を、ただの文字として表示される形に置き換えること\n- **XSS（クロスサイトスクリプティング）**：入力に紛れ込ませたプログラムを、他の人の画面で動かす攻撃\n- **アロー関数**：`x => ...` の短い関数の書き方\n- **null 合体演算子（??）**：左が null / undefined のときだけ右を使う\n- **比較関数**：`sort` に渡す「どちらを先にするか」を決める関数\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ ユーザーの入力を画面に出すときに `esc()` を通している\n- ✅ localStorage が使えない環境でも止まらない\n- ⚠️ 1 行に詰め込んだ関数が多く、読みにくい。理解するときは、例を入れて結果を書き出してみるとよい\n- ⚠️ `fmtDate` は「年-月-日」の形でない文字列が来ると、**そのまま返す**。返した値を `esc()` せずに画面に出している場所があり、データベースに変な値が入ると表示が崩れる（悪用される）可能性がある（6・7 ページ目の写真の扱いと合わせて注意点）\n\n## 🗣️ 30 秒で人に説明するなら\n\n「S はアプリの状態をまとめたオブジェクトで、設定・今のタブ・自分の名前と、5 種類のデータの配列が入っています。画面は S だけを見て描くルールです。\nそのほか、記号を無害化して XSS を防ぐ esc、日付を整える today と fmtDate、金額を ¥ とカンマ付きにする yen などの小さな関数を用意しています。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "`esc('<b>')` の結果は？",
+      "choices": [
+       "<b>",
+       "&lt;b&gt;",
+       "b"
+      ],
+      "answer": 1,
+      "explain": "< と > を、ただの文字として表示される形に置き換えます。"
+     },
+     {
+      "question": "JavaScript で 2026 年 11 月の日付に対して `d.getMonth()` を呼ぶと？",
+      "choices": [
+       "11",
+       "10",
+       "12"
+      ],
+      "answer": 1,
+      "explain": "月は 0 から数えるので、1 を足して使う必要があります。"
+     },
+     {
+      "question": "`fmtDate(\"2027-09-01\")` の結果は？",
+      "choices": [
+       "\"2027/9/1\"",
+       "\"2027/09/01\"",
+       "\"9/1\""
+      ],
+      "answer": 0,
+      "explain": "+m で \"09\" が数値の 9 になり、先頭の 0 が消えます。"
+     }
+    ]
+   ],
+   "id": "2026-11-17-popup2027-04-state-helpers"
+  },
+  {
+   "title": "描画（1）― render とホーム・タスク・予定・ログの画面",
+   "language": "JavaScript",
+   "date": "2026-11-17",
+   "level": 2,
+   "series": "popup2027",
+   "part": 5,
+   "concepts": [
+    "dom_ui",
+    "higher_order",
+    "collections",
+    "strings",
+    "conditionals"
+   ],
+   "lessons": [
+    "20-javascript/05-array-methods",
+    "20-javascript/06-dom-events",
+    "20-javascript/02-control-flow",
+    "20-javascript/04-functions-arrow"
+   ],
+   "summary": "状態 S から HTML の文字列を組み立てて画面を描き直す render と、4 つの画面の作り方。",
+   "body": "## 📄 解説するコード（165〜249 行目・抜粋）\n\n```javascript\n// ---------- 描画 ----------\nfunction render() {\n  document.title = S.settings.title;\n  document.getElementById(\"title\").textContent = S.settings.title;\n  document.getElementById(\"meBtn\").textContent = S.me ? `👤 ${S.me}` : \"名前を選ぶ\";\n  document.getElementById(\"nav\").innerHTML = TABS.map(([k, i, l]) => `<button data-tab=\"${k}\" class=\"${S.tab === k ? \"on\" : \"\"}\"><span>${i}</span>${l}</button>`).join(\"\");\n  const banner = S.error ? `<div class=\"banner\">${esc(S.error)}</div>` : store.live ? \"\" : `<div class=\"banner\">お試しモード：データはこの端末だけに保存されています（Firebase 未接続）</div>`;\n  document.getElementById(\"main\").innerHTML = banner + (VIEWS[S.tab] || VIEWS.home)();\n}\n\nconst VIEWS = {\n  home() {\n    const days = Math.ceil((new Date(S.settings.date + \"T00:00:00\") - new Date(today() + \"T00:00:00\")) / 864e5);\n    const total = S.tasks.length, done = S.tasks.filter(t => t.status === \"done\").length;\n    const next = S.milestones.filter(m => !m.done).sort((a, b) => (a.date || \"\").localeCompare(b.date || \"\")).slice(0, 3);\n    const mine = S.tasks.filter(t => t.assignee === S.me && t.status !== \"done\").sort((a, b) => (a.due || \"9\").localeCompare(b.due || \"9\")).slice(0, 5);\n    const logs = [...S.logs].sort(byNew).slice(0, 3);\n    return `\n    <div class=\"card\"><h2>本番まで（${fmtDate(S.settings.date)}）</h2>\n      <div class=\"count\"><b>${days >= 0 ? days : 0}</b><span>日</span></div></div>\n    <div class=\"card\"><h2>タスク進捗</h2>\n      <div class=\"row\"><span>${done} / ${total} 完了</span><span class=\"mini\">${total ? Math.round(done / total * 100) : 0}%</span></div>\n      <div class=\"bar\"><i style=\"width:${total ? done / total * 100 : 0}%\"></i></div></div>\n    ...（自分のやること・次の予定・最近のログ・設定ボタン）`;\n  },\n\n  tasks() {\n    const order = { doing: 0, todo: 1, done: 2 };\n    let list = [...S.tasks];\n    if (S.filter !== \"all\") list = list.filter(t => t.assignee === S.filter);\n    list.sort((a, b) => (order[a.status] - order[b.status]) || (a.due || \"9\").localeCompare(b.due || \"9\"));\n    const label = { todo: \"未着手\", doing: \"進行中\", done: \"完了\" };\n    return `\n    <form class=\"add\" data-form=\"tasks\">\n      <input class=\"grow\" name=\"title\" placeholder=\"やること\" required>\n      <select name=\"assignee\">${memberOpts(S.me, true)}</select>\n      <input type=\"date\" name=\"due\">\n      <button class=\"btn\">追加</button>\n    </form>\n    <div class=\"list\">${list.map(t => `\n      <div class=\"item ${t.status === \"done\" ? \"done\" : \"\"}\">\n        <button class=\"chip s-${t.status}\" data-cycle=\"${t.id}\">${label[t.status]}</button>\n        <div class=\"body\">${esc(t.title)}<div class=\"meta\">...</div></div>\n        <button class=\"x\" data-del=\"tasks:${t.id}\">×</button>\n      </div>`).join(\"\") || `<div class=\"empty\">タスクはまだありません</div>`}</div>`;\n  },\n\n  milestones() { /* 予定：日付順。過ぎた予定に class=\"past\" */ },\n  logs() { /* ログ：日付の新しい順 */ },\n  // ideas() と expenses() は 6 ページ目\n};\n```\n\n## 🧭 ひとことで言うと\n\n**JavaScript** で書かれた、**状態 `S` から画面を組み立てる** 部分です。各画面は「HTML の文字列を返す関数」になっていて、`render()` がそれを `#main` の箱に入れます。\n\n## 🗺️ 全体の流れ\n\n1. どこかで `S` が変わると `render()` が呼ばれる\n2. `render()` がタイトル・自分の名前・下のタブを書き換える\n3. 今のタブ（`S.tab`）に対応する画面の関数（`VIEWS.home` など）を呼び、HTML の文字列をもらう\n4. その文字列を `#main` に `innerHTML` で入れる → 画面が丸ごと新しくなる\n\n## 🔍 ブロックごとの解説\n\n### render：画面を丸ごと描き直す\n\n```javascript\ndocument.getElementById(\"main\").innerHTML = banner + (VIEWS[S.tab] || VIEWS.home)();\n```\n\n- `VIEWS[S.tab]`：`S.tab` が `\"tasks\"` なら `VIEWS.tasks`（画面の関数）を取り出す\n- `|| VIEWS.home`：知らないタブ名なら、ホームにする\n- 最後の `()` で関数を呼び、返ってきた HTML 文字列を箱に入れる\n\n変わった所だけを直すのではなく **毎回全部作り直す** ので、仕組みがとても単純です。小さなアプリならこれで十分速く動きます。\n\n### 下のタブを作る\n\n```javascript\nTABS.map(([k, i, l]) => `<button data-tab=\"${k}\" class=\"${S.tab === k ? \"on\" : \"\"}\">...`).join(\"\")\n```\n\n- `([k, i, l]) =>`：`[\"tasks\", \"✅\", \"タスク\"]` を 3 つの変数に **分割代入** して受け取る\n- 今のタブだけ `class=\"on\"`（色が付く）\n- `data-tab=\"tasks\"`：ボタンに付けた **メモ書き**。押されたときに、どのタブか分かる（7 ページ目）\n- `map` で作った文字列の配列を、`join(\"\")` で 1 つの文字列につなげる\n\n### ホーム：数字を計算して並べる\n\n```javascript\nconst days = Math.ceil((new Date(S.settings.date + \"T00:00:00\") - new Date(today() + \"T00:00:00\")) / 864e5);\n```\n\n日付どうしを引き算すると **ミリ秒（1000 分の 1 秒）** の差が出ます。`864e5` は `86400000`（1 日のミリ秒）なので、割ると日数になります。たとえば今日が 2026-11-17 なら、2027-09-01 まで **288 日** です。\n\n```javascript\nconst mine = S.tasks.filter(t => t.assignee === S.me && t.status !== \"done\")\n  .sort((a, b) => (a.due || \"9\").localeCompare(b.due || \"9\")).slice(0, 5);\n```\n\nメソッドチェーンを 1 段ずつ読みます。\n\n1. `filter`：自分が担当 **かつ** 完了していないタスクだけ\n2. `sort`：締め切りの早い順。締め切りが無いものは `\"9\"` として扱い、**一番後ろ** へ（日付の文字列 \"2027-...\" より \"9\" の方が後に来る）\n3. `slice(0, 5)`：先頭の 5 件だけ\n\n### タスク：並べ替えの 2 段階ルール\n\n```javascript\nconst order = { doing: 0, todo: 1, done: 2 };\nlist.sort((a, b) => (order[a.status] - order[b.status]) || (a.due || \"9\").localeCompare(b.due || \"9\"));\n```\n\n1. まず状態で並べる：**進行中 → 未着手 → 完了**\n2. 状態が同じなら（引き算が 0 になると `||` の右に進む）、締め切りの早い順\n\n`sort` の比較関数は「マイナスなら a が先、プラスなら b が先、0 なら同じ」というルールです。\n\n### 一覧が空のときの表示\n\n```javascript\n${list.map(t => `...`).join(\"\") || `<div class=\"empty\">タスクはまだありません</div>`}\n```\n\n1 件も無ければ `join(\"\")` は空文字になり、空文字は「偽」なので `||` の右側（「まだありません」）が使われます。\n\n### 予定・ログ\n\n- **予定**：日付の早い順。今日より前の予定には `class=\"past\"` を付けて、CSS で枠の色を変える。チェックボックスで完了にできる\n- **ログ**：日付の新しい順。同じ日付なら作成日時の新しい順（`byNew`）\n\n## 🐍 Python と比べると\n\n| JavaScript | Python で言うと |\n|---|---|\n| `VIEWS = { home() {...}, tasks() {...} }` | 関数を値に持つ辞書 `VIEWS = {\"home\": home, \"tasks\": tasks}` |\n| `VIEWS[S.tab] \\|\\| VIEWS.home` | `VIEWS.get(S[\"tab\"], home)` |\n| `list.map(t => `...`).join(\"\")` | `\"\".join(f\"...\" for t in lst)` |\n| `a.localeCompare(b)` | 文字列の比較（`sorted(key=...)` で並べる） |\n| `arr.slice(0, 5)` | `arr[:5]` |\n| `innerHTML = 文字列` | （Python には無い。HTML の箱に文字列を流し込む、ブラウザだけの機能） |\n\n## 🔑 キーワード\n\n- **render（描画）**：状態から画面を作り直す処理\n- **テンプレートリテラル**：`` `...${式}...` `` の、値を埋め込める文字列\n- **innerHTML**：要素の中身を HTML の文字列で書き換えるプロパティ\n- **data 属性**：`data-tab=\"...\"` のように、HTML の要素に付けるメモ書き\n- **メソッドチェーン**：`.filter().sort().slice()` のように処理をつなげる書き方\n- **比較関数**：`sort` に渡す「どちらを先にするか」を決める関数\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ 画面が「S → 文字列 → innerHTML」の一方通行で作られていて、仕組みが単純で追いやすい\n- ✅ ユーザーが入力したタイトルやログは `esc()` を通している\n- ⚠️ `innerHTML` で毎回全部作り直すので、**入力中のフォームが消えてしまう** 問題がある。8 ページ目の `rerender` でその対策をしている\n- ⚠️ `fmtDate(m.date)` や `t.status` などは `esc()` を通していない。普通に使う分には問題ないが、データベースに直接おかしな値が書き込まれると、表示が崩れたり悪用されたりする余地がある\n- ⚠️ 日数の計算は端末の時計とタイムゾーンを使う。海外の端末では 1 日ずれることがある（日本で使う分には問題なし）\n\n## 🗣️ 30 秒で人に説明するなら\n\n「render は状態 S をもとに画面を全部作り直す関数で、今のタブに対応する VIEWS の関数が返す HTML の文字列を、main の箱に innerHTML で入れています。\nホームでは本番までの日数を日付の引き算で出したり、自分の未完了タスクを filter・sort・slice で 5 件取り出したりしています。\nタスク一覧は、進行中・未着手・完了の順、同じ状態なら締め切りが早い順に並べています。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "`S.tab` が \"ideas\" のとき、render() が呼ぶ画面の関数は？",
+      "choices": [
+       "VIEWS.home",
+       "VIEWS.ideas",
+       "何も呼ばない"
+      ],
+      "answer": 1,
+      "explain": "VIEWS[S.tab] で、タブ名と同じ名前の関数を取り出します。"
+     },
+     {
+      "question": "タスク一覧で、締め切りが無いタスクはどこに並ぶ？",
+      "choices": [
+       "同じ状態のタスクの中で一番後ろ",
+       "一番先頭",
+       "表示されない"
+      ],
+      "answer": 0,
+      "explain": "締め切りが無いものは \"9\" として比べるので、日付より後になります。"
+     },
+     {
+      "question": "`[].map(x => x).join(\"\") || \"なし\"` の結果は？",
+      "choices": [
+       "\"\"",
+       "\"なし\"",
+       "[]"
+      ],
+      "answer": 1,
+      "explain": "空の配列を join すると空文字になり、空文字は偽なので || の右側が使われます。"
+     }
+    ]
+   ],
+   "id": "2026-11-17-popup2027-05-render-views"
+  },
+  {
+   "title": "描画（2）― アイデアの「いいね」とお金の精算計算",
+   "language": "JavaScript",
+   "date": "2026-11-17",
+   "level": 3,
+   "series": "popup2027",
+   "part": 6,
+   "concepts": [
+    "higher_order",
+    "collections",
+    "operators",
+    "dom_ui"
+   ],
+   "lessons": [
+    "20-javascript/05-array-methods",
+    "20-javascript/03-arrays-objects",
+    "10-python/04-lists-and-dicts"
+   ],
+   "summary": "いいねの多い順に並ぶアイデア一覧と、立て替えた支出から「誰がいくら払う・もらうか」を計算するお金の画面。",
+   "body": "## 📄 解説するコード（251〜291 行目・抜粋）\n\n```javascript\n  ideas() {\n    const list = [...S.ideas].sort((a, b) => ((b.likes || []).length - (a.likes || []).length) || byNew(a, b));\n    return `\n    <form class=\"add\" data-form=\"ideas\">\n      <textarea class=\"grow\" name=\"text\" placeholder=\"思いついたこと、なんでも（写真だけでもOK）\">${esc(S.ideaDraft || \"\")}</textarea>\n      ${S.ideaPhoto ? `<div class=\"grow photo-prev\"><img src=\"${S.ideaPhoto}\" alt=\"\"><button type=\"button\" class=\"x\" data-act=\"clearPhoto\">×</button></div>` : \"\"}\n      <label class=\"btn ghost\">📷 写真<input type=\"file\" accept=\"image/*\" data-photo hidden></label>\n      <button class=\"btn\" ${S.busy ? \"disabled\" : \"\"}>${S.busy ? \"処理中…\" : \"投稿\"}</button>\n    </form>\n    <div class=\"list\">${list.map(i => { const likes = i.likes || []; return `\n      <div class=\"item\"><div class=\"body\">${i.text ? esc(i.text) : \"\"}${i.photo ? `<img class=\"photo\" src=\"${i.photo}\" alt=\"\" data-zoom=\"${i.id}\">` : \"\"}<div class=\"meta\">${esc(i.author)}</div></div>\n      <button class=\"like ${likes.includes(S.me) ? \"on\" : \"\"}\" data-like=\"${i.id}\" title=\"${esc(likes.join(\"、\"))}\">♥ ${likes.length}</button>\n      <button class=\"x\" data-del=\"ideas:${i.id}\">×</button></div>`; }).join(\"\") || `<div class=\"empty\">アイデアはまだありません</div>`}</div>`;\n  },\n\n  expenses() {\n    const members = S.settings.members;\n    const total = S.expenses.reduce((s, e) => s + (+e.amount || 0), 0);\n    const share = members.length ? total / members.length : 0;\n    const paid = Object.fromEntries(members.map(m => [m, 0]));\n    S.expenses.forEach(e => { if (e.paidBy in paid) paid[e.paidBy] += +e.amount || 0; });\n    const list = [...S.expenses].sort((a, b) => (b.date || \"\").localeCompare(a.date || \"\") || byNew(a, b));\n    return `\n    <form class=\"add\" data-form=\"expenses\"> ...（何に使った？・金額・立て替えた人・日付）... </form>\n    <div class=\"card\"><h2>合計 ${yen(total)}（1人あたり ${yen(share)}）</h2>\n      <table><tr><th>名前</th><th class=\"num\">立替</th><th class=\"num\">精算</th></tr>\n      ${members.map(m => { const d = paid[m] - share; return `<tr><td>${esc(m)}</td><td class=\"num\">${yen(paid[m])}</td>\n        <td class=\"num\" style=\"color:${d > 0.5 ? \"var(--ok)\" : d < -0.5 ? \"var(--accent)\" : \"var(--sub)\"}\">${d > 0.5 ? \"+\" + yen(d) + \" もらう\" : d < -0.5 ? yen(-d) + \" 払う\" : \"±0\"}</td></tr>`; }).join(\"\")}\n      </table></div>\n    <div class=\"list\"> ...（支出の一覧：日付の新しい順）... </div>`;\n  },\n```\n\n## 🧭 ひとことで言うと\n\n**JavaScript** で書かれた、**アイデア** と **お金** の 2 つの画面です。アイデアは「いいね」の多い順に並び、お金は立て替えた支出の記録から **「誰がいくら払えば・もらえば公平になるか」** を自動で計算します。\n\n## 🗺️ 全体の流れ\n\n**アイデア**\n1. いいねの多い順、同じなら新しい順に並べる\n2. 投稿フォーム（文字・写真）と、投稿の一覧を作る\n3. 自分がいいね済みなら ♥ ボタンに色を付ける\n\n**お金**\n1. 支出の合計を出す\n2. 合計をメンバーの人数で割って、1 人あたりの負担額を出す\n3. メンバーごとに、立て替えた金額を集計する\n4. 「立て替えた金額 − 1 人あたり」で、もらう人・払う人を決めて表にする\n\n## 🔍 ブロックごとの解説\n\n### いいねの仕組み：名前の配列\n\n```javascript\nconst likes = i.likes || [];\nlikes.includes(S.me)   // 自分がいいね済みか\nlikes.length           // いいねの数\n```\n\nいいねは「数」ではなく **いいねした人の名前の配列**（例：`[\"メンバーA\", \"メンバーC\"]`）で持っています。\nそのおかげで、**同じ人が 2 回いいねできない**・**誰がいいねしたか分かる**（ボタンにマウスを乗せると `title` に名前が出る）という 2 つのことが実現できています。\n\n### いいねの多い順に並べる\n\n```javascript\n[...S.ideas].sort((a, b) => ((b.likes || []).length - (a.likes || []).length) || byNew(a, b))\n```\n\n- `[...S.ideas]`：元の配列を **コピーしてから** 並べ替える（`sort` は元の配列を書き換えてしまうため）\n- `b - a` の順なので **多い順**。同じ数なら（0 になって）`byNew` で新しい順\n\n### 写真の下書き\n\n`S.ideaPhoto` に写真が入っていればプレビューを表示し、`S.busy`（写真の縮小中）なら投稿ボタンを押せなくします。写真の縮小は 8 ページ目です。\n\n### お金：精算の計算\n\n例で追ってみます。メンバーは A・B・C の 3 人、A が 9,000 円、B が 3,000 円を立て替えたとします。\n\n```javascript\nconst total = S.expenses.reduce((s, e) => s + (+e.amount || 0), 0);   // 12000\nconst share = members.length ? total / members.length : 0;             // 4000\nconst paid = Object.fromEntries(members.map(m => [m, 0]));             // {A: 0, B: 0, C: 0}\nS.expenses.forEach(e => { if (e.paidBy in paid) paid[e.paidBy] += +e.amount || 0; });\n                                                                        // {A: 9000, B: 3000, C: 0}\n```\n\n| 名前 | 立替 `paid[m]` | `d = paid[m] - share` | 表示 |\n|---|---|---|---|\n| A | 9,000 | +5,000 | **+¥5,000 もらう** |\n| B | 3,000 | −1,000 | **¥1,000 払う** |\n| C | 0 | −4,000 | **¥4,000 払う** |\n\nB と C が払う合計（5,000）と、A がもらう額（5,000）が一致していて、全員の負担がちょうど 4,000 円ずつになります。\n\n### 読み解きのポイント\n\n- `reduce((s, e) => s + ..., 0)`：0 から始めて、支出を 1 件ずつ足していく（JavaScript コースの「map・filter・reduce」）\n- `+e.amount || 0`：`+` で文字列を数値にし、数値にできなければ（NaN は偽）0 にする\n- `Object.fromEntries([[A, 0], [B, 0]])`：`{A: 0, B: 0}` を作る。Python の `dict(...)` にあたる\n- `if (e.paidBy in paid)`：今のメンバーにいない名前（名前を変える前の古い記録など）は集計しない\n- `d > 0.5` / `d < -0.5`：割り算の端数（3,333.33… 円など）で「±0」が「1 円払う」にならないよう、**0.5 円の幅を持たせて** 判定している\n\n### 三項演算子の連続\n\n```javascript\nd > 0.5 ? \"+\" + yen(d) + \" もらう\" : d < -0.5 ? yen(-d) + \" 払う\" : \"±0\"\n```\n\n`条件1 ? A : 条件2 ? B : C` は、`if 条件1: A elif 条件2: B else: C` と同じです。\n\n## 🐍 Python と比べると\n\n```python\ntotal = sum(int(e[\"amount\"] or 0) for e in expenses)\nshare = total / len(members) if members else 0\npaid = {m: 0 for m in members}\nfor e in expenses:\n    if e[\"paidBy\"] in paid:\n        paid[e[\"paidBy\"]] += int(e[\"amount\"] or 0)\nfor m in members:\n    d = paid[m] - share\n    label = f\"+{d:,.0f} もらう\" if d > 0.5 else f\"{-d:,.0f} 払う\" if d < -0.5 else \"±0\"\n```\n\n| JavaScript | Python |\n|---|---|\n| `arr.reduce((s, e) => s + x, 0)` | `sum(x for e in arr)` |\n| `Object.fromEntries(members.map(m => [m, 0]))` | `{m: 0 for m in members}` |\n| `\"name\" in obj` | `\"name\" in dict` |\n| `[...arr].sort(...)` | `sorted(arr, key=...)`（元を変えない） |\n\n## 🔑 キーワード\n\n- **割り勘の精算**：全員の負担を同じにするための「払う・もらう」の計算\n- **reduce**：配列を 1 つの値にまとめるメソッド\n- **Object.fromEntries**：`[キー, 値]` の配列からオブジェクトを作る\n- **三項演算子**：`条件 ? A : B` の、短い if の書き方\n- **非破壊的な並べ替え**：`[...arr]` でコピーしてから並べ、元の配列を変えないこと\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ いいねを名前の配列で持つことで、二重いいねを防いでいる\n- ✅ 精算の判定に 0.5 円の幅を持たせて、割り切れない金額でも表示がおかしくならない\n- ⚠️ 写真（`i.photo`）は `esc()` を通さずに `src=\"...\"` に入れている。アプリが作った画像なら安全だが、データベースに直接おかしな文字列を書き込まれると、そこからプログラムを動かされる余地がある（ログインが無いので、Firestore のルールで書き込みを制限することが大事）\n- ⚠️ 支出は「全員で均等に割る」前提。「この支出は A と B だけで割る」はできない\n- ⚠️ メンバーの名前を変えると、変更前の名前で記録した支出は `in paid` に当たらず、集計から外れる（表の合計と立替の合計が合わなくなる）\n\n## 🗣️ 30 秒で人に説明するなら\n\n「アイデアの画面は、いいねした人の名前を配列で持っていて、その数が多い順に並べています。名前で持つので同じ人は 2 回いいねできません。\nお金の画面は、支出の合計をメンバー数で割って 1 人あたりを出し、各自が立て替えた金額との差がプラスならもらう、マイナスなら払う、と表示しています。端数で変な表示にならないよう 0.5 円の幅を持たせています。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "4 人のメンバーで、A が 8,000 円だけ立て替えた。B の表示は？",
+      "choices": [
+       "±0",
+       "¥2,000 払う",
+       "+¥2,000 もらう"
+      ],
+      "answer": 1,
+      "explain": "1 人あたり 2,000 円。B は 0 円しか払っていないので 2,000 円払います（A は 6,000 円もらう）。"
+     },
+     {
+      "question": "いいねを「数」ではなく「名前の配列」で持っている理由として正しいのは？",
+      "choices": [
+       "同じ人が 2 回いいねするのを防ぎ、誰がいいねしたかも分かるから",
+       "数字はデータベースに保存できないから",
+       "並べ替えができないから"
+      ],
+      "answer": 0,
+      "explain": "likes.includes(S.me) で、自分がいいね済みかを判定できます。"
+     },
+     {
+      "question": "`[...S.ideas].sort(...)` の `[...S.ideas]` は何のため？",
+      "choices": [
+       "アイデアを 2 倍に増やすため",
+       "元の配列を書き換えないよう、コピーしてから並べ替えるため",
+       "写真だけを取り出すため"
+      ],
+      "answer": 1,
+      "explain": "sort は元の配列を並べ替えてしまうので、コピーに対して行っています。"
+     }
+    ]
+   ],
+   "id": "2026-11-17-popup2027-06-ideas-expenses"
+  },
+  {
+   "title": "イベント処理 ― クリックと送信を 1 か所で受け止める仕組み",
+   "language": "JavaScript",
+   "date": "2026-11-17",
+   "level": 3,
+   "series": "popup2027",
+   "part": 7,
+   "concepts": [
+    "dom_ui",
+    "higher_order",
+    "conditionals",
+    "async"
+   ],
+   "lessons": [
+    "20-javascript/06-dom-events",
+    "20-javascript/04-functions-arrow",
+    "20-javascript/02-control-flow",
+    "20-javascript/07-promise-async"
+   ],
+   "summary": "画面全体のクリックと送信を document でまとめて受け止め、ボタンの data 属性を見て何をするか決める（イベント委任）。モーダルも担当。",
+   "body": "## 📄 解説するコード（293〜360 行目・抜粋）\n\n```javascript\n// ---------- モーダル ----------\nfunction showWho() {\n  document.getElementById(\"modal\").innerHTML = `<div class=\"modal\"><div class=\"card\"><h2>あなたは誰？</h2>\n    <div class=\"who\">${S.settings.members.map(m => `<button data-me=\"${esc(m)}\">${esc(m)}</button>`).join(\"\")}</div>\n    <p class=\"mini\">この端末に記憶されます。右上からいつでも変更できます。</p></div></div>`;\n}\nfunction showSettings() { /* タイトル・本番の日付・メンバー名を入力するフォームを出す */ }\nconst closeModal = () => document.getElementById(\"modal\").innerHTML = \"\";\n\n// ---------- イベント ----------\ndocument.addEventListener(\"click\", e => {\n  const z = e.target.closest(\"[data-zoom]\");\n  if (z) { document.getElementById(\"modal\").innerHTML = `<div class=\"modal lightbox\" data-act=\"close\"><img src=\"${z.src}\" alt=\"\"></div>`; return; }\n  if (e.target.closest(\".lightbox\")) return closeModal();\n  const t = e.target.closest(\"button,input[type=checkbox]\"); if (!t) return;\n  const d = t.dataset;\n  if (d.tab) { S.tab = d.tab; lsSet(\"pu-tab\", d.tab); render(); scrollTo(0, 0); }\n  else if (t.id === \"meBtn\") showWho();\n  else if (d.me) { S.me = d.me; lsSet(\"pu-me\", d.me); closeModal(); render(); }\n  else if (d.act === \"settings\") showSettings();\n  else if (d.act === \"close\") closeModal();\n  else if (d.act === \"clearPhoto\") { S.ideaPhoto = null; render(); }\n  else if (d.filter) { S.filter = d.filter; render(); }\n  else if (d.cycle) { const x = S.tasks.find(k => k.id === d.cycle); if (x) store.update(\"tasks\", x.id, { status: { todo: \"doing\", doing: \"done\", done: \"todo\" }[x.status] || \"todo\" }); }\n  else if (d.toggle) { const x = S.milestones.find(k => k.id === d.toggle); if (x) store.update(\"milestones\", x.id, { done: !x.done }); }\n  else if (d.like) {\n    if (!S.me) return showWho();\n    const x = S.ideas.find(k => k.id === d.like); if (!x) return;\n    const likes = x.likes || [];\n    store.update(\"ideas\", x.id, { likes: likes.includes(S.me) ? likes.filter(n => n !== S.me) : [...likes, S.me] });\n  }\n  else if (d.del) { const [col, id] = d.del.split(\":\"); if (confirm(\"削除しますか？\")) store.remove(col, id); }\n});\n\ndocument.addEventListener(\"submit\", e => {\n  const f = e.target.closest(\"form[data-form]\"); if (!f) return;\n  e.preventDefault();\n  const v = Object.fromEntries(new FormData(f));\n  const col = f.dataset.form;\n  if (col === \"settings\") { /* 設定を保存して閉じる */ return; }\n  if (!S.me) return showWho();\n  const author = S.me;\n  if (col === \"tasks\") store.add(col, { title: v.title.trim(), assignee: v.assignee, due: v.due, status: \"todo\", author });\n  if (col === \"milestones\") store.add(col, { title: v.title.trim(), date: v.date, done: false, author });\n  if (col === \"logs\") store.add(col, { text: v.text.trim(), date: v.date || today(), author });\n  if (col === \"ideas\") { /* 文字か写真が必要。失敗したら alert */ }\n  if (col === \"expenses\") store.add(col, { item: v.item.trim(), amount: +v.amount, paidBy: v.paidBy, date: v.date || today(), author });\n  pending = false; render();\n});\n```\n\n## 🧭 ひとことで言うと\n\n**JavaScript** で書かれた、**ボタンを押した・フォームを送信した、という操作（イベント）を受け止めて、データを変える** 部分です。ボタン 1 つ 1 つに処理を付けるのではなく、**ページ全体で 1 か所だけ** 受け止めているのが特徴です。\n\n## 🗺️ 全体の流れ\n\n**クリックされたとき**\n1. ページ全体（`document`）でクリックを受け取る\n2. 押された場所から一番近いボタンを探す（`closest`）\n3. ボタンの data 属性（`data-tab`・`data-cycle` など）を見て、何をするか決める\n4. 画面の切り替えなら `S` を変えて `render()`、データの変更なら `store.update` などを呼ぶ\n\n**フォームが送信されたとき**\n1. ページの再読み込みを止める（`preventDefault`）\n2. フォームの入力値をまとめて取り出す\n3. `data-form` の値（tasks など）に応じて `store.add` で保存する\n\n## 🔍 ブロックごとの解説\n\n### イベント委任：1 か所でまとめて受け止める\n\n```javascript\ndocument.addEventListener(\"click\", e => { ... });\n```\n\nこのアプリは `render()` のたびに画面を作り直すので、ボタンも毎回新しくなります。ボタンごとに処理を付けると、描き直すたびに付け直しが必要です。\nそこで、**ページ全体（document）に 1 つだけ** 処理を付け、クリックが「泡のように上に伝わってくる」性質（バブリング）を利用して受け止めています。これを **イベント委任** と呼びます。\n\n### closest と dataset：何が押されたかを知る\n\n```javascript\nconst t = e.target.closest(\"button,input[type=checkbox]\");\nconst d = t.dataset;\n```\n\n- `e.target`：実際にクリックされた要素（ボタンの中のアイコンの場合もある）\n- `closest(...)`：そこから外側へたどって、一番近いボタン（かチェックボックス）を探す\n- `dataset`：`data-tab=\"tasks\"` のような data 属性を `d.tab` で読めるようにしたもの\n\n5 ページ目で描いたボタンには、それぞれ data 属性が付いていました。\n\n| data 属性 | 押したときにすること |\n|---|---|\n| `data-tab` | タブを切り替える（最後のタブとして端末に記憶） |\n| `data-me` | 「あなたは誰？」で名前を選ぶ |\n| `data-act` | 設定を開く・閉じる・写真を取り消す |\n| `data-filter` | タスクを担当者で絞り込む |\n| `data-cycle` | タスクの状態を 未着手 → 進行中 → 完了 → 未着手 と回す |\n| `data-toggle` | 予定の完了チェック |\n| `data-like` | いいねを付ける・外す |\n| `data-del` | 確認してから削除（`\"tasks:abc123\"` を `:` で分けて種類と ID を取り出す） |\n\n### 状態を回す：対応表を使ったトリック\n\n```javascript\n{ todo: \"doing\", doing: \"done\", done: \"todo\" }[x.status] || \"todo\"\n```\n\n「今が todo なら次は doing」という **対応表をその場で作って、今の状態で引く** 書き方です。if を 3 つ並べるより短く書けます。\n\n### いいねの付け外し\n\n```javascript\nlikes.includes(S.me) ? likes.filter(n => n !== S.me) : [...likes, S.me]\n```\n\n自分の名前が入っていれば取り除き（いいね解除）、入っていなければ末尾に足す（いいね）。どちらも **新しい配列を作って** 保存しています。\n\n### フォームの送信\n\n```javascript\ne.preventDefault();\nconst v = Object.fromEntries(new FormData(f));\n```\n\n- `preventDefault()`：フォームを送信すると、普通はページが再読み込みされる。それを止めて JavaScript で処理する\n- `new FormData(f)`：フォームの入力欄を `name` ごとに集める\n- `Object.fromEntries(...)`：`{ title: \"会場を探す\", assignee: \"メンバーA\", due: \"2027-01-10\" }` のようなオブジェクトにする\n\n`<input name=\"title\">` の `name` が、そのまま `v.title` の名前になります。\n\n### 名前を選んでいないと書き込めない\n\n```javascript\nif (!S.me) return showWho();\nconst author = S.me;\n```\n\n誰が書いたかを `author` として一緒に保存するため、名前が未選択なら先に「あなたは誰？」を出します。\n\n### 変更したあと、画面はいつ変わる？\n\n`store.update(...)` を呼んでも、ここでは `render()` を呼んでいません（タブの切り替えなどは除く）。\n**データが変わると Firebase から知らせが届き、そこで描き直される** からです（3 ページ目の `onSnapshot`、8 ページ目の購読）。データの流れが一方通行になっているので、自分の変更も他の人の変更も、同じ道を通って画面に反映されます。\n\n## 🐍 Python と比べると\n\n| JavaScript | Python で言うと |\n|---|---|\n| `document.addEventListener(\"click\", e => ...)` | （ブラウザ専用）「クリックされたらこの関数を呼んで」と登録する |\n| `if (d.tab) ... else if (d.me) ...` | `if d.get(\"tab\"): ... elif d.get(\"me\"): ...` |\n| `{todo: \"doing\", ...}[x.status] \\|\\| \"todo\"` | `{\"todo\": \"doing\", ...}.get(x[\"status\"], \"todo\")` |\n| `const [col, id] = d.del.split(\":\")` | `col, id = d[\"del\"].split(\":\")` |\n| `confirm(\"削除しますか？\")` | `input(\"削除しますか？ (y/n) \") == \"y\"` |\n\n## 🔑 キーワード\n\n- **イベント**：クリック・送信・入力など、利用者の操作\n- **イベント委任**：親の要素（ここでは document）でまとめてイベントを受け止める方法\n- **バブリング**：イベントが内側の要素から外側へ伝わっていく性質\n- **closest**：外側へたどって、条件に合う一番近い要素を探すメソッド\n- **dataset / data 属性**：HTML 要素に付けたメモ書きを、JavaScript から読む仕組み\n- **モーダル**：画面の上に重ねて出す小窓\n- **FormData**：フォームの入力値をまとめて取り出す仕組み\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ イベント委任で、画面を作り直してもボタンの処理が消えない\n- ✅ 削除の前に確認を出している\n- ✅ 名前が未選択なら書き込む前に選ばせる\n- ⚠️ アイデア以外の保存（`store.add` / `update` / `remove`）は **失敗しても何も表示されない**。通信が切れていると、追加したつもりのタスクが消えたように見えることがある（Firestore はオフラインでも一時的に覚えておき、つながったら送る機能があるので、多くの場合は後で反映される）\n- ⚠️ 写真を拡大表示するとき `z.src` をそのまま HTML に入れている（6 ページ目と同じ注意点）\n- ⚠️ 長い `if / else if` の連続。機能が増えるとさらに長くなるので、data 属性ごとの処理を対応表（オブジェクト）にまとめる書き方もある\n\n## 🗣️ 30 秒で人に説明するなら\n\n「イベント処理は、ページ全体で 1 つだけクリックと送信を受け止める『イベント委任』で作っています。押されたボタンの data 属性、たとえば data-cycle や data-like を見て、タスクの状態を回したり、いいねを付け外ししたりしています。\nフォームは FormData で入力値をまとめて取り出して保存します。保存したあとはここでは描き直さず、データベースから届く変更の知らせで画面が更新される仕組みです。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "状態が「進行中（doing）」のタスクのボタンを押すと、次は？",
+      "choices": [
+       "未着手",
+       "完了",
+       "削除される"
+      ],
+      "answer": 1,
+      "explain": "対応表 { todo: \"doing\", doing: \"done\", done: \"todo\" } で次の状態を引きます。"
+     },
+     {
+      "question": "ボタンごとではなく document でクリックを受け止めている主な理由は？",
+      "choices": [
+       "render() で画面を作り直してもボタンの処理が消えないから",
+       "そうしないとクリックできないから",
+       "処理が速くなるから"
+      ],
+      "answer": 0,
+      "explain": "ボタンは描き直すたびに新しくなるので、親でまとめて受け止める方が確実です。"
+     },
+     {
+      "question": "フォームの送信で `e.preventDefault()` をしないと？",
+      "choices": [
+       "入力値が取り出せない",
+       "ページが再読み込みされてしまう",
+       "データが 2 回保存される"
+      ],
+      "answer": 1,
+      "explain": "フォームの標準の動き（再読み込み）を止めて、JavaScript で処理しています。"
+     }
+    ]
+   ],
+   "id": "2026-11-17-popup2027-07-events"
+  },
+  {
+   "title": "写真の縮小とリアルタイム更新 ― 入力中は描き直さない工夫",
+   "language": "JavaScript",
+   "date": "2026-11-17",
+   "level": 4,
+   "series": "popup2027",
+   "part": 8,
+   "concepts": [
+    "async",
+    "dom_ui",
+    "data_formats",
+    "errors",
+    "database"
+   ],
+   "lessons": [
+    "20-javascript/07-promise-async",
+    "20-javascript/06-dom-events",
+    "20-javascript/02-control-flow"
+   ],
+   "summary": "写真を 1MB の上限に収まるよう小さくして文字列にする処理と、データの変更を購読して画面を更新する（入力中は待つ）仕組み。",
+   "body": "## 📄 解説するコード（362〜403 行目）\n\n```javascript\n// ---------- 写真 ----------\ndocument.addEventListener(\"input\", e => { if (e.target.matches('[data-form=\"ideas\"] textarea')) S.ideaDraft = e.target.value; });\ndocument.addEventListener(\"change\", async e => {\n  const inp = e.target.closest(\"[data-photo]\"); if (!inp || !inp.files[0]) return;\n  S.busy = true; render();\n  try { S.ideaPhoto = await shrink(inp.files[0]); }\n  catch { alert(\"この画像は読み込めませんでした\"); }\n  S.busy = false; render();\n});\n// 写真を縮小して JPEG の文字列にする（データベースの1件あたり上限 1MB に収める）\nasync function shrink(file) {\n  const url = URL.createObjectURL(file);\n  try {\n    const img = await new Promise((ok, ng) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ng; i.src = url; });\n    let max = 1280, q = 0.78, out = \"\";\n    for (let n = 0; n < 6; n++) {\n      const r = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));\n      const c = document.createElement(\"canvas\");\n      c.width = Math.round(img.naturalWidth * r); c.height = Math.round(img.naturalHeight * r);\n      c.getContext(\"2d\").drawImage(img, 0, 0, c.width, c.height);\n      out = c.toDataURL(\"image/jpeg\", q);\n      if (out.length < 700000) return out;\n      max *= 0.8; q -= 0.08;\n    }\n    return out;\n  } finally { URL.revokeObjectURL(url); }\n}\n\n// ---------- 購読 ----------\nlet rendered = false;\nconst rerender = () => {\n  // 入力中のフォームは消さない\n  const a = document.activeElement;\n  if (rendered && a && a.closest(\"form\") && (a.value || \"\").length) return pending = true;\n  render(); rendered = true;\n};\nlet pending = false;\ndocument.addEventListener(\"focusout\", () => setTimeout(() => { if (pending && !document.activeElement?.closest(\"form\")) { pending = false; render(); } }, 0));\n\nstore.subSettings(s => { S.settings = { ...DEFAULT_SETTINGS, ...(s || {}) }; rerender(); if (!S.me || !S.settings.members.includes(S.me)) showWho(); });\nCOLS.forEach(c => store.sub(c, rows => { S[c] = rows; rerender(); }));\nrender();\n```\n\n## 🧭 ひとことで言うと\n\n**JavaScript** で書かれた、アプリの最後の部品です。前半は **写真をデータベースに入る大きさまで小さくする** 処理、後半は **データの変更を購読して画面を更新する**（ただし、文字を入力している最中は描き直さない）仕組みです。このシリーズで一番むずかしい部分なので、図を思い浮かべながら読みましょう。\n\n## 🗺️ 全体の流れ\n\n**写真を選んだとき**\n1. ファイル選択の変化（`change`）を受け取る\n2. 「処理中…」を表示（`S.busy = true`）\n3. `shrink()` で写真を縮小し、JPEG の **文字列** にして `S.ideaPhoto` に入れる\n4. 「処理中…」を消して描き直す（プレビューが出る）\n\n**アプリの起動時（購読の開始）**\n1. 設定と 5 種類のデータを購読する\n2. データが変わるたびに `S` に入れて `rerender()`\n3. `rerender()` は、誰かが文字を入力中なら描き直しを **保留** し、入力欄から離れたときにまとめて描き直す\n\n## 🔍 ブロックごとの解説\n\n### なぜ写真を小さくする？\n\nFirestore は **1 件のデータの大きさが最大 1MB** という決まりがあります。スマホの写真は数 MB あるので、そのままでは保存できません。\nこのアプリは写真を別の保存場所に置かず、**写真を文字列（Data URL）に変換して、アイデアのデータの中に直接入れる** 方式なので、小さくする必要があります。\n\n### shrink：少しずつ小さくして、入るまで試す\n\n```javascript\nlet max = 1280, q = 0.78, out = \"\";\nfor (let n = 0; n < 6; n++) {\n  ...\n  out = c.toDataURL(\"image/jpeg\", q);\n  if (out.length < 700000) return out;\n  max *= 0.8; q -= 0.08;\n}\n```\n\n1. 長い辺を最大 1280 ピクセル、画質 78% で JPEG にしてみる\n2. 文字列が 70 万文字より小さければ完成\n3. 大きすぎたら、サイズを 80% に、画質を 8% 下げて、もう一度（最大 6 回）\n\n| 回 | 長い辺の最大 | 画質 |\n|---|---|---|\n| 1 | 1280 | 0.78 |\n| 2 | 1024 | 0.70 |\n| 3 | 約 819 | 0.62 |\n| … | … | … |\n\n70 万文字にしているのは、1MB の上限に対して、文字（タイトルなど）の分の余裕を残すためです。\n\n### canvas：ブラウザの中の「お絵かき帳」\n\n```javascript\nconst c = document.createElement(\"canvas\");\nc.getContext(\"2d\").drawImage(img, 0, 0, c.width, c.height);\nout = c.toDataURL(\"image/jpeg\", q);\n```\n\n画面に見えない **お絵かき帳（canvas）** を作り、写真を小さいサイズで描き写して、それを JPEG の文字列として取り出しています。画像の縮小でよく使われる方法です。\n\n### 画像の読み込みを Promise にする\n\n```javascript\nconst img = await new Promise((ok, ng) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ng; i.src = url; });\n```\n\n画像の読み込みは「終わったら onload を呼ぶ」という古い形（コールバック）です。それを `new Promise` で包んで、`await` で待てる形に変えています。\n\n- `ok`（resolve）：成功したら呼ぶ → `await` の結果が `i` になる\n- `ng`（reject）：失敗したら呼ぶ → 例外になり、呼び出し元の `catch` で「読み込めませんでした」と表示\n\n`URL.createObjectURL` で作った一時的な URL は、`finally` の `revokeObjectURL` で **必ず片付けて** います（メモリの節約）。\n\n### rerender：入力中は描き直さない\n\n`render()` は画面を丸ごと作り直すので、**文字を入力している最中に他のメンバーの変更が届くと、入力中の文字が消えてしまいます**。それを防ぐ工夫です。\n\n```javascript\nconst a = document.activeElement;\nif (rendered && a && a.closest(\"form\") && (a.value || \"\").length) return pending = true;\n```\n\n「今カーソルがあるのがフォームの中で、何か入力されている」なら、描き直さずに `pending = true`（あとで描き直す印）だけ付けて終わります。\n\n```javascript\ndocument.addEventListener(\"focusout\", () => setTimeout(() => {\n  if (pending && !document.activeElement?.closest(\"form\")) { pending = false; render(); }\n}, 0));\n```\n\n入力欄からカーソルが離れたとき（`focusout`）に、印が付いていれば描き直します。\n`setTimeout(..., 0)` は「今の処理が終わった直後に実行して」という意味で、**カーソルの移動先が確定してから** 調べるためのものです。\n\nアイデアの下書き（`S.ideaDraft`）は、入力のたびに `S` に保存しているので、描き直しても消えません。\n\n### 購読の開始：アプリが動き出す場所\n\n```javascript\nstore.subSettings(s => { S.settings = { ...DEFAULT_SETTINGS, ...(s || {}) }; rerender(); ... });\nCOLS.forEach(c => store.sub(c, rows => { S[c] = rows; rerender(); }));\nrender();\n```\n\n- 設定を購読：届いた設定を **初期値に上書き** する形で入れる（`{ ...初期値, ...届いた値 }`）。自分の名前が今のメンバーにいなければ「あなたは誰？」を出す\n- 5 種類のデータを購読：届くたびに `S.tasks` などを入れ替えて描き直す\n- 最後の `render()`：データが届く前に、まず一度画面を出しておく\n\nここが、ここまでのページで見てきた部品が **一本の流れにつながる** 場所です。\n\n```text\n操作（7 ページ目）→ store に保存（3 ページ目）→ 変更の知らせ（ここ）→ S を更新 → render（5・6 ページ目）\n```\n\n## 🐍 Python と比べると\n\n| JavaScript | Python で言うと |\n|---|---|\n| `new Promise((ok, ng) => ...)` | `asyncio.Future` を作って、終わったら `set_result` する |\n| `try { ... } finally { 片付け }` | `try: ... finally: 片付け`（同じ） |\n| canvas で縮小 | Pillow の `img.thumbnail((1280, 1280))` と `img.save(..., quality=78)` |\n| `{ ...DEFAULT_SETTINGS, ...s }` | `{**DEFAULT_SETTINGS, **s}` |\n| `setTimeout(f, 0)` | `loop.call_soon(f)`（今の処理の直後に実行） |\n\n## 🔑 キーワード\n\n- **Data URL**：画像などを `data:image/jpeg;base64,...` という文字列で表したもの\n- **canvas**：ブラウザの中で絵を描いたり画像を加工したりできる要素\n- **Promise 化**：コールバック形式の処理を、`await` で待てる形に包むこと\n- **購読（subscribe）**：データの変化を見張り、変わったら知らせてもらうこと\n- **フォーカス**：今どの入力欄にカーソルがあるか（`document.activeElement`）\n- **保留フラグ**：「あとでやる」ことを覚えておく印（ここでは `pending`）\n\n## ⚠️ AI のコードとしてのチェックポイント\n\n- ✅ 写真を上限に収まるまで段階的に小さくし、失敗したら分かりやすく知らせる\n- ✅ 一時的な URL を `finally` で必ず片付けている\n- ✅ 入力中に他の人の変更が届いても、入力が消えないよう工夫している\n- ⚠️ 写真をデータベースの中に文字列で保存しているので、アイデアが増えると **アプリを開くたびに全部の写真を読み込む** ことになり、重く・通信量が多くなる。写真が増えるなら Firebase Storage（ファイル置き場）に分けるのが一般的\n- ⚠️ 6 回小さくしても 70 万文字を超える場合でも、そのまま返している。その場合はデータベースへの保存に失敗し、「投稿に失敗しました」と表示される\n- ⚠️ `pending` は使われる行より後ろ（398 行目）で宣言されている。実際に使われるのは起動後なので動くが、宣言を上にまとめた方が読みやすい\n\n## 🗣️ 30 秒で人に説明するなら\n\n「写真は Firestore の 1 件 1MB の上限に入るよう、canvas で縮小して JPEG の文字列にしています。入らなければサイズと画質を少しずつ下げて最大 6 回試します。\n起動時には設定と 5 種類のデータを購読して、変更が届くたびに状態を更新して描き直します。ただし入力中に描き直すと文字が消えるので、そのときは保留しておいて、入力欄から離れたときに描き直す工夫をしています。」\n\n## ✅ 理解度チェック\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+   "quizzes": [
+    [
+     {
+      "question": "写真を縮小している一番の理由は？",
+      "choices": [
+       "画面に収まるようにするため",
+       "データベースの 1 件あたりの上限（1MB）に収めるため",
+       "色をきれいにするため"
+      ],
+      "answer": 1,
+      "explain": "写真を文字列にしてデータの中に入れているので、上限に収める必要があります。"
+     },
+     {
+      "question": "文字を入力している最中に、他のメンバーがタスクを追加した。何が起きる？",
+      "choices": [
+       "すぐには描き直さず、入力欄から離れたときに描き直す",
+       "入力中の文字が消える",
+       "追加されたタスクは表示されない"
+      ],
+      "answer": 0,
+      "explain": "rerender が pending の印を付けて保留し、focusout で描き直します。"
+     },
+     {
+      "question": "`{ ...DEFAULT_SETTINGS, ...(s || {}) }` で、届いた設定に date が無い場合の date は？",
+      "choices": [
+       "undefined",
+       "DEFAULT_SETTINGS の \"2027-09-01\"",
+       "エラーになる"
+      ],
+      "answer": 1,
+      "explain": "後ろに書いた方が上書きするので、届いた値に無い項目は初期値のまま残ります。"
+     }
+    ]
+   ],
+   "id": "2026-11-17-popup2027-08-photo-sync"
+  },
+  {
    "title": "fashion_news の全体像 ― ニュースを集めて Notion にまとめるロボット",
    "language": "Python",
    "date": "2026-11-16",
