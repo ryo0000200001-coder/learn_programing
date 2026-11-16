@@ -1,0 +1,15 @@
+{
+ "title": "公開とクラウド",
+ "icon": "☁️",
+ "order": 150,
+ "category": "topic",
+ "status": "planned",
+ "description": "作ったものをインターネットに公開する仕組み。",
+ "outline": [
+  "ローカルと本番",
+  "ホスティングとサーバーレス",
+  "ドメインと HTTPS",
+  "環境変数と設定",
+  "Docker の基本"
+ ]
+}

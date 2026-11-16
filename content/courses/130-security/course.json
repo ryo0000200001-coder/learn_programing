@@ -1,0 +1,15 @@
+{
+ "title": "セキュリティの基本",
+ "icon": "🔐",
+ "order": 130,
+ "category": "topic",
+ "status": "planned",
+ "description": "AI のコードで見落としがちな危険を知る。",
+ "outline": [
+  "パスワードとハッシュ",
+  "XSS",
+  "SQL インジェクション",
+  "認証と認可",
+  "依存ライブラリの脆弱性"
+ ]
+}

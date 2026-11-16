@@ -1,0 +1,15 @@
+{
+ "title": "C#",
+ "icon": "🟪",
+ "order": 94,
+ "category": "language",
+ "status": "planned",
+ "description": "Unity のゲーム開発や Windows アプリで使われる言語。",
+ "outline": [
+  "クラスと名前空間",
+  "プロパティ",
+  "LINQ",
+  "async/await",
+  "Unity のスクリプトを読む"
+ ]
+}

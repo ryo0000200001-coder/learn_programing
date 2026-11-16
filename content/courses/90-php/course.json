@@ -1,0 +1,15 @@
+{
+ "title": "PHP",
+ "icon": "🐘",
+ "order": 90,
+ "category": "language",
+ "status": "planned",
+ "description": "WordPress や Laravel で使われる Web サーバーの言語。既存サイトを触るときに出会う。",
+ "outline": [
+  "<?php と echo",
+  "変数の $ と配列",
+  "関数とクラス",
+  "フォームとデータベース",
+  "WordPress のテーマを読む"
+ ]
+}

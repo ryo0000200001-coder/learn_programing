@@ -1,0 +1,15 @@
+{
+ "title": "C 言語",
+ "icon": "🔧",
+ "order": 92,
+ "category": "language",
+ "status": "planned",
+ "description": "多くの言語の祖先。マイコンや OS など、機械に近い所で使われる。",
+ "outline": [
+  "main 関数と printf",
+  "型とメモリ",
+  "ポインタ",
+  "配列と文字列",
+  "malloc と free"
+ ]
+}

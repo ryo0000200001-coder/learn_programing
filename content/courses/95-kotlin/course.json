@@ -1,0 +1,15 @@
+{
+ "title": "Kotlin",
+ "icon": "🟣",
+ "order": 95,
+ "category": "language",
+ "status": "planned",
+ "description": "Android アプリ開発の標準言語。Java を簡潔にしたような書き方。",
+ "outline": [
+  "val と var",
+  "null 安全",
+  "data class",
+  "ラムダとコレクション操作",
+  "Jetpack Compose を読む"
+ ]
+}

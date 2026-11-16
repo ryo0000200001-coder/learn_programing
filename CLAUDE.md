@@ -30,8 +30,11 @@
 ### B. 「◯◯のレッスンを追加して」「◯◯コースを作って」
 
 - コースは `content/courses/NN-名前/`。`course.json` に title / icon / order / description / levels
+  と `category`（`"start"` はじめに / `"language"` 言語コース / `"topic"` テーマ別コース。省略時は language）
   （準備中のコースは `"status": "planned"` と `outline`。レッスンを足したら status と outline を消す）
 - レッスンは `NN-英小文字スラッグ.md`（NN の番号順に並ぶ）。下のレッスンのテンプレートに従う
+- テーマ別コース（AI との開発、Web の仕組み、セキュリティなど）も同じ形式。コード例は Python / JavaScript を中心に、
+  言語コースで学んだ範囲で読めるものにする
 - 難易度は level 1（入門）→ 2（基礎）→ 3（実践）→ 4（応用）。前のレッスンで学んだことだけで読めるように順番を組む
 - 新しい概念が必要なら `content/concepts.json` に追加してよい
 - 最後に build → コミット → push

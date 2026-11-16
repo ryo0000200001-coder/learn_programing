@@ -1,0 +1,15 @@
+{
+ "title": "Java",
+ "icon": "☕",
+ "order": 91,
+ "category": "language",
+ "status": "planned",
+ "description": "銀行や企業の業務システム、Android で使われる言語。型をしっかり書く。",
+ "outline": [
+  "クラスと main メソッド",
+  "静的型と変数宣言",
+  "クラス・インターフェース",
+  "例外処理",
+  "コレクションと Stream"
+ ]
+}

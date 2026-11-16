@@ -123,8 +123,7 @@ function viewHome() {
         : `<p>🎉 公開中のレッスンはすべて完了！ 新しいコースを Claude に頼んでみましょう。</p>`}
     </section>
 
-    <h2>コース</h2>
-    ${courseCards()}
+    ${courseSections()}
 
     <h2>最近のコード解説 <a class="more" href="#/explanations">すべて見る →</a></h2>
     ${explCards(DATA.explanations.slice(0, 3))}
@@ -141,8 +140,31 @@ function viewHome() {
   afterRender();
 }
 
-function courseCards() {
-  return `<div class="cards">${DATA.courses.map((c) => {
+const CATEGORIES = [
+  { id: "start", title: "はじめに", desc: "言語に関係なく使える土台。まずはここから。" },
+  { id: "language", title: "言語コース", desc: "言語ごとに、入門から少しずつ難しくなっていきます。" },
+  { id: "topic", title: "テーマ別コース", desc: "AI との開発、Web の仕組み、セキュリティなど、言語以外の知識。" },
+];
+const categoryOf = (c) => c.category || "language";
+
+// 開講中のコースを先、準備中を後ろに並べる
+function sortedCourses(list) {
+  return [...list].sort((a, b) =>
+    (a.status === "planned") - (b.status === "planned") || (a.order ?? 999) - (b.order ?? 999));
+}
+
+function courseSections(headingTag = "h2") {
+  return CATEGORIES.map((cat) => {
+    const list = DATA.courses.filter((c) => categoryOf(c) === cat.id);
+    if (!list.length) return "";
+    return `<${headingTag}>${esc(cat.title)}</${headingTag}>
+      <p class="muted small">${esc(cat.desc)}</p>
+      ${courseCards(sortedCourses(list))}`;
+  }).join("");
+}
+
+function courseCards(list = DATA.courses) {
+  return `<div class="cards">${list.map((c) => {
     const s = courseStats(c);
     const planned = c.status === "planned";
     return `<a class="card course-card ${planned ? "planned" : ""}" href="#/course/${c.id}">
@@ -158,8 +180,8 @@ function courseCards() {
 
 function viewCourses() {
   app.innerHTML = `<h1>コース</h1>
-    <p class="muted">上から順に進めるのがおすすめです。「はじめての『コードを読む』」→ Python → JavaScript → …</p>
-    ${courseCards()}`;
+    <p class="muted">おすすめの順番：「はじめての『コードを読む』」→ Python →「AI と一緒に開発する」→ JavaScript → TypeScript → …</p>
+    ${courseSections()}`;
   afterRender();
 }
 

@@ -1,0 +1,15 @@
+{
+ "title": "Ruby",
+ "icon": "💎",
+ "order": 97,
+ "category": "language",
+ "status": "planned",
+ "description": "日本生まれの言語。Ruby on Rails の Web アプリで使われる。",
+ "outline": [
+  "変数とメソッド",
+  "ブロックと each",
+  "シンボルとハッシュ",
+  "クラス",
+  "Rails のコードを読む"
+ ]
+}

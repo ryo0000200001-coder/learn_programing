@@ -1,0 +1,15 @@
+{
+ "title": "C++",
+ "icon": "⚙️",
+ "order": 93,
+ "category": "language",
+ "status": "planned",
+ "description": "C を拡張した言語。ゲーム（Unreal Engine）や高速な処理で使われる。",
+ "outline": [
+  "C との違い",
+  "クラスと参照",
+  "STL（vector・map）",
+  "スマートポインタ",
+  "テンプレート"
+ ]
+}

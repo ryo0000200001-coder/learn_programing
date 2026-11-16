@@ -1,0 +1,15 @@
+{
+ "title": "Swift",
+ "icon": "🕊️",
+ "order": 96,
+ "category": "language",
+ "status": "planned",
+ "description": "iPhone・Mac アプリの言語。",
+ "outline": [
+  "let と var",
+  "オプショナル",
+  "struct と class",
+  "クロージャ",
+  "SwiftUI を読む"
+ ]
+}

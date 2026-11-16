@@ -106,5 +106,17 @@
  "memory": {
   "name": "メモリ・参照",
   "desc": "参照・コピー・ポインタ・所有権"
+ },
+ "ai_coding": {
+  "name": "AI との開発",
+  "desc": "頼み方・任せ方・確かめ方"
+ },
+ "version_control": {
+  "name": "Git・バージョン管理",
+  "desc": "変更の記録・差分・ブランチ"
+ },
+ "llm": {
+  "name": "LLM・AI API",
+  "desc": "AI をアプリに組み込む仕組み"
  }
 }
