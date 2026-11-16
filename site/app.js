@@ -379,5 +379,6 @@ function route() {
 }
 
 marked.setOptions({ gfm: true });
+if (!hljs.getLanguage("tsx")) hljs.registerAliases(["tsx"], { languageName: "typescript" });
 window.addEventListener("hashchange", route);
 route();

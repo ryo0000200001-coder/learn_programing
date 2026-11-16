@@ -73,6 +73,10 @@ window.SITE_DATA = {
    "name": "型注釈",
    "desc": "型ヒント・TypeScript の型"
   },
+  "generics": {
+   "name": "ジェネリクス",
+   "desc": "型をパラメータにして使い回す"
+  },
   "async": {
    "name": "非同期処理",
    "desc": "async/await・Promise"
@@ -1272,17 +1276,395 @@ window.SITE_DATA = {
    "title": "TypeScript",
    "icon": "🔷",
    "order": 30,
-   "status": "planned",
-   "description": "JavaScript に「型」を足した言語。AI が書く Web アプリの多くはこれ。",
-   "outline": [
-    "型注釈の読み方",
-    "interface と type",
-    "ユニオン型と絞り込み",
-    "ジェネリクス",
-    "React コンポーネントを読む"
-   ],
+   "description": "JavaScript に「型」を足した言語。AI が書く Web アプリの多くはこれ。JavaScript コースの次に。",
+   "levels": {
+    "1": "入門",
+    "2": "基礎",
+    "3": "実践"
+   },
    "id": "30-typescript",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "TypeScript とは？ 型注釈の読み方",
+     "level": 1,
+     "minutes": 12,
+     "concepts": [
+      "type_hints",
+      "types",
+      "tooling"
+     ],
+     "summary": "JavaScript との関係と、`: string` のような型注釈の読み方。",
+     "body": "## このレッスンのゴール\n\n- TypeScript が「JavaScript ＋ 型」で、最終的に JavaScript に変換されると説明できる\n- `変数: 型` / `(引数: 型): 戻り値の型` を読める\n\n## TypeScript ＝ JavaScript ＋ 型\n\n```typescript\nlet count: number = 0;\nconst name: string = \"Ryo\";\nlet isOpen: boolean = false;\n```\n\n`: number` などの部分が **型注釈** です。これを取り除くと、ただの JavaScript になります。\n実際、TypeScript は実行前に `tsc`（TypeScript コンパイラ）などで **型を消して JavaScript に変換** され、ブラウザや Node.js ではその JavaScript が動きます。\n\n| 拡張子 | 中身 |\n|---|---|\n| `.ts` | TypeScript |\n| `.tsx` | TypeScript ＋ JSX（React の画面部品） |\n| `.d.ts` | 型の情報だけを書いたファイル |\n\n## Python の型ヒントとの違い\n\n```python\ndef greet(name: str) -> str: ...        # Python\n```\n```typescript\nfunction greet(name: string): string { ... }   // TypeScript\n```\n\n見た目はそっくりですが、大きな違いがあります。\n\n| | Python の型ヒント | TypeScript |\n|---|---|---|\n| 型が合わないと | そのまま動く（注釈なだけ） | **実行前にエラー**（コンパイルエラー） |\n| チェックする人 | mypy などの別ツール | TypeScript 自身 |\n\n```typescript\nlet count: number = 0;\ncount = \"たくさん\";   // エラー: Type 'string' is not assignable to type 'number'.\n```\n\nこのエラー文は「string 型を number 型に入れることはできません」という意味です。TypeScript のエラーは **「A は B に代入できない」** の形が多いと覚えておくと読めます。\n\n## 型推論：書かなくても型は付く\n\n```typescript\nlet count = 0;        // 自動で number 型になる\nconst items = [1, 2]; // number[]\n```\n\nAI のコードで型注釈が無い変数も、TypeScript は **最初に入れた値から型を推測** しています。\nエディタで変数にマウスを乗せると、推測された型が見られます。\n\n## 関数の型\n\n```typescript\nfunction add(a: number, b: number): number {\n  return a + b;\n}\n\nconst double = (x: number): number => x * 2;\n\nfunction log(message: string): void {   // void ＝ 何も返さない\n  console.log(message);\n}\n```\n\n**`(...)` の後ろの `: 型` が戻り値の型** です。`void` は Python の `-> None` にあたります。\n\n## 基本の型\n\n| TypeScript | 意味 | Python では |\n|---|---|---|\n| `number` | 数値（整数も小数も） | `int` / `float` |\n| `string` | 文字列 | `str` |\n| `boolean` | 真偽値 | `bool` |\n| `null` / `undefined` | 値が無い | `None` |\n| `any` | 何でもあり（型チェックを諦める） | `Any` |\n| `unknown` | 何か分からない（使う前に確認が必要） | `object` に近い |\n\n⚠️ AI のコードで `any` がたくさん出てきたら、型の恩恵を捨てているサインです。レビューで確認したいポイントです。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "TypeScript のコードは最終的にどうやって動く？",
+        "choices": [
+         "ブラウザが TypeScript をそのまま実行する",
+         "型を取り除いて JavaScript に変換してから実行される",
+         "Python に変換されて実行される"
+        ],
+        "answer": 1,
+        "explain": "tsc やビルドツールが JavaScript に変換します。"
+       },
+       {
+        "question": "`function f(x: string): number` の戻り値の型は？",
+        "choices": [
+         "string",
+         "number",
+         "void"
+        ],
+        "answer": 1,
+        "explain": "( ) の後ろの `: number` が戻り値の型です。"
+       },
+       {
+        "question": "`let n = 5; n = \"five\";` は TypeScript でどうなる？",
+        "choices": [
+         "問題なく動く",
+         "型エラーになる"
+        ],
+        "answer": 1,
+        "explain": "`let n = 5` で n は number と推論されるため、文字列は代入できません。"
+       }
+      ]
+     ],
+     "id": "01-what-is-typescript"
+    },
+    {
+     "title": "配列とオブジェクトの型",
+     "level": 1,
+     "minutes": 12,
+     "concepts": [
+      "type_hints",
+      "collections"
+     ],
+     "summary": "`string[]`、`{ name: string }`、`?`（省略可能）を読む。",
+     "body": "## このレッスンのゴール\n\n- 配列の型 `string[]` と `Array<string>` を読める\n- オブジェクトの型と、`?`（省略可能）・`readonly` を読める\n\n## 配列の型\n\n```typescript\nconst names: string[] = [\"Ryo\", \"Ken\"];\nconst scores: Array<number> = [80, 65];   // number[] と同じ意味\nconst pair: [string, number] = [\"Ryo\", 20]; // タプル：長さと順番が決まった配列\n```\n\n`string[]` は「文字列の配列」。Python の `list[str]` です。\n`[string, number]` は Python の `tuple[str, int]` にあたります。\n\n## オブジェクトの型\n\n```typescript\nconst user: { name: string; age: number } = {\n  name: \"Ryo\",\n  age: 20,\n};\n```\n\n`{ キー: 型; ... }` で、そのオブジェクトがどんな形をしているかを表します。\n足りないキーや、余分なキーがあるとエラーになります。\n\n## ? ＝ 省略してもよい\n\n```typescript\nconst user: { name: string; email?: string } = { name: \"Ryo\" };  // OK\n\nuser.email.toUpperCase();   // エラー：email は undefined かもしれない\nuser.email?.toUpperCase();  // OK：?. で「あれば」呼ぶ\n```\n\n`email?: string` は「email は無くてもいい」という意味で、実際の型は `string | undefined` になります。\nTypeScript は **「無いかもしれないもの」をそのまま使うと怒ってくれる** ので、バグを防げます。\n\n## readonly ＝ 書き換え禁止\n\n```typescript\nconst config: { readonly apiUrl: string } = { apiUrl: \"https://...\" };\nconfig.apiUrl = \"x\";   // エラー\n```\n\n## インデックスシグネチャ（辞書の型）\n\n```typescript\nconst prices: { [item: string]: number } = { apple: 120, banana: 80 };\nconst stock: Record<string, number> = { apple: 3 };   // 同じ意味の短い書き方\n```\n\nキーが自由な「辞書」のような使い方です。Python の `dict[str, int]` にあたります。\nAI のコードでは `Record<string, number>` の形をよく見ます。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`number[]` と同じ意味の型は？",
+        "choices": [
+         "Array<number>",
+         "[number]",
+         "number"
+        ],
+        "answer": 0,
+        "explain": "`[number]` は「number が 1 つだけのタプル」という別の意味になります。"
+       },
+       {
+        "question": "`{ title: string; memo?: string }` に合うのは？",
+        "choices": [
+         "{ title: \"買い物\" }",
+         "{ memo: \"牛乳\" }",
+         "{ title: 1 }"
+        ],
+        "answer": 0,
+        "explain": "memo は省略できますが、title は必須で string である必要があります。"
+       },
+       {
+        "question": "`Record<string, boolean>` に合うデータは？",
+        "choices": [
+         "[\"a\", true]",
+         "{ a: true, b: false }",
+         "{ a: \"yes\" }"
+        ],
+        "answer": 1,
+        "explain": "キーが文字列、値が boolean の辞書型オブジェクトです。"
+       }
+      ]
+     ],
+     "id": "02-arrays-objects-types"
+    },
+    {
+     "title": "interface と type",
+     "level": 2,
+     "minutes": 15,
+     "concepts": [
+      "type_hints",
+      "classes"
+     ],
+     "summary": "型に名前を付けて使い回す 2 つの書き方。",
+     "body": "## このレッスンのゴール\n\n- `interface` と `type` が「型に名前を付ける」ためのものだと説明できる\n- `extends` と `&` による型の組み合わせを読める\n\n## 型に名前を付ける\n\n毎回 `{ name: string; age: number }` と書くのは大変なので、名前を付けます。\n\n```typescript\ninterface User {\n  id: number;\n  name: string;\n  email?: string;\n}\n\ntype Product = {\n  id: number;\n  title: string;\n  price: number;\n};\n\nfunction showUser(user: User): string {\n  return `${user.id}: ${user.name}`;\n}\n```\n\nAI のコードでは、ファイルの上の方や `types.ts` に `interface` / `type` がずらっと並んでいることがよくあります。\n**ここを先に読むと、そのアプリが扱うデータの形が全部分かります**。コードを読むときの近道です。\n\n## Python で言うと\n\n```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass User:\n    id: int\n    name: str\n    email: str | None = None\n```\n\nただし TypeScript の `interface` は **形の約束だけ** で、実行時には消えます（中身を作る機能はない）。\n\n## 型を広げる：extends と &\n\n```typescript\ninterface Admin extends User {   // User の項目 ＋ role\n  role: \"owner\" | \"editor\";\n}\n\ntype AdminUser = User & { role: string };   // & で合体（ほぼ同じ意味）\n```\n\n## interface と type の違いは？\n\n| | `interface` | `type` |\n|---|---|---|\n| オブジェクトの形 | ◯ | ◯ |\n| ユニオン型（次のレッスン）など | ✕ | ◯ |\n| 広げ方 | `extends` | `&` |\n\n読む側としては **「どちらも型に名前を付けている」と理解すれば十分** です。チームやライブラリの好みで使い分けられています。\n\n## 構造的型付け\n\n```typescript\nconst p = { id: 1, name: \"Ryo\", age: 20 };\nshowUser(p);   // OK！ User と「同じ形」を持っていれば通る\n```\n\nTypeScript は名前ではなく **形（構造）** で型を判断します。「User として作ったか」ではなく「User に必要な項目を持っているか」が大事です。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "AI が書いた TypeScript のプロジェクトで、データの形を手っ取り早く知るには？",
+        "choices": [
+         "interface や type の定義（types.ts など）を読む",
+         "一番下の行から読む",
+         "package.json を読む"
+        ],
+        "answer": 0,
+        "explain": "型定義を読むと、アプリが扱うデータの全体像が分かります。"
+       },
+       {
+        "question": "`interface Admin extends User { role: string }` の Admin が持つ項目は？",
+        "choices": [
+         "role だけ",
+         "User の項目すべてと role",
+         "User の項目だけ"
+        ],
+        "answer": 1,
+        "explain": "extends は「引き継いで足す」です。"
+       },
+       {
+        "question": "interface は実行時（JavaScript になったあと）どうなる？",
+        "choices": [
+         "クラスとして残る",
+         "消える（型チェック専用）"
+        ],
+        "answer": 1,
+        "explain": "型の情報はコンパイル時に取り除かれます。"
+       }
+      ]
+     ],
+     "id": "03-interface-type"
+    },
+    {
+     "title": "ユニオン型と型の絞り込み",
+     "level": 2,
+     "minutes": 15,
+     "concepts": [
+      "type_hints",
+      "conditionals"
+     ],
+     "summary": "「A または B」を表す `|` と、if で型を確定させる書き方。",
+     "body": "## このレッスンのゴール\n\n- `string | number` や `\"a\" | \"b\"` を読める\n- `typeof` や `in`、`if` で型が絞り込まれる仕組みを説明できる\n\n## ユニオン型：A または B\n\n```typescript\nlet id: string | number;\nid = 101;      // OK\nid = \"A-101\";  // OK\nid = true;     // エラー\n```\n\nPython の `str | int` と同じです。\n\n## リテラル型：決まった値だけ\n\n```typescript\ntype Status = \"loading\" | \"success\" | \"error\";\nlet status: Status = \"loading\";\nstatus = \"done\";   // エラー：その文字列は許されていない\n```\n\n**選択肢を型で決めてしまう** 書き方で、AI のコードで非常によく出てきます。\nタイプミス（`\"sucess\"` など）を実行前に見つけられるのが利点です。\n\n## 絞り込み（ナローイング）\n\nユニオン型の値は、そのままでは「どちらか分からない」ので使える操作が限られます。\n`if` で調べると、その中では型が確定します。\n\n```typescript\nfunction format(id: string | number): string {\n  if (typeof id === \"number\") {\n    return id.toFixed(0);       // ここでは id は number\n  }\n  return id.toUpperCase();      // ここでは id は string\n}\n```\n\n| 調べ方 | 例 |\n|---|---|\n| `typeof x === \"string\"` | 基本の型を調べる |\n| `x === null` / `if (x)` | null・undefined を除く |\n| `\"email\" in user` | そのキーを持っているか |\n| `x instanceof Date` | どのクラスのインスタンスか |\n| `Array.isArray(x)` | 配列か |\n\n## 判別可能なユニオン（AI がよく書く形）\n\n```typescript\ntype Result =\n  | { ok: true; data: string[] }\n  | { ok: false; error: string };\n\nfunction show(r: Result) {\n  if (r.ok) {\n    console.log(r.data);    // ok が true の形 → data がある\n  } else {\n    console.log(r.error);   // ok が false の形 → error がある\n  }\n}\n```\n\n共通のキー（ここでは `ok`、よく `type` や `kind`）で形を見分けます。\n`switch (action.type) { case \"add\": ... }` の形も同じ考え方で、React の状態管理などで頻出です。\n\n## ! と as（要注意の書き方）\n\n```typescript\nconst el = document.getElementById(\"app\")!;   // 「絶対に null じゃない」と言い切る\nconst user = data as User;                     // 「これは User だ」と言い切る\n```\n\nどちらも **TypeScript のチェックを人間の判断で黙らせる** 書き方です。間違っていると実行時にエラーになります。\nAI のコードで多用されていたら、「本当にそう言い切れる？」とチェックしたいポイントです。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`type Size = \"S\" | \"M\" | \"L\"` の変数に入れられないのは？",
+        "choices": [
+         "\"S\"",
+         "\"L\"",
+         "\"XL\""
+        ],
+        "answer": 2,
+        "explain": "リテラル型で決めた 3 つ以外は入れられません。"
+       },
+       {
+        "question": "`if (typeof v === \"string\") { ... }` の { } の中で v の型は？",
+        "choices": [
+         "string",
+         "string | number のまま",
+         "unknown"
+        ],
+        "answer": 0,
+        "explain": "typeof のチェックで型が絞り込まれます。"
+       },
+       {
+        "question": "`value as User` の注意点は？",
+        "choices": [
+         "TypeScript のチェックを省略するので、実際に違う形ならバグになる",
+         "値が自動的に User に変換される",
+         "実行が遅くなる"
+        ],
+        "answer": 0,
+        "explain": "as は変換ではなく「そうだと信じて」という宣言です。"
+       }
+      ]
+     ],
+     "id": "04-union-narrowing"
+    },
+    {
+     "title": "関数の型と Promise の型",
+     "level": 2,
+     "minutes": 12,
+     "concepts": [
+      "type_hints",
+      "functions",
+      "async",
+      "higher_order"
+     ],
+     "summary": "コールバックの型、`Promise<T>`、API 呼び出しの型付けを読む。",
+     "body": "## このレッスンのゴール\n\n- `(x: number) => string` という「関数の型」を読める\n- `async` 関数の戻り値 `Promise<User[]>` の意味が分かる\n\n## 関数そのものの型\n\n```typescript\ntype Formatter = (value: number) => string;\n\nconst yen: Formatter = (v) => `${v.toLocaleString()} 円`;\n\nfunction printAll(values: number[], format: Formatter): void {\n  values.forEach((v) => console.log(format(v)));\n}\n```\n\n`(value: number) => string` は「number を受け取って string を返す関数」という **型** です。\nアロー関数と見た目が似ていますが、`=>` の右が **値ではなく型** になっている点に注意しましょう。\nPython の `Callable[[int], str]` にあたります。\n\n## オプション引数・デフォルト引数\n\n```typescript\nfunction greet(name: string, greeting?: string): string { ... }      // 省略可\nfunction greet2(name: string, greeting = \"こんにちは\"): string { ... } // 既定値（型は推論）\n```\n\n## async 関数と Promise<T>\n\n```typescript\ninterface User { id: number; name: string; }\n\nasync function fetchUsers(): Promise<User[]> {\n  const res = await fetch(\"/api/users\");\n  if (!res.ok) throw new Error(`HTTP ${res.status}`);\n  return (await res.json()) as User[];\n}\n```\n\n`Promise<User[]>` は「**あとで User の配列が届く約束**」という型です。\n`async` 関数の戻り値は必ず `Promise<...>` になり、`await` すると中身（`User[]`）が取り出せます。\n\n```typescript\nconst users = await fetchUsers();   // users の型は User[]\nconst p = fetchUsers();             // p の型は Promise<User[]>（await 忘れに気づける）\n```\n\n## ⚠️ res.json() の結果は信用できない\n\n`res.json()` の戻り値は `any`（または `unknown`）です。上の `as User[]` は「そうだと信じる」だけで、\nサーバーが違う形のデータを返しても TypeScript は気づけません。\nしっかりしたコードでは **zod** などのライブラリで実際の中身を検証します。\n\n```typescript\nimport { z } from \"zod\";\nconst UserSchema = z.object({ id: z.number(), name: z.string() });\nconst users = z.array(UserSchema).parse(await res.json());   // 形が違えばここでエラー\n```\n\nAI のコードで `zod` や `z.object` を見たら「外から来たデータを検証している」と読みましょう。\nPython の pydantic と同じ役割です。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`type F = (s: string) => boolean` に合う関数は？",
+        "choices": [
+         "(s) => s.length > 0",
+         "(n: number) => n > 0",
+         "(s) => s.toUpperCase()"
+        ],
+        "answer": 0,
+        "explain": "string を受け取り boolean を返す関数です。"
+       },
+       {
+        "question": "`async function f(): Promise<number>` を `const x = await f()` で呼ぶと x の型は？",
+        "choices": [
+         "Promise<number>",
+         "number"
+        ],
+        "answer": 1,
+        "explain": "await すると Promise の中身が取り出せます。"
+       },
+       {
+        "question": "`(await res.json()) as User[]` の弱点は？",
+        "choices": [
+         "実際のデータが User[] の形か、実行時には確認していない",
+         "必ずエラーになる",
+         "型が any になる"
+        ],
+        "answer": 0,
+        "explain": "実行時の検証には zod などを使います。"
+       }
+      ]
+     ],
+     "id": "05-function-types-async"
+    },
+    {
+     "title": "ジェネリクス",
+     "level": 3,
+     "minutes": 15,
+     "concepts": [
+      "generics",
+      "type_hints"
+     ],
+     "summary": "`<T>` の読み方。型を「引数」のように受け取る仕組み。",
+     "body": "## このレッスンのゴール\n\n- `<T>` が「型の引数（あとで決まる型）」だと説明できる\n- `Array<T>`、`Promise<T>`、`useState<T>` などの読み方が分かる\n\n## なぜ必要？\n\n「配列の最初の要素を返す関数」を考えます。\n\n```typescript\nfunction firstNumber(items: number[]): number { return items[0]; }\nfunction firstString(items: string[]): string { return items[0]; }\n```\n\n中身は同じなのに、型ごとに関数を作るのは無駄です。`any` を使うと型の情報が消えてしまいます。\n\n## <T> ＝ 型の引数\n\n```typescript\nfunction first<T>(items: T[]): T {\n  return items[0];\n}\n\nconst n = first([1, 2, 3]);        // T は number → n は number\nconst s = first([\"a\", \"b\"]);       // T は string → s は string\nconst u = first<User>(users);      // 明示的に指定することもできる\n```\n\n**`T` は「呼ばれたときに決まる型」の仮の名前** です。\n`first<T>(items: T[]): T` は「何かの型 T の配列を受け取り、同じ T を返す」と読みます。\n`T` 以外に `K`（キー）、`V`（値）、`TData` など意味のある名前が使われることもあります。\n\n## もう出会っているジェネリクス\n\n| 書き方 | 読み方 |\n|---|---|\n| `Array<string>` | string の配列 |\n| `Promise<User>` | あとで User が届く約束 |\n| `Record<string, number>` | キーが string・値が number の辞書 |\n| `Map<string, User>` | string → User の Map |\n| `useState<number>(0)` | number を持つ状態（React） |\n\n`<...>` を見たら「**中に入る型を指定している**」と読めば OK です。\n\n## 制約：extends\n\n```typescript\nfunction getLength<T extends { length: number }>(x: T): number {\n  return x.length;\n}\ngetLength(\"hello\");   // OK（string は length を持つ）\ngetLength([1, 2]);    // OK\ngetLength(42);        // エラー（number は length を持たない）\n```\n\n`T extends ...` は「T は何でもいいわけではなく、**この条件を満たす型** に限る」という意味です。\n\n## interface にも使える\n\n```typescript\ninterface ApiResponse<T> {\n  data: T;\n  error: string | null;\n}\n\nconst res: ApiResponse<User[]> = { data: [], error: null };\n```\n\nAPI の返り値の「外枠は共通、中身だけ違う」という形でよく使われます。\n\n## Python では\n\n```python\ndef first[T](items: list[T]) -> T:   # Python 3.12 以降の書き方\n    return items[0]\n```\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`function wrap<T>(x: T): T[]` を `wrap(\"a\")` で呼ぶと戻り値の型は？",
+        "choices": [
+         "string[]",
+         "string",
+         "T[]"
+        ],
+        "answer": 0,
+        "explain": "T が string に決まるので T[] は string[] です。"
+       },
+       {
+        "question": "`ApiResponse<Product>` の `data` の型は？",
+        "choices": [
+         "ApiResponse",
+         "Product",
+         "T"
+        ],
+        "answer": 1,
+        "explain": "T に Product が入ります。"
+       },
+       {
+        "question": "`<T extends { id: number }>` の意味は？",
+        "choices": [
+         "T は id: number を持つ型に限られる",
+         "T は id という名前の型",
+         "T を id に変換する"
+        ],
+        "answer": 0,
+        "explain": "extends はジェネリクスでは「制約」の意味です。"
+       }
+      ]
+     ],
+     "id": "06-generics"
+    },
+    {
+     "title": "ユーティリティ型",
+     "level": 3,
+     "minutes": 12,
+     "concepts": [
+      "generics",
+      "type_hints"
+     ],
+     "summary": "Partial・Pick・Omit・keyof など、既存の型から新しい型を作る道具。",
+     "body": "## このレッスンのゴール\n\n- `Partial` / `Pick` / `Omit` / `Required` の意味が分かる\n- `keyof` と `typeof` を読める\n\n## 既存の型から作る\n\n```typescript\ninterface User {\n  id: number;\n  name: string;\n  email: string;\n  password: string;\n}\n```\n\nこの `User` をもとに、場面ごとの型を作れます。\n\n| 書き方 | 意味 | 使われる場面 |\n|---|---|---|\n| `Partial<User>` | すべての項目を省略可能に | 一部だけ更新するとき |\n| `Required<User>` | すべての項目を必須に | |\n| `Pick<User, \"id\" \\| \"name\">` | 指定した項目だけ | 一覧表示用 |\n| `Omit<User, \"password\">` | 指定した項目を除く | 外に返すとき（秘密を除く） |\n| `Readonly<User>` | すべて書き換え禁止 | |\n\n```typescript\nfunction updateUser(id: number, changes: Partial<User>) { ... }\nupdateUser(1, { name: \"新しい名前\" });   // 一部だけでも OK\n\ntype PublicUser = Omit<User, \"password\">;   // パスワードを外に出さない型\n```\n\n`Omit<User, \"password\">` のような型は、**セキュリティの意図が型に表れている** 例です。\n\n## keyof：キーの一覧を型にする\n\n```typescript\ntype UserKey = keyof User;   // \"id\" | \"name\" | \"email\" | \"password\"\n\nfunction getField(user: User, key: keyof User) {\n  return user[key];\n}\ngetField(u, \"name\");   // OK\ngetField(u, \"nmae\");   // エラー（タイプミスを防げる）\n```\n\n## typeof：値から型を作る\n\n```typescript\nconst defaultConfig = { theme: \"dark\", fontSize: 14 };\ntype Config = typeof defaultConfig;   // { theme: string; fontSize: number }\n```\n\nJavaScript の `typeof x === \"string\"`（実行時の判定）とは別物で、\n**型の位置に書かれた `typeof` は「この値の型」** という意味です。\n\n## as const\n\n```typescript\nconst COLORS = [\"red\", \"green\", \"blue\"] as const;\ntype Color = (typeof COLORS)[number];   // \"red\" | \"green\" | \"blue\"\n```\n\n`as const` は「この値を変更しない。型もリテラルのまま扱って」という指定です。\n選択肢の一覧から型を作るテクニックで、AI のコードでときどき見かけます。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`Omit<User, \"password\">` の型が持たない項目は？",
+        "choices": [
+         "id",
+         "name",
+         "password"
+        ],
+        "answer": 2,
+        "explain": "Omit は指定した項目を取り除きます。"
+       },
+       {
+        "question": "`Partial<Product>` の変数に `{}`（空オブジェクト）を入れられる？",
+        "choices": [
+         "入れられる",
+         "入れられない"
+        ],
+        "answer": 0,
+        "explain": "Partial はすべての項目を省略可能にします。"
+       },
+       {
+        "question": "`keyof { a: number; b: string }` は？",
+        "choices": [
+         "\"a\" | \"b\"",
+         "number | string",
+         "{ a: number; b: string }"
+        ],
+        "answer": 0,
+        "explain": "keyof はキー名のユニオン型を作ります。"
+       }
+      ]
+     ],
+     "id": "07-utility-types"
+    },
+    {
+     "title": "React コンポーネントを読む（TSX）",
+     "level": 3,
+     "minutes": 20,
+     "concepts": [
+      "dom_ui",
+      "type_hints",
+      "functions",
+      "generics"
+     ],
+     "summary": "AI が最もよく書く TypeScript の形、React の .tsx ファイルを読み解く。",
+     "body": "## このレッスンのゴール\n\n- JSX（HTML のような部分）が「画面の設計図を返している」と説明できる\n- Props の型、`useState`、`useEffect` の役割を読める\n\n## コンポーネント＝画面の部品を返す関数\n\n```tsx\ntype GreetingProps = {\n  name: string;\n  count?: number;\n};\n\nexport function Greeting({ name, count = 0 }: GreetingProps) {\n  return (\n    <div className=\"greeting\">\n      <h1>こんにちは、{name}さん</h1>\n      {count > 0 && <p>{count} 件の通知があります</p>}\n    </div>\n  );\n}\n```\n\n| 部分 | 読み方 |\n|---|---|\n| `GreetingProps` | この部品が受け取るデータ（**Props**）の型 |\n| `({ name, count = 0 }: GreetingProps)` | Props を分割代入で受け取る（JS コースの「分割代入」） |\n| `return ( <div>...</div> )` | 画面の設計図（**JSX**）を返す |\n| `{name}` | JSX の中の `{ }` は JavaScript の式（f-string の `{ }` と同じ感覚） |\n| `className` | HTML の `class`（JS の予約語と被るので名前が違う） |\n| `{条件 && <p>...</p>}` | 条件が真のときだけ表示する定番の書き方 |\n\n使う側は HTML のタグのように書きます：`<Greeting name=\"Ryo\" count={3} />`\n\n## useState：変化するデータ（状態）\n\n```tsx\nimport { useState } from \"react\";\n\nexport function Counter() {\n  const [count, setCount] = useState<number>(0);\n\n  return (\n    <button onClick={() => setCount(count + 1)}>\n      {count} 回押された\n    </button>\n  );\n}\n```\n\n- `useState<number>(0)`：初期値 0 の **状態** を作る（`<number>` はジェネリクス）\n- `[count, setCount]`：今の値と、値を変える関数（配列の分割代入）\n- `setCount(...)` を呼ぶと、**React が自動で画面を描き直す**\n\nDOM を直接書き換えた JavaScript コースとの一番の違いはここです。\n**「状態を変える → 画面は React が勝手に更新」** と読みましょう。\n\n## リストを表示する：map\n\n```tsx\ntype Todo = { id: number; title: string; done: boolean };\n\nfunction TodoList({ todos }: { todos: Todo[] }) {\n  return (\n    <ul>\n      {todos.map((todo) => (\n        <li key={todo.id}>{todo.done ? \"✅\" : \"⬜\"} {todo.title}</li>\n      ))}\n    </ul>\n  );\n}\n```\n\n配列の `map` で `<li>` を量産しています。`key` は React が要素を見分けるための目印です。\n\n## useEffect：表示されたあとに何かする\n\n```tsx\nconst [users, setUsers] = useState<User[]>([]);\n\nuseEffect(() => {\n  fetchUsers().then(setUsers);\n}, []);   // [] ＝ 最初の 1 回だけ実行\n```\n\n「画面が表示されたら API からデータを取ってきて、状態に入れる」という定番の形です。\n最後の `[]` は **いつ実行し直すか**（依存配列）。`[userId]` なら userId が変わるたびに実行されます。\n\n## 読む順番のコツ\n\n1. Props の型（何を受け取る部品か）\n2. `useState`（どんなデータが変化するか）\n3. `return` の JSX（画面の形）\n4. イベント（`onClick` など）と `useEffect`（いつ何が起きるか）\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`<UserCard user={u} />` と書いたとき、UserCard 関数が受け取るのは？",
+        "choices": [
+         "{ user: u } という Props",
+         "u そのもの",
+         "何も受け取らない"
+        ],
+        "answer": 0,
+        "explain": "属性がまとめて Props オブジェクトとして渡されます。"
+       },
+       {
+        "question": "`setCount(5)` を呼ぶと何が起きる？",
+        "choices": [
+         "count が 5 になり、React が画面を描き直す",
+         "count が 5 になるが画面はそのまま",
+         "DOM を自分で書き換える必要がある"
+        ],
+        "answer": 0,
+        "explain": "状態を変えると React が自動で再描画します。"
+       },
+       {
+        "question": "`useEffect(() => { ... }, [])` の中身はいつ実行される？",
+        "choices": [
+         "部品が最初に表示されたときの 1 回",
+         "画面が描き直されるたび毎回",
+         "ボタンが押されたとき"
+        ],
+        "answer": 0,
+        "explain": "依存配列が空なので最初の 1 回だけです。"
+       },
+       {
+        "question": "JSX の `{isAdmin && <AdminMenu />}` の意味は？",
+        "choices": [
+         "isAdmin が真のときだけ AdminMenu を表示",
+         "isAdmin と AdminMenu を両方表示",
+         "isAdmin に AdminMenu を代入"
+        ],
+        "answer": 0,
+        "explain": "&& による条件付き表示の定番パターンです。"
+       }
+      ]
+     ],
+     "id": "08-react-components"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "HTML / CSS",
