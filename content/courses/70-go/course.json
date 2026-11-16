@@ -1,0 +1,3 @@
+{"title": "Go", "icon": "🐹", "order": 70, "status": "planned",
+ "description": "シンプルで速い、サーバー向けの言語。",
+ "outline": ["パッケージと main", "静的型と := ", "構造体とメソッド", "エラーを値で返す", "goroutine と channel"]}

@@ -1,0 +1,3 @@
+{"title": "SQL", "icon": "🗄️", "order": 50, "status": "planned",
+ "description": "データベースに問い合わせる言語。AI がよく書くバックエンドの必需品。",
+ "outline": ["SELECT と WHERE", "並べ替えと集計", "JOIN", "INSERT / UPDATE / DELETE", "インデックスとトランザクション"]}

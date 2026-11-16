@@ -1,0 +1,3 @@
+{"title": "Rust", "icon": "🦀", "order": 80, "status": "planned",
+ "description": "安全さと速さを両立する言語。所有権という独特の考え方がある。",
+ "outline": ["let と mut", "所有権と借用", "enum と match", "Result と ? 演算子", "トレイト"]}

@@ -1,0 +1,3 @@
+{"title": "TypeScript", "icon": "🔷", "order": 30, "status": "planned",
+ "description": "JavaScript に「型」を足した言語。AI が書く Web アプリの多くはこれ。",
+ "outline": ["型注釈の読み方", "interface と type", "ユニオン型と絞り込み", "ジェネリクス", "React コンポーネントを読む"]}

@@ -1,0 +1,3 @@
+{"title": "HTML / CSS", "icon": "🎨", "order": 40, "status": "planned",
+ "description": "Web ページの骨組みと見た目。",
+ "outline": ["タグと要素", "クラスと ID", "セレクタ", "Flexbox と Grid", "レスポンシブ"]}
