@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Code Reading Dojo</title>
+  <link rel="stylesheet" href="/static/vendor/github-dark.min.css">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">📖 Code Reading Dojo <span class="sub">AI のコードを「説明できる」まで読む</span></div>
+    <nav class="tabs">
+      <button class="tab active" data-view="explain">解説する</button>
+      <button class="tab" data-view="notes">学習ノート</button>
+      <button class="tab" data-view="map">学習マップ</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ================= 解説する ================= -->
+    <section id="view-explain" class="view active">
+      <div class="workspace">
+        <div class="pane input-pane">
+          <label class="label" for="code">AI が書いたコードを貼り付け</label>
+          <textarea id="code" spellcheck="false" placeholder="ここにコードを貼り付けてください（どの言語でも OK）"></textarea>
+          <div class="options">
+            <label>言語
+              <select id="language"><option value="auto">自動判定</option></select>
+            </label>
+            <label>深さ
+              <select id="level">
+                <option value="easy">やさしく</option>
+                <option value="normal" selected>ふつう</option>
+                <option value="deep">くわしく</option>
+              </select>
+            </label>
+          </div>
+          <input id="focus" type="text" placeholder="特に知りたいこと（任意）例：async の部分がわからない">
+          <div class="actions">
+            <button id="btn-explain" class="primary">解説してもらう</button>
+            <button id="btn-clear" class="ghost">クリア</button>
+          </div>
+          <p class="hint">Ctrl / ⌘ + Enter でも実行できます。</p>
+        </div>
+
+        <div class="pane output-pane">
+          <div class="output-head">
+            <span class="label">解説</span>
+            <span id="note-badge" class="badge hidden"></span>
+            <button id="btn-save" class="small" disabled>ノートに保存</button>
+          </div>
+          <article id="explanation" class="markdown empty">
+            <div class="placeholder">
+              <p>左にコードを貼り付けて「解説してもらう」を押してください。</p>
+              <ol>
+                <li><b>読む</b>：ブロックごとの解説と、Python との比較を読む</li>
+                <li><b>聞く</b>：わからない所を下のチャットで質問する</li>
+                <li><b>説明する</b>：自分の言葉で説明して採点してもらう</li>
+                <li><b>残す</b>：ノートに保存すると学習マップに記録される</li>
+              </ol>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div class="followups">
+        <div class="pane">
+          <div class="label">💬 わからない所を質問する</div>
+          <div id="chat-log" class="chat-log"></div>
+          <form id="chat-form" class="chat-form">
+            <input id="chat-input" type="text" placeholder="例：この => は何？ / Python だとどう書く？" disabled>
+            <button class="primary" disabled>送信</button>
+          </form>
+        </div>
+
+        <div class="pane">
+          <div class="label">🗣️ 自分の言葉で説明してみる（ティーチバック）</div>
+          <textarea id="teach-input" rows="6" placeholder="このコードを、同僚に説明するつもりで書いてみてください。" disabled></textarea>
+          <div class="actions">
+            <button id="btn-teach" class="primary" disabled>採点してもらう</button>
+          </div>
+          <div id="teach-result"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 学習ノート ================= -->
+    <section id="view-notes" class="view">
+      <div class="notes-head">
+        <input id="notes-search" type="search" placeholder="タイトル・キーワードで検索">
+        <select id="notes-lang"><option value="">すべての言語</option></select>
+      </div>
+      <div id="notes-list" class="notes-list"></div>
+    </section>
+
+    <!-- ================= 学習マップ ================= -->
+    <section id="view-map" class="view">
+      <h2>言語ごとの記録</h2>
+      <div id="lang-cards" class="lang-cards"></div>
+      <h2>概念マップ <span class="sub">どの言語でも出てくる考え方。濃いほど何度も読んだもの</span></h2>
+      <div id="concept-grid" class="concept-grid"></div>
+    </section>
+  </main>
+
+  <script src="/static/vendor/marked.min.js"></script>
+  <script src="/static/vendor/purify.min.js"></script>
+  <script src="/static/vendor/highlight.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
