@@ -131,11 +131,15 @@ function viewHome() {
     <section class="howto">
       <h2>コード解説の増やし方</h2>
       <ol>
-        <li>AI に書いてもらったコードを、Claude（Claude Code）にそのまま貼り付けて「解説して」と頼む</li>
-        <li>Claude が解説ページを作って、このサイトに追加（GitHub に push）する</li>
-        <li>サイトを開き直すと「コード解説」に並ぶ。クイズと関連レッスンで復習する</li>
+        <li>claude.ai/code で、リポジトリ <b>learn_programing</b> を選んで会話を始める</li>
+        <li>AI に書いてもらったコードを貼り付けて送る（「解説して」は付けても付けなくても OK）。<br>
+          GitHub にあるプログラムなら「◯◯リポジトリの main.py を解説して」でも OK</li>
+        <li>Claude が解説ページを作って GitHub に保存する（自動で main に入る）。終わるまで待つだけ</li>
+        <li>GitHub Desktop で <b>Fetch origin → Pull origin</b> を押す</li>
+        <li>このサイトを再読み込み（F5）すると「コード解説」の一番上に並ぶ。クイズと関連レッスンで復習する</li>
       </ol>
-      <p class="muted">新しいコースやレッスンも「TypeScript コースを作って」のように頼めば追加されます。</p>
+      <p class="muted">ふつうの質問はチャットで答えるだけでサイトには残りません。残したいときは「サイトに残して」と添えてください。<br>
+        新しいコースやレッスンも「SQL コースを作って」のように頼めば同じ流れで追加されます。</p>
     </section>`;
   afterRender();
 }
