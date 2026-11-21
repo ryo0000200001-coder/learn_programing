@@ -3282,20 +3282,345 @@ window.SITE_DATA = {
   },
   {
    "title": "ターミナルと Git をくわしく",
-   "icon": "🌳",
+   "icon": "⌨️",
    "order": 120,
    "category": "topic",
-   "status": "planned",
-   "description": "コマンドライン操作と Git を一歩深く。ブランチ運用やトラブル対応。",
-   "outline": [
-    "ディレクトリとパス",
-    "よく使うコマンド",
-    "ブランチとマージ",
-    "コンフリクトの直し方",
-    "プルリクエストとレビュー"
-   ],
+   "description": "黒い画面（ターミナル）の歩き方と、Git を毎日・チームで使うための知識。パス、よく使うコマンド、履歴の読み方、ブランチ、コンフリクト、プルリクエスト、取り消し方まで。Windows（PowerShell・Git Bash）の違いも。",
+   "levels": {
+    "1": "入門：ターミナルに慣れる",
+    "2": "基礎：Git の毎日",
+    "3": "実践：チームで使う",
+    "4": "応用：困ったときに"
+   },
    "id": "120-terminal-git",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "ディレクトリとパス ― 今どこにいる？",
+     "level": 1,
+     "minutes": 14,
+     "concepts": [
+      "tooling",
+      "io"
+     ],
+     "summary": "ターミナルの「現在地」と、ファイルの場所を表すパス。絶対パス・相対パス・`.` と `..`・`~`、Windows と Mac/Linux の書き方の違い。",
+     "body": "## このレッスンのゴール\n\n- 「カレントディレクトリ（現在地）」の意味を説明できる\n- 絶対パスと相対パスを読み分けられ、`.`・`..`・`~` の意味が分かる\n- Windows の `C:\\Users\\...` と、Git Bash の `/c/Users/...` が同じ場所だと分かる\n\n## ターミナルとは\n\n**ターミナル**（黒い画面）は、マウスの代わりに **文字でコンピュータに命令する** 画面です。AI が「これを実行して」と出してくるコマンドは、ここに打ち込みます。\n\n| Windows でよく使うもの | 特徴 |\n|---|---|\n| **PowerShell** | Windows の標準。`C:\\Users\\ryo>` のように表示される |\n| **Git Bash** | Git と一緒に入る。Mac・Linux と同じコマンド（Bash）が使える |\n| VS Code のターミナル | 中で PowerShell か Git Bash などを選んで使う |\n\nAI の説明や、ネットの記事のコマンドは **Mac・Linux 向け（Bash）が多い** です。Windows では Git Bash を使うと、そのまま動くことが多くなります。\n\n## フォルダ ＝ ディレクトリ\n\nターミナルの世界では、フォルダのことを **ディレクトリ** と呼びます。ディレクトリの中にディレクトリが入り、**木（ツリー）** のような形になっています。\n\n```text\nC:\\                           ← いちばん上（ルート）\n└── Users\n    └── ryo                   ← ホームディレクトリ（自分専用の場所）\n        ├── Desktop\n        ├── Documents\n        └── learn_programing  ← このサイトのリポジトリ\n            ├── content\n            │   └── courses\n            ├── site\n            │   └── index.html\n            └── tools\n                └── build.py\n```\n\n## 現在地：カレントディレクトリ\n\nターミナルは、いつも **どこかのディレクトリの中にいます**。これを **カレントディレクトリ**（作業ディレクトリ）と呼びます。\n\n```bash\npwd                    # 今どこにいるか（print working directory）\n# /c/Users/ryo/learn_programing\n```\n\nPowerShell では `pwd`、または画面の左の `PS C:\\Users\\ryo\\learn_programing>` を見れば分かります。\n\n`python tools/build.py` のようなコマンドは、**現在地から見た場所** を探します。違うディレクトリにいると、こうなります。\n\n```text\npython: can't open file 'C:\\\\Users\\\\ryo\\\\tools\\\\build.py': [Errno 2] No such file or directory\n```\n\n「`C:\\Users\\ryo` の中に `tools\\build.py` は無い」＝ **いる場所が違う** というエラーです。`cd learn_programing` で移動してから実行し直します。\n\n## 絶対パスと相対パス\n\n**パス** は、ファイルやディレクトリの場所を表す文字列です。\n\n| 種類 | 例 | 意味 |\n|---|---|---|\n| **絶対パス** | `C:\\Users\\ryo\\learn_programing\\site\\index.html` | ルートから全部たどった住所。どこにいても同じ場所を指す |\n| **相対パス** | `site\\index.html` | **現在地から** たどった道順。いる場所によって指す先が変わる |\n\n### 相対パスの記号\n\n| 記号 | 意味 | 例 |\n|---|---|---|\n| `.` | 今いるディレクトリ | `./build.py`（ここにある build.py） |\n| `..` | 1 つ上のディレクトリ | `../site`（1 つ上に戻ってから site へ） |\n| `~` | ホームディレクトリ | `~/Desktop`（= `C:\\Users\\ryo\\Desktop`） |\n\n```bash\ncd ~/learn_programing/tools    # ここに移動して\nls ..                          # 1 つ上（learn_programing）の中身\n# content  site  tools  ...\npython build.py                # tools の中なので、そのまま書ける\npython ../tools/build.py       # 上に戻ってから tools へ（同じファイル）\n```\n\n## Windows と Mac/Linux の書き方の違い\n\n| | Windows（PowerShell） | Mac・Linux・Git Bash |\n|---|---|---|\n| 区切り文字 | `\\`（バックスラッシュ。日本語キーボードでは `¥` に見える） | `/`（スラッシュ） |\n| ルート | `C:\\`（ドライブごと） | `/` |\n| ホーム | `C:\\Users\\ryo` | Mac：`/Users/ryo`、Linux：`/home/ryo` |\n| Git Bash での C ドライブ | — | `/c/Users/ryo` |\n| 大文字・小文字 | 区別しない（`README.md` と `readme.md` は同じ） | 区別する（Mac は初期設定では区別しない） |\n\n⚠️ 大文字・小文字の違いは、Windows で動いたのにサーバー（Linux）で `No such file` になる、という形でよく問題になります。`import` するファイル名は、大文字・小文字まで正確に書きましょう。\n\n### Python のコードではどう書く？\n\n```python\nfrom pathlib import Path\n\nbase = Path(__file__).parent          # このファイルがあるディレクトリ\ndata = base / \"data\" / \"items.json\"   # / でつなげば、OS に合った区切りになる\nprint(data.resolve())                 # 絶対パスにする\n```\n\n`Path(__file__).parent` は「このプログラムのファイルがある場所」です。**どこから実行しても同じファイルを指せる** ので、AI のコードでよく見かけます。このサイトの `tools/build.py` も、この書き方で `content/` を探しています。\n\n## スペースを含むパス\n\n```bash\ncd my folder        # bash: cd: too many arguments  ← 「my」と「folder」の 2 つと思われた\ncd \"my folder\"      # ✅ 引用符でくくる\ncd my\\ folder       # ✅ Bash では \\ でスペースを「ただの文字」にできる\n```\n\nターミナルは **スペースで区切って** 命令を読むので、スペースを含むパスは `\"...\"` でくくります。`C:\\Program Files` などでよく出会います。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 意味 |\n|---|---|\n| `cd your-project` | 「自分のプロジェクトのディレクトリに移動して」。名前は自分の環境に合わせて読み替える |\n| `./venv/bin/activate`（Mac/Linux）／`.\\venv\\Scripts\\activate`（Windows） | 同じことを OS ごとに書いたもの |\n| `open(\"data.csv\")` | 相対パス。**実行したときの現在地** から探す。現在地が違うと見つからない |\n| `Path(__file__).parent / \"data.csv\"` | このファイルの隣を探す。どこから実行しても同じ |\n| `C:\\\\Users\\\\...` | Python の文字列の中の `\\` は 2 つ重ねる（または `r\"C:\\Users\\...\"`） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`python tools/build.py` を実行したら `No such file or directory` と出た。まず疑うことは？",
+        "choices": [
+         "今いるディレクトリ（カレントディレクトリ）が違う",
+         "Python が壊れている",
+         "build.py の中身が間違っている"
+        ],
+        "answer": 0,
+        "explain": "相対パスは現在地から探します。`pwd` で現在地を確認し、リポジトリのディレクトリに `cd` してから実行します。"
+       },
+       {
+        "question": "今 `learn_programing/tools` にいるとき、`../site/index.html` が指すのは？",
+        "choices": [
+         "`learn_programing/tools/site/index.html`",
+         "`learn_programing/site/index.html`",
+         "`site/index.html`（ルート直下）"
+        ],
+        "answer": 1,
+        "explain": "`..` で 1 つ上（learn_programing）に戻ってから、site/index.html へ進みます。"
+       },
+       {
+        "question": "Git Bash の `/c/Users/ryo/Desktop` と同じ場所は？",
+        "choices": [
+         "`/Users/ryo/Desktop`",
+         "`C:\\Users\\ryo\\Desktop`",
+         "`~/c/Desktop`"
+        ],
+        "answer": 1,
+        "explain": "Git Bash では、C ドライブを `/c` と書きます。区切りの `/` と `\\` が違うだけで、同じ場所です。"
+       }
+      ]
+     ],
+     "id": "01-paths"
+    },
+    {
+     "title": "よく使うコマンドと「危ないコマンド」",
+     "level": 1,
+     "minutes": 18,
+     "concepts": [
+      "tooling",
+      "security"
+     ],
+     "summary": "ls・cd・mkdir・cp・mv・rm・cat・grep などの基本と、コマンドの読み方（オプション・引数）。PowerShell との違い、command not found と PATH、実行前に必ず止まるべきコマンド。",
+     "body": "## このレッスンのゴール\n\n- コマンドを「命令・オプション・引数」に分けて読める\n- よく使うコマンドが何をするか分かり、PowerShell での書き方の違いを知っている\n- `command not found` の原因（PATH）と、実行前に確認すべき危ないコマンドが分かる\n\n## コマンドの形\n\n```bash\nls   -la   src\n│    │     └ 引数（何に対して）\n│    └ オプション（どんなふうに）。- 1 つは 1 文字、-- 2 つは長い名前（--all）\n└ 命令（何をする）\n```\n\nPython の関数で言うと、`ls(src, long=True, all=True)` のようなものです。\n\n困ったら `コマンド --help`（PowerShell では `Get-Help コマンド`）で説明が出ます。\n\n## 基本のコマンド\n\n### 見る・移動する\n\n| コマンド | 意味 | 例 |\n|---|---|---|\n| `pwd` | 今いる場所を表示 | |\n| `ls` | 中身の一覧 | `ls -la`（隠しファイルも、詳しく） |\n| `cd 場所` | 移動 | `cd src`、`cd ..`、`cd ~` |\n| `cat ファイル` | 中身を表示 | `cat README.md` |\n| `head` / `tail` | 先頭／末尾だけ表示 | `tail -n 20 app.log`（最後の 20 行） |\n\n```text\n$ ls -la\ntotal 12\ndrwxr-xr-x 3 ryo ryo 4096 Nov 21 17:36 .\ndrwxr-xr-x 3 ryo ryo 4096 Nov 21 17:36 ..\n-rw-r--r-- 1 ryo ryo    0 Nov 21 17:36 README.md\ndrwxr-xr-x 2 ryo ryo 4096 Nov 21 17:36 src\n```\n\n先頭の `d` はディレクトリ、`-` はファイル。`rwx` は読む・書く・実行するの権限（コンピュータの基礎コースのレッスン 2 の 8 進数 `755` の正体）です。\n\n### 作る・コピー・移動・削除\n\n| コマンド | 意味 | 例 |\n|---|---|---|\n| `mkdir` | ディレクトリを作る | `mkdir -p data/2026`（途中のディレクトリもまとめて） |\n| `touch` | 空のファイルを作る | `touch .env` |\n| `cp` | コピー | `cp .env.example .env`、`cp -r src backup`（ディレクトリごと） |\n| `mv` | 移動・名前の変更 | `mv old.py new.py` |\n| `rm` | 削除 | `rm memo.txt`、`rm -r build`（ディレクトリごと） |\n\n⚠️ ターミナルの `rm` は **ゴミ箱に入りません**。消したら基本的に戻せません。\n\n### 探す\n\n| コマンド | 意味 | 例 |\n|---|---|---|\n| `grep` | ファイルの中から文字列を探す | `grep -rn \"print\" src`（-r：中のディレクトリも、-n：行番号も） |\n| `find` | ファイルを名前などで探す | `find . -name \"*.py\"` |\n| `which` | コマンドの本体の場所 | `which python` |\n\n```text\n$ grep -rn \"print\" project\nproject/src/main.py:1:print('hi')\n```\n\n「`project/src/main.py` の 1 行目にある」と読みます。\n\n### つなぐ：パイプとリダイレクト\n\n| 記号 | 意味 | 例 |\n|---|---|---|\n| `\\|` | 左の出力を、右の入力に渡す | `cat app.log \\| grep ERROR`（エラーの行だけ） |\n| `>` | 出力をファイルに書く（**上書き**） | `pip freeze > requirements.txt` |\n| `>>` | 出力をファイルの末尾に追加 | `echo \".env\" >> .gitignore` |\n| `&&` | 左が成功したら右を実行 | `cd site && ls` |\n\n## PowerShell では\n\nWindows の PowerShell にも `ls`・`cd`・`pwd`・`cat`・`cp`・`mv`・`rm` という名前は用意されていますが、**中身は別の命令** なので、オプションが違います。\n\n| やりたいこと | Bash（Mac・Linux・Git Bash） | PowerShell |\n|---|---|---|\n| ディレクトリごと削除 | `rm -rf build` | `Remove-Item -Recurse -Force build` |\n| 文字列を探す | `grep -rn \"print\" src` | `Select-String -Path src\\*.py -Pattern \"print\"` |\n| 環境変数を設定 | `export API_KEY=xxx` | `$env:API_KEY = \"xxx\"` |\n| 空のファイル | `touch .env` | `New-Item .env` |\n| 続けて実行 | `cd site && ls` | PowerShell 7 なら同じ。Windows 標準の 5.1 では `cd site; ls` |\n\nAI が出したコマンドが PowerShell でエラーになったら、**「Bash 向けのコマンドでは？」** と疑い、Git Bash で実行するか、「PowerShell 用に書き直して」と頼みましょう。\nこのリポジトリの `open-site.bat` は、さらに古い **コマンドプロンプト**（cmd）向けの書き方（`rem`・`%~dp0` など）です。\n\n## `command not found` と PATH\n\n```text\nbash: nosuchcmd: command not found\n'python' は、内部コマンドまたは外部コマンド、操作可能なプログラムまたはバッチ ファイルとして認識されていません。\n```\n\nコマンドを打つと、ターミナルは **環境変数 `PATH` に書かれたディレクトリを順番に探して**、同じ名前のプログラムを見つけて実行します。見つからないと `command not found` です。\n\n```bash\nwhich python3        # /usr/local/bin/python3   ← 見つかった本体の場所\necho $PATH           # 探す場所の一覧（: 区切り。Windows は ; 区切り）\n```\n\n| 原因 | 対処 |\n|---|---|\n| そもそもインストールしていない | インストールする |\n| インストールしたが、ターミナルを開き直していない | ターミナルを閉じて開き直す（PATH は起動時に読まれる） |\n| インストール時に「PATH に追加」をしなかった | Python なら、インストーラーの「Add python.exe to PATH」にチェックを入れて入れ直す |\n| 名前が違う | Mac/Linux は `python3`、Windows は `python` や `py` のことが多い |\n\n## ⚠️ 実行前に必ず止まるべきコマンド\n\nAI が出したコマンドでも、次のものは **何が起きるかを理解してから** 実行します。\n\n| コマンド | 何が危ないか |\n|---|---|\n| `rm -rf 場所` | 確認なしでディレクトリごと消す。`rm -rf /`、`rm -rf ~`、`rm -rf $DIR/`（変数が空だと `/` になる）は特に致命的 |\n| `sudo ...` | 管理者の権限で実行する。システム全体を変えられる |\n| `curl ... \\| bash`／`irm ... \\| iex`（PowerShell） | ネットから取ってきたプログラムを、中身を見ずに実行する |\n| `chmod -R 777` | 誰でも読み書き・実行できるようにする |\n| `> 大事なファイル` | 中身を空にして上書きする |\n| `git reset --hard`・`git push --force` | 次のレッスン以降で説明（作業が消える・履歴を上書きする） |\n\n迷ったら「このコマンドは何を消す・変える可能性がある？」と AI に聞き返しましょう。\n\n## AI のコードではこう出てくる\n\n```bash\npython -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt\n```\n\n`&&` で 3 つをつないでいます。① `.venv` という場所に Python の作業用の環境を作る → ② それを有効にする → ③ 必要なライブラリを入れる。\nWindows の PowerShell では ② が `.venv\\Scripts\\Activate.ps1` になります。**同じことを OS ごとに書き分けている** だけなので、どの部分が何をしているかを分けて読めば怖くありません。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`cp -r src backup` の意味は？",
+        "choices": [
+         "backup を src に移動する",
+         "src ディレクトリを中身ごと backup という名前でコピーする",
+         "src を削除して backup を作る"
+        ],
+        "answer": 1,
+        "explain": "`cp` はコピー、`-r` はディレクトリの中身ごと（recursive）。引数は「コピー元 コピー先」の順です。"
+       },
+       {
+        "question": "Python をインストールしたのに `python: command not found` と出た。よくある原因は？",
+        "choices": [
+         "Python のコードに間違いがある",
+         "ターミナルを開き直していない、または PATH に追加されていない",
+         "パソコンのメモリが足りない"
+        ],
+        "answer": 1,
+        "explain": "ターミナルは PATH に書かれた場所からコマンドを探します。インストール後にターミナルを開き直すか、PATH の設定を確認します。"
+       },
+       {
+        "question": "AI が `curl -fsSL https://example.com/install.sh | bash` を出してきた。どう考える？",
+        "choices": [
+         "公式っぽい URL なら何も考えずに実行してよい",
+         "ネットのプログラムを中身を見ずに実行するので、配布元が信頼できるかを確認してから実行する",
+         "`curl` はファイルを表示するだけなので安全"
+        ],
+        "answer": 1,
+        "explain": "`| bash` は、ダウンロードしたものをそのまま実行します。公式のインストール方法でもよく使われますが、URL が本当に公式のものかを確かめてから実行します。"
+       }
+      ]
+     ],
+     "id": "02-commands"
+    },
+    {
+     "title": "コミットと履歴を読む ― status・diff・log",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "version_control",
+      "tooling",
+      "reading"
+     ],
+     "summary": "Git の 3 つの場所（作業中・ステージ・コミット済み）と、git status・diff・log・show・blame の出力の読み方。.gitignore で秘密を守る。",
+     "body": "## このレッスンのゴール\n\n- 「作業中」「ステージ」「コミット済み」の 3 つの場所を説明できる\n- `git status`・`git diff`・`git log` の出力を読める\n- `.gitignore` の役割が分かり、`.env` がコミットされそうになっていたら気づける\n\nAI と開発するコースの「Git の基本」の続きです。ここでは、実際に買い物メモのリポジトリを作って試した出力を読みます。\n\n## 3 つの場所\n\n```text\n 作業ディレクトリ        ステージ（インデックス）       リポジトリ（履歴）\n ファイルを編集する場所  →  次のコミットに入れる候補  →  コミット済みの記録\n              git add            git commit\n```\n\n| 場所 | たとえ | 確認するコマンド |\n|---|---|---|\n| 作業ディレクトリ | 机の上の下書き | `git diff` |\n| ステージ | 「これを提出する」と箱に入れたもの | `git diff --staged` |\n| リポジトリ | 提出済みの記録 | `git log` |\n\nステージがあるおかげで、**変更したファイルのうち、一部だけをコミットする** ことができます。\n\n## git status：今どうなっている？\n\n```text\n$ git status --short\n M shopping.md\n?? .env\n?? app.py\n```\n\n| 記号 | 意味 |\n|---|---|\n| `??` | Git がまだ管理していない新しいファイル（untracked） |\n| ` M`（左が空白） | 変更したが、まだステージに入れていない |\n| `M `（右が空白） | 変更をステージに入れた |\n| `A ` | 新しいファイルをステージに入れた |\n| `D ` | 削除した |\n\n`--short` を付けない `git status` は、次に何をすればよいかを英語で教えてくれます（`use \"git add <file>...\" to include in what will be committed` ＝「コミットに入れるなら git add して」）。\n\n## git diff：何を変えた？\n\n```diff\n$ git diff\ndiff --git a/shopping.md b/shopping.md\nindex 2ec13e6..44b0a40 100644\n--- a/shopping.md\n+++ b/shopping.md\n@@ -2,3 +2,4 @@\n\n - りんご\n - 牛乳\n+- パン\n```\n\n| 部分 | 読み方 |\n|---|---|\n| `--- a/...` / `+++ b/...` | 変更前（a）と変更後（b） |\n| `@@ -2,3 +2,4 @@` | 変更前の 2 行目から 3 行分が、変更後は 2 行目から 4 行分になった |\n| 先頭が空白の行 | 変わっていない前後の行（場所の目印） |\n| `+` の行 | 追加された行 |\n| `-` の行 | 削除された行 |\n\n1 行を書き換えた場合は、`-` の古い行と `+` の新しい行が並びます。AI と開発するコースの「差分を読む」で練習したのと同じ形です。\n\n| コマンド | 見えるもの |\n|---|---|\n| `git diff` | 作業中で、まだステージに入れていない変更 |\n| `git diff --staged` | ステージに入れた変更（次のコミットの中身） |\n| `git diff main` | 今のブランチと main の違い |\n| `git diff --stat` | ファイルごとの変更行数だけ |\n\n## git log：これまでの記録\n\n```text\n$ git log --oneline\nd978c53 Add app\n3509968 Add bread\nf60a6eb Add shopping list\n```\n\n上が新しい順です。左の `d978c53` は **コミット ID**（長い 16 進数の先頭 7 文字）で、コミットを指す名前として使えます。\n\n```text\n$ git show --stat 3509968\ncommit 35099684f118846508ae5c49d30a2ec29f6d8a7f\nAuthor: Ryo <ryo@example.com>\nDate:   Sat Nov 21 17:36:18 2026 +0000\n\n    Add bread\n\n shopping.md | 1 +\n 1 file changed, 1 insertion(+)\n```\n\n| よく使う形 | 意味 |\n|---|---|\n| `git log --oneline --graph` | ブランチの分かれ方も図で見る（次のレッスン） |\n| `git log -p ファイル` | そのファイルの変更の中身ごと |\n| `git show ID` | 1 つのコミットの中身 |\n| `HEAD` | 今いるコミット。`HEAD~1` は 1 つ前 |\n\n### git blame：この行は誰がいつ書いた？\n\n```text\n$ git blame -L 3,5 shopping.md\n^f60a6eb (Ryo 2026-11-21 17:36:18 +0000 3) - りんご\nd5398514 (Ryo 2026-11-21 17:36:26 +0000 4) - バナナ\n077e9717 (Ryo 2026-11-21 17:36:26 +0000 5) - 牛乳（低脂肪）2 本\n```\n\n行ごとに、最後に変えたコミットが分かります。「この変な行はなぜある？」と思ったら、blame でコミットを見つけ、`git show` でそのときの変更とメッセージを読みます。GitHub の画面の「Blame」ボタンでも同じものが見られます。\n\n## .gitignore：コミットしないものを決める\n\n```text\n$ git status --short\n?? .env              ← 秘密情報のファイルが「新しいファイル」として見えている\n```\n\n`.gitignore` に名前を書くと、Git はそのファイルを **無いものとして扱います**。\n\n```gitignore\n# 秘密情報\n.env\n# Python の作業用の環境と、Python が自動で作るファイル\n.venv/\n__pycache__/\n# JavaScript のライブラリ（npm install で作り直せる）\nnode_modules/\n# .log で終わるファイル全部\n*.log\n```\n\n`#` で始まる行はコメントです。⚠️ `.env  # 秘密情報` のように **同じ行の後ろにコメントを書くと、そこまで含めてファイル名だと思われる** ので、コメントは別の行に書きます。\n\n```text\n$ echo \".env\" > .gitignore\n$ git status --short\n?? .gitignore        ← .env が一覧から消えた\n```\n\n⚠️ `.gitignore` は **これから** 追跡しないための設定です。すでにコミットしたファイルは消えません。秘密情報を一度でもコミットして push したら、AI と開発するコースの「秘密情報と環境変数」の手順で、**キーそのものを無効にして作り直す** 必要があります。\n\n⚠️ `git add .`（全部をステージに）は便利ですが、`.gitignore` が無いと `.env` まで入ってしまいます。実行前に `git status` を見る習慣をつけましょう。\n\n## よいコミットとは\n\n| | よい | よくない |\n|---|---|---|\n| 大きさ | 1 つの目的ごと（「パンを追加」） | 1 週間分を 1 回で（「いろいろ修正」） |\n| メッセージ | 何を・なぜが分かる（`Fix tax rounding for 8% items`） | `update`、`fix`、`aaa` |\n| 中身 | そのコミットだけで動く | 途中の壊れた状態 |\n\nコミットを小さく分けておくと、後で「この変更だけ取り消す」（レッスン 7）が簡単になります。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`git status --short` で `?? app.py` と表示された。意味は？",
+        "choices": [
+         "Git がまだ管理していない新しいファイル",
+         "変更してステージに入れたファイル",
+         "削除されたファイル"
+        ],
+        "answer": 0,
+        "explain": "`??` は untracked（未追跡）。`git add app.py` でステージに入れると `A ` になります。"
+       },
+       {
+        "question": "`git diff` に何も表示されないのに、`git status` では変更がある。考えられる理由は？",
+        "choices": [
+         "Git が壊れている",
+         "変更をすでに `git add` でステージに入れている（`git diff --staged` で見える）",
+         "ファイルが保存されていない"
+        ],
+        "answer": 1,
+        "explain": "`git diff` はステージに入れる前の変更だけを表示します。ステージ済みの変更は `git diff --staged` で確認します。"
+       },
+       {
+        "question": "`.env` をうっかりコミットして GitHub に push してしまった。正しい対応は？",
+        "choices": [
+         "`.gitignore` に `.env` を追加すれば、GitHub からも消えるので大丈夫",
+         "次のコミットで `.env` を削除すれば、履歴からも消える",
+         "中のキーやパスワードを無効にして新しいものを作り直す（そのうえで追跡をやめる）"
+        ],
+        "answer": 2,
+        "explain": "一度 push すると履歴に残り、誰かに見られた可能性があります。まずキー自体を無効にするのが最優先です。"
+       }
+      ]
+     ],
+     "id": "03-commits-history"
+    },
+    {
+     "title": "ブランチとマージ ― 作業の道を分けて合わせる",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "version_control",
+      "tooling"
+     ],
+     "summary": "ブランチの正体（コミットを指す名札）、switch・merge、早送りマージとマージコミット、origin/main と fetch・pull の関係。",
+     "body": "## このレッスンのゴール\n\n- ブランチが「コミットを指す名札」であることを説明できる\n- 早送り（fast-forward）マージとマージコミットの違いを、`git log --graph` で見分けられる\n- `origin/main`・`fetch`・`pull`・`push` の関係が分かる\n\n## ブランチ ＝ コミットを指す名札\n\n```text\nf60a6eb ← 3509968 ← d978c53 ← 0f626e2\n                                  ↑\n                                 main   ← HEAD（今ここにいる）\n```\n\nコミットは「1 つ前のコミット」を覚えていて、鎖のようにつながっています。**ブランチは、その鎖のどれか 1 つに貼った名札** にすぎません。\n新しくコミットすると、今いるブランチの名札が新しいコミットへ動きます。\n\n`HEAD` は「今どの名札を見ているか」の印です。\n\n## ブランチを作って移る\n\n```text\n$ git switch -c add-fruit\nSwitched to a new branch 'add-fruit'\n```\n\n| コマンド | 意味 |\n|---|---|\n| `git switch -c 名前` | 新しいブランチを作って移る |\n| `git switch 名前` | 既存のブランチに移る |\n| `git branch` | ブランチの一覧（`*` が今いるところ） |\n| `git branch -d 名前` | マージ済みのブランチを消す |\n\n古い記事や AI のコードでは `git checkout -b 名前` / `git checkout 名前` と書かれていることもあります。同じ意味です（`checkout` は役割が多すぎたので、`switch` と `restore` に分けられました）。\n\n⚠️ ブランチを移ると、**作業ディレクトリのファイルが、そのブランチの内容に書き換わります**。コミットしていない変更があると、移れないか、変更が一緒についてきます。移る前に `git status` を確認しましょう。\n\n## マージ：2 つの道を合わせる\n\n### ① 早送りマージ（fast-forward）\n\nmain がその後進んでいなければ、名札を前に進めるだけで済みます。\n\n```text\n$ git switch main\n$ git merge add-fruit\nUpdating 0f626e2..d539851\nFast-forward\n shopping.md | 1 +\n 1 file changed, 1 insertion(+)\n\n$ git log --oneline --graph\n* d539851 Add banana\n* 0f626e2 Ignore .env\n* d978c53 Add app\n```\n\n`Fast-forward` と出たら、新しいコミットは作られていません。履歴は 1 本のまっすぐな線のままです。\n\n### ② マージコミット\n\n両方のブランチが別々に進んでいたら、**2 つの親を持つ新しいコミット** を作って合わせます。\n\n```text\n$ git log --oneline --graph\n*   077e971 Merge branch 'price'\n|\\\n| * 2803c21 Low-fat milk           ← price ブランチでの変更\n* | 1552dfe Two bottles of milk    ← 同じころの main での変更\n|/\n* d539851 Add banana\n```\n\n| 記号 | 読み方 |\n|---|---|\n| `*` | コミット |\n| `\\|\\` | ここで道が 2 本に分かれている（上から見て合流） |\n| `\\|/` | ここから道が分かれた |\n\nこの例は、同じ行を両方で変えたので **コンフリクト** になりました（次のレッスン）。違う場所を変えていれば、Git が自動で合わせてくれます。\n\n## リモート：GitHub 側のリポジトリ\n\n```text\n自分のパソコン                                 GitHub（origin）\n  main  ──── git push ────────────────────→   main\n  origin/main ←─── git fetch ───────────────  main\n  main  ←─── git merge origin/main ─────\n          （fetch + merge = git pull）\n```\n\n| 用語 | 意味 |\n|---|---|\n| **origin** | GitHub など、クローン元のリポジトリにつける標準の名前 |\n| **origin/main** | 「最後に確認したときの、GitHub 側の main」の **写し**。自動では更新されない |\n| `git fetch` | GitHub の最新を取ってきて、`origin/main` を更新する。自分の main は変わらない |\n| `git pull` | `fetch` ＋ 自分のブランチへのマージ |\n| `git push` | 自分のコミットを GitHub に送る |\n\n`Your branch is behind 'origin/main' by 3 commits`（3 コミット遅れています）と出たら、`git pull` で追いつきます。\n\n### --ff-only：安全な pull\n\nこのリポジトリの `open-site.bat` には、こう書かれています。\n\n```bat\ngit pull --ff-only\nif errorlevel 1 (\n  echo Update failed. Opening the current version instead.\n)\n```\n\n`--ff-only` は「**早送りでできるときだけ** pull する」という指定です。手元で何か変えていて、マージコミットが必要になりそうなら、何もせずに失敗します。勝手にマージして状態をややこしくしないための、安全な書き方です。\n\n## AI のコードではこう出てくる\n\n```bash\ngit switch -c feature/login\n# …作業してコミット…\ngit push -u origin feature/login\n```\n\n`-u`（`--set-upstream`）は「このブランチは、GitHub の `feature/login` とつながっている」と覚えさせる指定です。2 回目からは `git push` だけで送れます。\nClaude がこのサイトを更新するときも、`claude/...` というブランチを作って push し、GitHub Actions が main にマージしています（次のレッスンのプルリクエストを省いた形）。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "ブランチの正体として正しいのは？",
+        "choices": [
+         "コミットをまるごとコピーしたもの",
+         "あるコミットを指す名札（新しくコミットすると前に進む）",
+         "GitHub にしか存在しないもの"
+        ],
+        "answer": 1,
+        "explain": "ブランチはコミットを指しているだけなので、作るのも消すのも一瞬です。"
+       },
+       {
+        "question": "`git merge` で `Fast-forward` と表示された。何が起きた？",
+        "choices": [
+         "合わせる先が進んでいなかったので、名札を前に進めただけ（マージコミットは無し）",
+         "コンフリクトが起きた",
+         "新しいマージコミットが作られた"
+        ],
+        "answer": 0,
+        "explain": "早送りマージでは履歴は 1 本のまま。両方が進んでいた場合にだけ、マージコミットが作られます。"
+       },
+       {
+        "question": "`git fetch` を実行した直後の状態として正しいのは？",
+        "choices": [
+         "自分の main が GitHub の main と同じになっている",
+         "`origin/main` は最新になったが、自分の main はまだ変わっていない",
+         "自分のコミットが GitHub に送られた"
+        ],
+        "answer": 1,
+        "explain": "fetch は取ってくるだけ。自分のブランチに取り込むには merge（または最初から pull）が必要です。"
+       }
+      ]
+     ],
+     "id": "04-branches-merge"
+    },
+    {
+     "title": "コンフリクトの直し方 ― <<<<<<< を怖がらない",
+     "level": 3,
+     "minutes": 16,
+     "concepts": [
+      "version_control",
+      "reading"
+     ],
+     "summary": "同じ場所を両方で変えると起きるコンフリクト。マーカーの読み方、直してからコミットするまでの手順、やめたいときの戻り方。",
+     "body": "## このレッスンのゴール\n\n- コンフリクトが起きる理由を説明できる\n- `<<<<<<<`・`=======`・`>>>>>>>` のマーカーを読み、正しく直せる\n- 直し終わるまでの手順と、やめたいときの `--abort` が分かる\n\n## コンフリクトとは\n\n2 つのブランチが **同じファイルの同じ場所** を、それぞれ違う内容に変えていると、Git はどちらを残せばよいか決められません。これが **コンフリクト（衝突）** です。\n違う場所の変更なら、Git が自動で合わせます。コンフリクトはエラーではなく、**「ここは人間が決めて」という相談** です。\n\n前のレッスンの続きで、実際に起こしてみます。\n\n```text\nmain  ブランチ：「- 牛乳」を「- 牛乳 2 本」に変えてコミット\nprice ブランチ：「- 牛乳」を「- 牛乳（低脂肪）」に変えてコミット\n```\n\n```text\n$ git merge price\nAuto-merging shopping.md\nCONFLICT (content): Merge conflict in shopping.md\nAutomatic merge failed; fix conflicts and then commit the result.\n```\n\n「shopping.md の中身でコンフリクト。自動のマージに失敗したので、直してからコミットして」と言っています。\n\n## 状態を確認する\n\n```text\n$ git status\nOn branch main\nYou have unmerged paths.\n  (fix conflicts and run \"git commit\")\n  (use \"git merge --abort\" to abort the merge)\n\nUnmerged paths:\n  (use \"git add <file>...\" to mark resolution)\n\tboth modified:   shopping.md\n```\n\n| 表示 | 意味 |\n|---|---|\n| `You have unmerged paths` | マージの途中で止まっている |\n| `both modified: shopping.md` | 両方のブランチが変えたファイル。ここを直す |\n| `git merge --abort` | マージをやめて、始める前に戻る |\n\n## マーカーを読む\n\n```text\n# 買い物メモ\n\n- りんご\n- バナナ\n<<<<<<< HEAD\n- 牛乳 2 本\n=======\n- 牛乳（低脂肪）\n>>>>>>> price\n- パン\n```\n\n| 部分 | 意味 |\n|---|---|\n| `<<<<<<< HEAD` から `=======` まで | **今いるブランチ**（main）の内容 |\n| `=======` から `>>>>>>> price` まで | **取り込もうとしたブランチ**（price）の内容 |\n| マーカーの外 | 自動で合わせられた部分（そのままでよい） |\n\n## 直す\n\n選択肢は 3 つです。\n\n| 方針 | 結果 |\n|---|---|\n| 自分（HEAD）の方を残す | `- 牛乳 2 本` |\n| 相手（price）の方を残す | `- 牛乳（低脂肪）` |\n| **両方の意図を合わせる** | `- 牛乳（低脂肪）2 本` |\n\n今回は「2 本」も「低脂肪」もどちらも必要なので、合わせます。**マーカーの 3 行（`<<<<<<<`・`=======`・`>>>>>>>`）も必ず消します**。\n\n```text\n# 買い物メモ\n\n- りんご\n- バナナ\n- 牛乳（低脂肪）2 本\n- パン\n```\n\n## 仕上げ：add して commit\n\n```bash\ngit add shopping.md      # 「直しました」という印\ngit commit --no-edit     # マージコミットを作る（メッセージは自動の Merge branch 'price'）\n```\n\n```text\n$ git log --oneline --graph\n*   077e971 Merge branch 'price'\n|\\\n| * 2803c21 Low-fat milk\n* | 1552dfe Two bottles of milk\n|/\n* d539851 Add banana\n```\n\nここまで、実際に実行して確認した流れです。\n\n## 直すときのコツ\n\n- **どちらが正しいかは、コードの意味で決める**。片方を機械的に選ぶと、相手の修正が消えます\n- 直した後に **テストを実行する**、またはアプリを動かして確かめる。文字としては合っていても、動きが壊れていることがあります\n- 消し忘れたマーカーがないか探す：`grep -rn \"<<<<<<<\" .`\n- VS Code では、コンフリクトの上に「Accept Current Change（今の方）」「Accept Incoming Change（来た方）」「Accept Both Changes（両方）」のボタンが出ます。**Both は単に並べるだけ** なので、今回のように 1 行にまとめたいときは手で直します\n- 分からなくなったら `git merge --abort` で、マージ前に戻ってやり直せます\n\n## よくある場面\n\n| 場面 | 起きること |\n|---|---|\n| `git pull` したら CONFLICT | 自分の変更と、GitHub 側の他人（や別のパソコン）の変更がぶつかった。直し方は同じ |\n| GitHub のプルリクエストに「This branch has conflicts」 | main が先に進んで、同じ場所が変わった。手元で main をマージして直し、push する |\n| `package-lock.json` などの自動生成ファイルでコンフリクト | 手で直さず、片方を採用してから `npm install` で作り直すのが定番 |\n| `git rebase` の途中で CONFLICT | 直して `git add` した後、`git rebase --continue`。やめるなら `git rebase --abort` |\n\nこのリポジトリでは、Claude が push したブランチを GitHub Actions が自動で main にマージしています。もしここでコンフリクトが起きると自動マージは失敗するので、Claude に知らせて相談してもらう約束になっています。\n\n## AI に直してもらうとき\n\nコンフリクトの解消は AI に任せることもできますが、**「両方のブランチで何をしようとしていたか」** を伝えないと、片方の変更を黙って消すことがあります。\n直してもらった後は、`git diff HEAD~1` などで **マージ前と比べて、両方の変更が残っているか** を確認しましょう。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`<<<<<<< HEAD` と `=======` の間に書かれているのは？",
+        "choices": [
+         "今いるブランチ（マージを実行した側）の内容",
+         "取り込もうとしたブランチの内容",
+         "Git が自動で作った正解"
+        ],
+        "answer": 0,
+        "explain": "HEAD は今いるブランチです。`=======` から `>>>>>>>` までが、取り込もうとしたブランチの内容です。"
+       },
+       {
+        "question": "コンフリクトを直した後、マージを完了させる手順は？",
+        "choices": [
+         "そのまま `git push` する",
+         "マーカーを消して内容を直し、`git add` してから `git commit` する",
+         "`git merge --abort` を実行する"
+        ],
+        "answer": 1,
+        "explain": "`git add` で「このファイルは直した」と Git に伝え、`git commit` でマージコミットを作ります。`--abort` はマージをやめるコマンドです。"
+       },
+       {
+        "question": "「どう直せばよいか分からなくなった。マージを始める前に戻りたい」ときは？",
+        "choices": [
+         "ファイルを全部削除する",
+         "`git push --force` する",
+         "`git merge --abort` を実行する"
+        ],
+        "answer": 2,
+        "explain": "マージの途中なら、`--abort` でマージを始める前の状態に戻れます。"
+       }
+      ]
+     ],
+     "id": "05-conflicts"
+    },
+    {
+     "title": "プルリクエストとレビュー",
+     "level": 3,
+     "minutes": 16,
+     "concepts": [
+      "version_control",
+      "ai_coding",
+      "testing"
+     ],
+     "summary": "「この変更を main に入れていい？」の提案と確認の場、プルリクエスト（PR）。作り方、画面の読み方、レビューで見ること、3 種類のマージ方法。",
+     "body": "## このレッスンのゴール\n\n- プルリクエストの流れ（ブランチ → push → PR → レビュー → マージ）を説明できる\n- PR の画面（Files changed・Checks・Conversation）で何を見ればよいか分かる\n- マージの 3 つの方法（Merge・Squash・Rebase）の違いが分かる\n\n## プルリクエストとは\n\n**プルリクエスト（PR）** は、「このブランチの変更を main に取り込んでください」という **提案** です。GitHub 上で、変更の中身を見ながら話し合い、OK になったらマージします。\nGitLab では **マージリクエスト（MR）** と呼びますが、同じものです。\n\n```text\n① ブランチを作って作業・コミット（レッスン 4）\n② git push -u origin ブランチ名\n③ GitHub で PR を作る（タイトルと説明を書く）\n④ 自動テスト（CI）が走る ＋ 人がレビューする\n⑤ 指摘があれば、同じブランチに追加でコミットして push（PR に自動で反映）\n⑥ OK になったら「Merge」ボタン → main に入る\n⑦ ブランチを消す\n```\n\nAI のエージェント（Claude Code など）に作業を任せるときも、**PR にしてもらってから、自分で確認してマージする** のが安全な進め方です（AI と開発するコースの「エージェントに任せるときの進め方」）。\n\n## PR の作り方\n\npush すると、GitHub の画面に「Compare & pull request」ボタンが出ます。コマンドで作るなら GitHub CLI（`gh`）を使います。\n\n```bash\ngh pr create --title \"Add banana to shopping list\" --body \"バナナが売り切れていたので次回用に追加\"\ngh pr list                 # PR の一覧\ngh pr view 12              # 12 番の PR の内容\ngh pr checkout 12          # 12 番の PR のブランチを手元に持ってきて試す\ngh pr merge 12 --squash    # 12 番を Squash でマージ\n```\n\n### よい PR の説明\n\n| 書くこと | 例 |\n|---|---|\n| 何を変えたか | 税込み価格の計算を `Decimal` に変更 |\n| なぜ変えたか | 8% の商品で 1 円ずれる不具合があったため（Issue #34） |\n| どう確かめたか | 単体テストを追加。198 円 × 3 個 = 641 円になることを確認 |\n| 見てほしいところ | 端数の切り捨て・四捨五入の方針がこれでよいか |\n\n## PR の画面の読み方\n\n| タブ | 何がある | 見ること |\n|---|---|---|\n| **Conversation** | 説明・コメント・レビューの結果・マージボタン | 何のための変更か。未解決の指摘が残っていないか |\n| **Commits** | この PR に含まれるコミットの一覧 | 関係ない変更が混ざっていないか |\n| **Checks** | 自動テスト（GitHub Actions など）の結果 | ✅ 緑なら合格、❌ 赤なら失敗。赤のままマージしない |\n| **Files changed** | 変更の差分（レッスン 3 の diff） | ここが本体。1 行ずつ読む |\n\nFiles changed では、行番号の横の **「+」を押すとその行にコメント** が付けられます。最後に「Review changes」から次のどれかを選びます。\n\n| 選択 | 意味 |\n|---|---|\n| **Comment** | 感想・質問だけ |\n| **Approve** | OK。マージしてよい |\n| **Request changes** | 直してほしいところがある。直るまでマージしない |\n\n## レビューで見ること\n\nAI と開発するコースの「差分を読む」のチェックリストに、PR ならではの点を足すと次のようになります。\n\n| 観点 | 質問 |\n|---|---|\n| 目的 | 説明に書いてあることと、差分が一致しているか。**頼んでいない変更** が混ざっていないか |\n| 大きさ | 大きすぎないか（目安：数百行を超えたら分けてもらう） |\n| テスト | 変更に合わせてテストが追加・更新されているか。Checks は緑か |\n| 秘密情報 | `.env`、API キー、パスワードが入っていないか |\n| 消えたもの | 削除された行（赤）に、必要な処理が含まれていないか |\n| 依存関係 | `requirements.txt`・`package.json` に知らないライブラリが増えていないか（セキュリティのコース） |\n\nAI が作った PR は、説明が立派でも **実際の差分と一致しているとは限りません**。説明ではなく、Files changed を基準に確認しましょう。\n\n## マージの 3 つの方法\n\n| ボタン | 何が起きるか | 履歴 |\n|---|---|---|\n| **Create a merge commit** | マージコミットを作る（レッスン 4 の ②） | ブランチのコミットがすべて残り、分かれて合流する形 |\n| **Squash and merge** | PR のコミットを **1 つにまとめて** main に入れる | main は 1 PR ＝ 1 コミットの、まっすぐな履歴 |\n| **Rebase and merge** | PR のコミットを、main の先頭に 1 つずつ付け直す | まっすぐな履歴。コミットは個別に残る |\n\n「修正」「typo」「やっぱり戻す」のような細かいコミットがたくさんある PR は、**Squash** にすると main の履歴が読みやすくなります。どれを使うかはチームで決めておきます。\n\n## このリポジトリの場合\n\nこのサイトでは、利用者の了承のもとで **PR を省略** しています。\n\n```yaml\non:\n  push:\n    branches: [\"claude/**\"]     # claude/ で始まるブランチに push されたら\n...\n      git merge --no-edit \"origin/${GITHUB_REF_NAME}\"   # main にマージして\n      git push origin main                               # main を push する\n```\n\n`.github/workflows/auto-merge-claude.yml` の一部です。学習用の自分だけのサイトなので、毎回の確認の手間を省いています。\nチームの開発や、お金・個人情報を扱うアプリでは、このような自動マージではなく、**PR で人が確認してからマージする** のが基本です。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "プルリクエストを作った後で修正を頼まれた。どうすれば PR に反映される？",
+        "choices": [
+         "新しい PR を作り直す",
+         "同じブランチに修正をコミットして push する",
+         "main に直接 push する"
+        ],
+        "answer": 1,
+        "explain": "PR はブランチにひもづいているので、同じブランチに push すれば自動で反映されます。"
+       },
+       {
+        "question": "AI が作った PR のレビューで、いちばん信用してよい情報は？",
+        "choices": [
+         "PR の説明文",
+         "コミットメッセージ",
+         "Files changed の実際の差分"
+        ],
+        "answer": 2,
+        "explain": "説明やメッセージは間違っていることがあります。実際に何が変わったかは差分にしか書かれていません。"
+       },
+       {
+        "question": "「typo 修正」「やり直し」など細かいコミットが 15 個ある PR を、main の履歴を 1 つにまとめて取り込みたい。選ぶのは？",
+        "choices": [
+         "Create a merge commit",
+         "Squash and merge",
+         "Rebase and merge"
+        ],
+        "answer": 1,
+        "explain": "Squash は PR のコミットを 1 つにまとめます。main の履歴が「1 PR ＝ 1 コミット」になって読みやすくなります。"
+       }
+      ]
+     ],
+     "id": "06-pull-requests"
+    },
+    {
+     "title": "取り消しとやり直し ― restore・revert・reset・stash・reflog",
+     "level": 4,
+     "minutes": 20,
+     "concepts": [
+      "version_control",
+      "tooling",
+      "security"
+     ],
+     "summary": "「元に戻したい」の場面ごとに使うコマンドが違う。消えるもの・残るものを表で整理し、最後の救命ボート reflog まで。",
+     "body": "## このレッスンのゴール\n\n- 「どこまで戻したいか」に合わせて、restore・revert・reset を選べる\n- `reset --soft`・`--mixed`・`--hard` の違いと、`--hard` で何が消えるかを説明できる\n- 作業を一時退避する `stash` と、消したはずのコミットを探す `reflog` が分かる\n\nここでのコマンドと出力は、すべて買い物メモのリポジトリで実際に試したものです。\n\n## まず全体の地図\n\n| やりたいこと | コマンド | 消えるもの |\n|---|---|---|\n| ファイルの編集を、最後のコミットの状態に戻す | `git restore ファイル` | **そのファイルのコミットしていない変更** |\n| ステージに入れたのを取り消す（編集は残す） | `git restore --staged ファイル` | 無し |\n| 直前のコミットのメッセージ・中身を直す | `git commit --amend` | 直前のコミット（作り直される） |\n| push 済みのコミットを打ち消す | `git revert コミット` | 無し（打ち消すコミットが **増える**） |\n| コミットを無かったことにする | `git reset` | オプション次第（下の表） |\n| 作業を一時的にどける | `git stash` | 無し（あとで戻せる） |\n| 消えたコミットを探す | `git reflog` | 無し |\n\n## restore：コミットしていない変更を戻す\n\n```bash\necho \"- 卵\" >> shopping.md     # 編集した\ngit restore shopping.md        # 最後のコミットの状態に戻る（- 卵 は消える）\n```\n\n```bash\ngit add shopping.md            # ステージに入れてしまった\ngit restore --staged shopping.md\ngit status --short\n#  M shopping.md               ← ステージからは外れたが、編集は残っている\n```\n\n⚠️ `--staged` を付けない `git restore` は、**コミットしていない編集を消します**。Git の記録にない変更なので、戻せません。\n\n## commit --amend：直前のコミットを直す\n\n```bash\ngit commit -am \"Add eggs\"\ngit commit --amend -m \"Add eggs to the list\"   # メッセージを直した\n```\n\n```text\n$ git log --oneline -2\n2b32853 Add eggs to the list\n077e971 Merge branch 'price'\n```\n\n`--amend` は、直前のコミットを **作り直します**（ID も変わる）。\n⚠️ **push した後に amend すると**、GitHub 側の履歴と食い違い、`git push --force` が必要になります。push 済みなら、次の revert を使います。\n\n## revert：打ち消すコミットを足す\n\n```text\n$ git revert --no-edit HEAD\n[main 0932c7a] Revert \"Add eggs to the list\"\n\n$ git log --oneline -3\n0932c7a Revert \"Add eggs to the list\"     ← 「卵を消す」という新しいコミット\n2b32853 Add eggs to the list              ← 元のコミットは残っている\n077e971 Merge branch 'price'\n```\n\nrevert は、**指定したコミットと逆の変更をする新しいコミット** を作ります。履歴は消さずに増やすだけなので、**他の人と共有している（push 済みの）ブランチでも安全** です。\n「本番で不具合が出たので、昨日の変更を取り消したい」ときの定番です。\n\n## reset：名札を過去に戻す\n\n`git reset` は、ブランチの名札（レッスン 4）を **過去のコミットに動かします**。その後ろのコミットは、ブランチから見えなくなります。\nオプションで、作業中のファイルをどうするかが変わります。\n\n| オプション | ブランチの名札 | ステージ | 作業ディレクトリのファイル | 使う場面 |\n|---|---|---|---|---|\n| `--soft` | 戻る | **変更が残る**（ステージに入った状態） | 残る | コミットをまとめ直したい |\n| `--mixed`（省略時） | 戻る | 空になる | **残る** | コミットをやり直したい |\n| `--hard` | 戻る | 空になる | **消える（コミット時の状態に戻る）** | 全部捨てて戻りたい |\n\n```text\n$ git reset --soft HEAD~1\n$ git status --short\nM  shopping.md             ← コミットは消えたが、変更はステージに残っている\n\n$ git reset --hard HEAD~1\nHEAD is now at 077e971 Merge branch 'price'   ← ファイルもその時点に戻った\n```\n\n⚠️ `--hard` は、**コミットしていない変更を完全に消します**。AI と開発するコースで「取り消せない系」として紹介したのはこのためです。\n⚠️ push 済みのコミットを reset で消して `git push --force` すると、他の人の手元の履歴と食い違います。共有ブランチでは revert を使います。\n\n## stash：作業を一時的にどける\n\n「作業の途中だけど、急いで main に移って別の修正をしたい」ときに使います。\n\n```text\n$ git stash\nSaved working directory and index state WIP on main: 077e971 Merge branch 'price'\n\n$ git status --short\n                           ← 何も無い（変更がどけられた）\n\n$ git stash list\nstash@{0}: WIP on main: 077e971 Merge branch 'price'\n\n$ git stash pop            ← どけた変更を戻す（stash からは消える）\n```\n\n⚠️ stash は便利ですが、**溜め込むと何がどこにあるか分からなくなります**。長く置いておくなら、ブランチを作ってコミットしたほうが安全です。\n\n## reflog：最後の救命ボート\n\nreset で消したはずのコミットも、実はしばらく Git の中に残っています。**HEAD が動いた記録** を見るのが `git reflog` です。\n\n```text\n$ git reflog -5\n077e971 HEAD@{0}: reset: moving to HEAD~1\n2b32853 HEAD@{1}: reset: moving to HEAD~1\n0932c7a HEAD@{2}: revert: Revert \"Add eggs to the list\"\n2b32853 HEAD@{3}: commit (amend): Add eggs to the list\n0735572 HEAD@{4}: commit: Add eggs\n\n$ git reset --hard HEAD@{2}\nHEAD is now at 0932c7a Revert \"Add eggs to the list\"   ← reset する前に戻れた\n```\n\n`reset --hard` で「コミットを消してしまった！」と思っても、**コミットしてあったものなら、reflog から戻せます**。\n戻せないのは、**一度もコミットしていない変更** だけです。だから「こまめにコミット」が最大の保険になります。\n\n## AI が提案してきたら\n\n| 提案 | 確認すること |\n|---|---|\n| `git reset --hard` | コミットしていない変更は無いか（`git status`）。必要なら先に commit か stash |\n| `git push --force` | そのブランチを他の人も使っていないか。`--force-with-lease`（他人の変更があれば止まる）にできないか |\n| `git clean -fd` | Git が管理していないファイル（`.env` など）まで消える。先に `git clean -nd` で消えるものを確認 |\n| `git checkout .` / `git restore .` | すべてのファイルのコミットしていない変更が消える |\n| `git revert` | ✅ 履歴を壊さない。共有ブランチではこちらが基本 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "GitHub に push 済みの「昨日のコミット」を取り消したい。チームのブランチなので履歴は書き換えたくない。使うのは？",
+        "choices": [
+         "`git reset --hard HEAD~1` して `git push --force`",
+         "`git revert コミットID`",
+         "`git commit --amend`"
+        ],
+        "answer": 1,
+        "explain": "revert は、打ち消す新しいコミットを足すだけなので、共有している履歴を壊しません。"
+       },
+       {
+        "question": "`git reset --hard HEAD~1` を実行した。消えて二度と戻せない可能性があるのは？",
+        "choices": [
+         "1 つ前のコミット",
+         "一度もコミットしていなかった編集",
+         "GitHub 上の main ブランチ"
+        ],
+        "answer": 1,
+        "explain": "コミットは reflog から戻せることが多いですが、コミットしていない編集は Git の記録に無いので戻せません。"
+       },
+       {
+        "question": "`git reset --soft HEAD~1` の後の状態は？",
+        "choices": [
+         "コミットも変更も全部消える",
+         "何も変わらない",
+         "直前のコミットは取り消されるが、その変更はステージに残っている"
+        ],
+        "answer": 2,
+        "explain": "`--soft` は名札を戻すだけで、変更はステージに置いたままにします。コミットをまとめ直したいときに使います。"
+       }
+      ]
+     ],
+     "id": "07-undo"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "セキュリティの基本",
