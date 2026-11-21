@@ -184,7 +184,7 @@ function courseCards(list = DATA.courses) {
 
 function viewCourses() {
   app.innerHTML = `<h1>コース</h1>
-    <p class="muted">おすすめの順番：「はじめての『コードを読む』」→ Python →「AI と一緒に開発する」→ JavaScript → TypeScript → …</p>
+    <p class="muted">おすすめの順番：「はじめての『コードを読む』」→ Python →「AI と一緒に開発する」→「バックエンドを基礎から」→ JavaScript → TypeScript → …</p>
     ${courseSections()}`;
   afterRender();
 }

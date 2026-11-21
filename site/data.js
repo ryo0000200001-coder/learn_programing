@@ -120,6 +120,22 @@ window.SITE_DATA = {
   "llm": {
    "name": "LLM・AI API",
    "desc": "AI をアプリに組み込む仕組み"
+  },
+  "backend": {
+   "name": "バックエンドの仕組み",
+   "desc": "サーバー・API・リクエストの流れ"
+  },
+  "auth": {
+   "name": "認証・認可",
+   "desc": "ログイン・パスワード・トークン・権限"
+  },
+  "performance": {
+   "name": "性能・スケール",
+   "desc": "キャッシュ・インデックス・負荷への強さ"
+  },
+  "deploy": {
+   "name": "デプロイ・運用",
+   "desc": "本番環境に出して動かし続ける"
   }
  },
  "courses": [
@@ -1325,6 +1341,836 @@ window.SITE_DATA = {
    "status": "open"
   },
   {
+   "title": "バックエンドを基礎から",
+   "icon": "🛠️",
+   "order": 16,
+   "category": "topic",
+   "description": "画面の裏側で動くサーバーの世界を、HTTP の仕組みから API・データベース・認証・テスト・本番運用・設計まで一から順に。コード例は主に Python（FastAPI）。",
+   "levels": {
+    "1": "入門：Web の仕組み",
+    "2": "基礎：API を作る部品",
+    "3": "実践：堅くする",
+    "4": "応用：動かし続ける"
+   },
+   "id": "105-backend",
+   "lessons": [
+    {
+     "title": "バックエンドとは何か",
+     "level": 1,
+     "minutes": 12,
+     "concepts": [
+      "backend",
+      "basics"
+     ],
+     "summary": "フロントエンド・バックエンド・データベースの役割分担と、バックエンドがやっている仕事。",
+     "body": "## このレッスンのゴール\n\n- フロントエンド・バックエンド・データベースの役割の違いを説明できる\n- 「なぜバックエンドが必要なのか」を 3 つ挙げられる\n- 自分が作ってもらったアプリ（popup2027・fashion_news）のどこがバックエンドか言える\n\n## レストランでたとえると\n\n| Web の世界 | レストラン | していること |\n|---|---|---|\n| **フロントエンド** | ホール（客席・メニュー・店員） | 画面を見せる、操作を受け付ける。ブラウザやスマホで動く |\n| **バックエンド** | 厨房 | 注文を受けて、材料を確かめ、料理を作って返す。サーバーで動く |\n| **データベース** | 冷蔵庫・倉庫 | 材料（データ）をしまっておく |\n\nお客さん（利用者）は厨房に入れません。注文は必ずホールを通し、厨房は「この注文は受けていいか」「材料はあるか」を確かめてから料理を出します。\nこの **「お客さんが直接さわれない場所で、確かめて・処理して・保存する」** のがバックエンドの仕事です。\n\n## なぜバックエンドが必要？\n\nブラウザで動く JavaScript だけでもアプリは作れます。それでもバックエンドを置く理由は 3 つです。\n\n1. **データを共有するため**：ブラウザの中（localStorage）に保存したデータは、その端末でしか見られない。みんなで同じデータを見るには、共通の置き場所が要る\n2. **秘密を守るため**：ブラウザに届くコードは利用者に全部見える。API キーやパスワードの確認など、見られてはいけない処理はサーバー側に置く\n3. **ルールを守らせるため**：ブラウザ側のチェックは、利用者が改造すれば簡単に飛ばせる。「在庫が無いのに注文できる」「他人のデータを消せる」を防ぐ最後の砦はサーバー側\n\n## バックエンドがやっている仕事\n\n```text\n① リクエストを受け取る     「タスクを 1 件追加して」\n② 誰からか確かめる（認証）  「この人はログイン済み？」\n③ してよいか確かめる（認可）「この人はこのチームのメンバー？」\n④ 中身を確かめる（検証）    「タイトルは空じゃない？ 日付の形は正しい？」\n⑤ 処理する                  データベースに保存する、計算する、メールを送る…\n⑥ レスポンスを返す         「追加しました（id: 42）」\n```\n\nこのコースでは、この 6 つを 1 つずつ深く学んでいきます。\n\n## これまで解説したアプリでは？\n\n| アプリ | バックエンドはどこ？ |\n|---|---|\n| **popup2027** | 自分でサーバーを作らず、**Firebase** という「既製品のバックエンド」を使っている（BaaS：Backend as a Service）。そのため ②③ の役割を Firebase のセキュリティルールが担っている |\n| **fashion_news** | 画面が無く、**GitHub Actions 上で定時に動く Python** そのものがバックエンド。リクエストを待つのではなく、決まった時刻に自分から動く「バッチ処理」型 |\n\nバックエンドは「Web サーバー」だけではなく、**利用者から見えない所で動く処理の全般** を指すことが多いです。\n\n## バックエンドで使われる言語\n\n| 言語 | よく使われるフレームワーク | 特徴 |\n|---|---|---|\n| Python | FastAPI、Django、Flask | 書きやすい。AI・データ処理と相性が良い |\n| JavaScript / TypeScript | Express、NestJS、Next.js | フロントエンドと同じ言語で書ける |\n| Go | 標準ライブラリ、Gin | 速くてシンプル |\n| Java / Kotlin | Spring | 大企業・銀行のシステム |\n| PHP | Laravel、WordPress | 昔から Web サーバーの定番 |\n| Ruby | Ruby on Rails | 素早く作れる |\n\n言語が違っても、**「リクエストを受けて、確かめて、処理して、返す」という流れは同じ** です。このコースでは主に Python（FastAPI）で例を示し、ときどき JavaScript（Express）と見比べます。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "API キーを使う処理をバックエンドに置く一番の理由は？",
+        "choices": [
+         "処理が速くなるから",
+         "ブラウザに届くコードは利用者に見えてしまうから",
+         "JavaScript では API キーが使えないから"
+        ],
+        "answer": 1,
+        "explain": "ブラウザで動くコードは誰でも読めるので、秘密はサーバー側に置きます。"
+       },
+       {
+        "question": "ブラウザ側で「タイトルが空なら送信しない」チェックがある。サーバー側でも同じチェックは必要？",
+        "choices": [
+         "必要。ブラウザ側のチェックは改造すれば飛ばせるから",
+         "不要。ブラウザでチェック済みだから"
+        ],
+        "answer": 0,
+        "explain": "サーバーは「最後の砦」。どんなリクエストが来ても正しく断れるようにします。"
+       },
+       {
+        "question": "popup2027 で、バックエンドの役割を主に担っているのは？",
+        "choices": [
+         "GitHub Pages",
+         "Firebase（とそのセキュリティルール）",
+         "index.html の CSS"
+        ],
+        "answer": 1,
+        "explain": "自前のサーバーの代わりに、既製品のバックエンド（BaaS）を使っています。"
+       }
+      ]
+     ],
+     "id": "01-what-is-backend"
+    },
+    {
+     "title": "URL・DNS・IP・ポート ― リクエストが届くまで",
+     "level": 1,
+     "minutes": 15,
+     "concepts": [
+      "backend",
+      "http_api"
+     ],
+     "summary": "ブラウザに URL を入れてから、サーバーに届くまでの道のり。",
+     "body": "## このレッスンのゴール\n\n- URL を部品に分けて読める\n- DNS・IP アドレス・ポートの役割を説明できる\n- `localhost:8000` の意味が分かる\n\n## URL を分解する\n\n```text\nhttps://api.example.com:443/users/42?sort=new#profile\n└─┬─┘   └──────┬──────┘└┬┘└───┬───┘└───┬───┘└──┬──┘\nスキーム     ホスト名   ポート  パス    クエリ   フラグメント\n```\n\n| 部品 | 意味 | 例 |\n|---|---|---|\n| スキーム | 通信の方法 | `https`（暗号化あり）、`http`（なし） |\n| ホスト名（ドメイン） | どのサーバーか | `api.example.com` |\n| ポート | そのサーバーのどの窓口か | `443`（https の既定値なので普段は省略） |\n| パス | サーバーの中のどの資源か | `/users/42`（id 42 のユーザー） |\n| クエリ | 追加の条件 | `?sort=new`（新しい順で） |\n| フラグメント | ページ内の位置。**サーバーには送られない** | `#profile` |\n\nfashion_news の解説で、URL から `utm_source` などを取り除いていたのは、この **クエリ** の部分です。\n\n## DNS：名前から住所を引く電話帳\n\nコンピュータ同士は、`93.184.215.14` のような **IP アドレス**（インターネット上の住所）で相手を探します。\n人間には覚えにくいので、`example.com` のような名前を付け、**DNS**（ドメインネームシステム）という仕組みで名前 → IP アドレスに変換します。\n\n```text\nブラウザ「api.example.com の住所は？」\n   ↓\nDNS サーバー「93.184.215.14 です」\n   ↓\nブラウザ → 93.184.215.14 に接続\n```\n\n新しいサイトを公開したのにしばらくつながらない、というときは、この DNS の情報が世界中に行き渡るのを待っていることがあります。\n\n## ポート：建物の部屋番号\n\nIP アドレスが「建物の住所」なら、**ポート** は「部屋番号」です。1 台のサーバーで、いくつものプログラムが別々のポートで待ち受けられます。\n\n| ポート | よく使うもの |\n|---|---|\n| 80 | http |\n| 443 | https |\n| 22 | SSH（サーバーへのリモートログイン） |\n| 5432 | PostgreSQL（データベース） |\n| 3000 / 5173 / 8000 | 開発中の Web サーバー（Node.js・Vite・Python などの慣習） |\n\n## localhost：自分自身\n\n```text\nhttp://localhost:8000\nhttp://127.0.0.1:8000\n```\n\n`localhost`（IP アドレスでは `127.0.0.1`）は **「このパソコン自身」** を指す特別な名前です。\nAI が「サーバーを起動したので http://localhost:8000 を開いてください」と言うのは、「あなたのパソコンの 8000 番の部屋で、いまサーバーが待ち受けています」という意味です。他のパソコンからは見えません。\n\n## HTTPS：暗号化された通信\n\n`https` の `s` は Secure。途中の経路（Wi-Fi など）で中身を盗み見られたり、書き換えられたりしないよう暗号化します。\n**パスワードや個人情報を扱うなら https は必須** で、今は普通のサイトでもほぼすべて https です。\n\n## 全体の流れ\n\n```text\n① URL を入力 → ② DNS でホスト名を IP アドレスに変換\n→ ③ その IP アドレスのポート 443 に接続し、暗号化の準備（TLS）\n→ ④ HTTP リクエストを送る（次のレッスン）\n→ ⑤ サーバーのプログラムが処理して HTTP レスポンスを返す\n→ ⑥ ブラウザが表示する\n```\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`https://shop.example.com/items/7?color=red#reviews` のうち、サーバーに送られないのは？",
+        "choices": [
+         "/items/7",
+         "color=red",
+         "#reviews"
+        ],
+        "answer": 2,
+        "explain": "フラグメント（# 以降）はブラウザの中だけで使われます。"
+       },
+       {
+        "question": "DNS の役割は？",
+        "choices": [
+         "ドメイン名を IP アドレスに変換する",
+         "通信を暗号化する",
+         "データを保存する"
+        ],
+        "answer": 0,
+        "explain": "インターネットの電話帳のような仕組みです。"
+       },
+       {
+        "question": "友達のパソコンから `http://localhost:8000` を開くと？",
+        "choices": [
+         "あなたのパソコンのサーバーが見える",
+         "友達のパソコン自身の 8000 番ポートにつながる"
+        ],
+        "answer": 1,
+        "explain": "localhost は「そのパソコン自身」を指します。"
+       }
+      ]
+     ],
+     "id": "02-url-dns-ip"
+    },
+    {
+     "title": "HTTP のリクエストとレスポンス",
+     "level": 1,
+     "minutes": 18,
+     "concepts": [
+      "http_api",
+      "backend"
+     ],
+     "summary": "メソッド・ステータスコード・ヘッダー・ボディ。バックエンドの会話の文法。",
+     "body": "## このレッスンのゴール\n\n- HTTP のリクエストとレスポンスの中身を読める\n- GET・POST・PUT・PATCH・DELETE の使い分けを説明できる\n- ステータスコードを見て、何が起きたか分かる\n\n## HTTP は「手紙のやりとり」\n\nブラウザ（クライアント）がサーバーに **リクエスト** という手紙を送り、サーバーが **レスポンス** という返事を送ります。中身はただの文字です。\n\n**リクエスト**\n\n```http\nPOST /tasks HTTP/1.1\nHost: api.example.com\nContent-Type: application/json\nAuthorization: Bearer eyJhbGciOi...\n\n{\"title\": \"会場を探す\", \"due\": \"2027-01-10\"}\n```\n\n**レスポンス**\n\n```http\nHTTP/1.1 201 Created\nContent-Type: application/json\n\n{\"id\": 42, \"title\": \"会場を探す\", \"due\": \"2027-01-10\", \"status\": \"todo\"}\n```\n\n| 部分 | リクエスト | レスポンス |\n|---|---|---|\n| 1 行目 | **メソッド** と パス（何をしたいか） | **ステータスコード**（結果） |\n| ヘッダー | 付属情報（送る形式・名札など） | 付属情報（返す形式・キャッシュの指示など） |\n| 空行のあと＝ボディ | 送るデータ（JSON など） | 返すデータ |\n\n## メソッド：何をしたいか\n\n| メソッド | 意味 | 例 | ボディ |\n|---|---|---|---|\n| **GET** | 取得する | タスク一覧を見る | なし |\n| **POST** | 新しく作る | タスクを追加する | あり |\n| **PUT** | 丸ごと置き換える | タスクの全項目を更新 | あり |\n| **PATCH** | 一部だけ変える | タスクの状態だけ「完了」に | あり |\n| **DELETE** | 削除する | タスクを消す | 普通はなし |\n\n大事な性質が 2 つあります。\n\n- **GET はデータを変えてはいけない**：ブラウザや検索エンジンは GET のリンクを自由にたどるので、`GET /tasks/42/delete` のような作りにすると、勝手に消されることがある\n- **同じことを何回しても結果が同じ（べき等）**：GET・PUT・DELETE はべき等。POST は 2 回送ると 2 件できてしまう。ボタンの二度押し対策が必要なのは主に POST\n\n## ステータスコード：結果の番号\n\n最初の数字で大まかな意味が分かります。\n\n| 番台 | 意味 | よく見るもの |\n|---|---|---|\n| **2xx 成功** | うまくいった | `200 OK`、`201 Created`（作成した）、`204 No Content`（成功・返すものなし） |\n| **3xx 転送** | 別の場所へ | `301`（引っ越した）、`302`（一時的に別の場所）、`304`（前と同じなのでキャッシュを使って） |\n| **4xx 利用者側の問題** | リクエストがおかしい | `400`（形が変）、`401`（ログインしていない）、`403`（権限がない）、`404`（無い）、`409`（衝突）、`422`（中身の検証で不合格）、`429`（多すぎ） |\n| **5xx サーバー側の問題** | サーバーが失敗した | `500`（中でエラー）、`502` / `503`（裏のサーバーが応答しない・混雑） |\n\n**401 と 403 の違い** はよく聞かれます。\n- `401 Unauthorized`：**あなたが誰か分からない**（ログインしていない・トークンが無効）\n- `403 Forbidden`：**誰かは分かったが、それをする権限がない**\n\n**4xx は「リクエストを直さないと何度やっても同じ」、5xx は「時間をおけば直るかもしれない」**。fashion_news の notion.py が 429 と 5xx だけをやり直していたのは、この違いを使っています。\n\n## ヘッダー：付属情報\n\n| ヘッダー | 意味 |\n|---|---|\n| `Content-Type: application/json` | ボディは JSON です |\n| `Authorization: Bearer xxx` | 私はこのトークンの持ち主です（認証） |\n| `Cookie` / `Set-Cookie` | ブラウザに覚えておいてもらう小さなデータ（ログイン状態など） |\n| `User-Agent` | 私はこういうプログラムです（fashion_news が名乗っていたもの） |\n| `Cache-Control` | このレスポンスをどれくらい使い回してよいか |\n| `Retry-After` | 何秒後にやり直せばよいか（429・503 と一緒に返る） |\n\n## HTTP は「覚えていない」\n\nHTTP は、**前のリクエストのことを覚えていません**（ステートレス）。1 通 1 通が独立した手紙です。\nだから「ログインしている」ことを伝えるには、**毎回のリクエストに Cookie やトークンを付けて名乗る** 必要があります（レッスン 9）。\n\n## 実際に見てみる\n\nブラウザで F12 →「ネットワーク」タブを開いてページを読み込むと、リクエストとレスポンスが 1 つずつ見られます。メソッド・ステータス・ヘッダーが、このレッスンの表のとおりに並んでいます。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "タスクの状態だけを「完了」に変えるのに最も合うメソッドは？",
+        "choices": [
+         "GET",
+         "POST",
+         "PATCH"
+        ],
+        "answer": 2,
+        "explain": "一部だけ変えるのは PATCH、丸ごと置き換えるのは PUT です。"
+       },
+       {
+        "question": "ログインせずに管理画面の API を呼んだときに返るべきステータスは？",
+        "choices": [
+         "401",
+         "403",
+         "500"
+        ],
+        "answer": 0,
+        "explain": "誰か分からないなら 401、誰か分かったうえで権限が無いなら 403 です。"
+       },
+       {
+        "question": "500 が返ってきた。まず疑うのは？",
+        "choices": [
+         "送ったデータの形が間違っている",
+         "サーバー側のプログラムでエラーが起きている",
+         "URL が存在しない"
+        ],
+        "answer": 1,
+        "explain": "5xx はサーバー側の問題。ログを見て原因を探します。"
+       },
+       {
+        "question": "POST を 2 回送ってしまうと、何が起きやすい？",
+        "choices": [
+         "同じデータが 2 件作られる",
+         "2 回目は自動で無視される",
+         "サーバーが止まる"
+        ],
+        "answer": 0,
+        "explain": "POST はべき等ではないので、二度押し対策が必要です。"
+       }
+      ]
+     ],
+     "id": "03-http"
+    },
+    {
+     "title": "API と REST ― エンドポイントの設計",
+     "level": 1,
+     "minutes": 15,
+     "concepts": [
+      "http_api",
+      "backend",
+      "data_formats"
+     ],
+     "summary": "リソースと URL の決め方、JSON の返し方、API 設計のよくある約束ごと。",
+     "body": "## このレッスンのゴール\n\n- API と REST が何か説明できる\n- 「名詞の URL ＋ 動詞のメソッド」で API を読める・設計できる\n- 一覧・ページ分け・エラーの返し方の定番を知る\n\n## API ＝ プログラム用の窓口\n\n**API**（Application Programming Interface）は、プログラムが別のプログラムに頼みごとをするための **窓口の約束ごと** です。\nWeb の世界では「この URL にこのメソッドでリクエストすると、こういう JSON が返ってくる」という約束を指すことがほとんどです。\n\npopup2027 の画面と Firebase、fashion_news と Notion の間でやりとりしていたのも API です。\n\n## REST：URL は名詞、メソッドは動詞\n\nREST は API の作り方の考え方（スタイル）です。一番大事なルールは、**URL で「何を（リソース）」、メソッドで「どうする」を表す** ことです。\n\n| やりたいこと | REST らしい | REST らしくない |\n|---|---|---|\n| タスク一覧を見る | `GET /tasks` | `GET /getTasks` |\n| タスクを 1 件見る | `GET /tasks/42` | `GET /task?id=42&action=show` |\n| タスクを作る | `POST /tasks` | `POST /createTask` |\n| タスクを変える | `PATCH /tasks/42` | `POST /tasks/42/update` |\n| タスクを消す | `DELETE /tasks/42` | `GET /tasks/42/delete` |\n| あるチームのタスク | `GET /teams/3/tasks` | `GET /tasks?team=3`（これも可） |\n\n- リソースは **複数形の名詞**（`/tasks`、`/users`）\n- 1 件は **ID** で指す（`/tasks/42`）\n- 親子関係はパスで表す（`/teams/3/tasks`）\n- 絞り込み・並べ替えはクエリで（`/tasks?status=done&sort=-due`）\n\n## CRUD との対応\n\nデータ操作の基本 4 つ（**C**reate 作成・**R**ead 読み取り・**U**pdate 更新・**D**elete 削除）は、ほぼそのまま REST に対応します。\n\n| CRUD | HTTP | SQL（レッスン 7） |\n|---|---|---|\n| Create | POST | INSERT |\n| Read | GET | SELECT |\n| Update | PUT / PATCH | UPDATE |\n| Delete | DELETE | DELETE |\n\n## 返す JSON の形\n\n```json\n{\n  \"id\": 42,\n  \"title\": \"会場を探す\",\n  \"status\": \"todo\",\n  \"due\": \"2027-01-10\",\n  \"assignee\": {\"id\": 1, \"name\": \"メンバーA\"},\n  \"created_at\": \"2026-11-21T09:30:00Z\"\n}\n```\n\nよくある約束ごと：\n\n- 日時は **ISO 8601**（`2026-11-21T09:30:00Z`）で、タイムゾーンを付ける（`Z` は UTC）\n- キーの名前は `snake_case` か `camelCase` に **そろえる**\n- お金は小数の誤差を避けるため、**円なら整数** で持つ\n\n## 一覧は「ページ分け」する\n\n1 万件のタスクを一度に返すと遅く、重くなります。一覧の API は一部ずつ返すのが普通です。\n\n```http\nGET /tasks?limit=20&offset=40      ← 41〜60 件目\nGET /tasks?limit=20&cursor=abc123  ← 「続きの目印」方式（Notion API と同じ）\n```\n\n```json\n{\n  \"items\": [ ... 20 件 ... ],\n  \"next_cursor\": \"def456\",\n  \"has_more\": true\n}\n```\n\nfashion_news の `find_child_page` が `has_more` と `next_cursor` を見てくり返し聞いていたのは、この **カーソル方式のページ分け** です。\n\n## エラーも決まった形で返す\n\n```http\nHTTP/1.1 422 Unprocessable Entity\n\n{\n  \"error\": {\n    \"code\": \"validation_error\",\n    \"message\": \"title は 1〜100 文字で入力してください\",\n    \"field\": \"title\"\n  }\n}\n```\n\n**ステータスコード ＋ 機械が読める code ＋ 人が読める message** の 3 点セットにしておくと、フロントエンドが「どの入力欄に赤字を出すか」を決めやすくなります。\n\n## バージョン\n\n```text\n/v1/tasks   ← 今の版\n/v2/tasks   ← 形を大きく変えた新しい版\n```\n\nAPI を使っている側がいるので、形を勝手に変えると相手のアプリが壊れます。大きく変えるときは新しい版を作るのが一般的です（Notion API の `Notion-Version` ヘッダーも同じ考え方）。\n\n## REST 以外の API\n\n| 種類 | 特徴 |\n|---|---|\n| **GraphQL** | 1 つの URL に「この項目がほしい」と問い合わせ文を送る。必要な分だけ取れる |\n| **gRPC** | サーバー同士の高速な通信向け。JSON ではなくバイナリ |\n| **WebSocket** | つなぎっぱなしで双方向にやりとり。チャットや popup2027 のようなリアルタイム更新向け |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "「id 7 のユーザーの注文一覧を取得する」REST らしい書き方は？",
+        "choices": [
+         "POST /getOrders?user=7",
+         "GET /users/7/orders",
+         "GET /orders/delete?user=7"
+        ],
+        "answer": 1,
+        "explain": "URL は名詞（リソース）、操作はメソッドで表します。"
+       },
+       {
+        "question": "タスクを削除する REST らしいリクエストは？",
+        "choices": [
+         "GET /tasks/42/delete",
+         "DELETE /tasks/42",
+         "POST /deleteTask"
+        ],
+        "answer": 1,
+        "explain": "GET でデータを変えるのは避けます（勝手にたどられて消されることがある）。"
+       },
+       {
+        "question": "一覧 API が `{\"items\": [...], \"has_more\": true, \"next_cursor\": \"x\"}` を返した。続きを取るには？",
+        "choices": [
+         "cursor=x を付けてもう一度リクエストする",
+         "同じリクエストをもう一度送る",
+         "items の最後の要素を削除する"
+        ],
+        "answer": 0,
+        "explain": "カーソル方式のページ分けです。has_more が false になるまで続けます。"
+       }
+      ]
+     ],
+     "id": "04-rest-api"
+    },
+    {
+     "title": "Web フレームワークとルーティング",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "backend",
+      "http_api",
+      "functions"
+     ],
+     "summary": "FastAPI で「この URL にこのメソッドが来たら、この関数」を書く。パスパラメータとクエリの受け取り方。",
+     "body": "## このレッスンのゴール\n\n- フレームワークが何を肩代わりしてくれるか説明できる\n- `@app.get(\"/tasks/{task_id}\")` のようなルーティングを読める\n- パスパラメータ・クエリパラメータの違いが分かる\n\n## フレームワーク＝バックエンドの骨組みキット\n\nHTTP の手紙（レッスン 3）を自分で 1 文字ずつ読み解くのは大変です。**Web フレームワーク** は、\n「リクエストを受け取る」「URL ごとに関数を呼び分ける」「JSON にして返す」といった定番の作業を引き受けてくれます。\n私たちが書くのは **「この URL に来たら何をするか」** だけになります。\n\n## 最小の API（FastAPI）\n\n```python\nfrom fastapi import FastAPI, HTTPException\n\napp = FastAPI()\n\ntasks = {\n    1: {\"id\": 1, \"title\": \"会場を探す\", \"status\": \"todo\"},\n    2: {\"id\": 2, \"title\": \"チラシを作る\", \"status\": \"done\"},\n}\n\n@app.get(\"/tasks\")\ndef list_tasks(status: str | None = None):\n    items = list(tasks.values())\n    if status:\n        items = [t for t in items if t[\"status\"] == status]\n    return {\"items\": items}\n\n@app.get(\"/tasks/{task_id}\")\ndef get_task(task_id: int):\n    if task_id not in tasks:\n        raise HTTPException(status_code=404, detail=\"タスクが見つかりません\")\n    return tasks[task_id]\n```\n\n起動はターミナルでこう打ちます（ファイル名が `main.py` の場合）。\n\n```bash\nuvicorn main:app --reload\n```\n\n`main:app` は「main.py の中の app」、`--reload` は「ファイルを保存したら自動で再起動」です。\n`http://localhost:8000/tasks` を開くと JSON が表示され、`http://localhost:8000/docs` を開くと **API の説明書と試し打ちの画面が自動で** できています。\n\n## ルーティング：URL と関数の対応表\n\n```python\n@app.get(\"/tasks/{task_id}\")\ndef get_task(task_id: int):\n```\n\n`@app.get(...)` はデコレータ（Python コース Lv4）で、「GET で `/tasks/何か` が来たら、この関数を呼んで」と **登録** しています。\n\n| デコレータ | 対応するリクエスト |\n|---|---|\n| `@app.get(\"/tasks\")` | `GET /tasks` |\n| `@app.post(\"/tasks\")` | `POST /tasks` |\n| `@app.patch(\"/tasks/{task_id}\")` | `PATCH /tasks/42` |\n| `@app.delete(\"/tasks/{task_id}\")` | `DELETE /tasks/42` |\n\n**AI が書いたバックエンドを読むときは、まずこのデコレータを全部探す** と、その API で何ができるかの一覧がすぐ分かります。\n\n## パスパラメータとクエリパラメータ\n\n```text\nGET /tasks/2           → get_task(task_id=2)          パスの一部\nGET /tasks?status=done → list_tasks(status=\"done\")    ? のあと\n```\n\n| | パスパラメータ | クエリパラメータ |\n|---|---|---|\n| 書き方 | `/tasks/{task_id}` | `?status=done` |\n| 使いどころ | **どれか 1 つを指す**（ID） | **絞り込み・並べ替え・ページ分け** |\n| 省略 | できない | `= None` を付ければ省略できる |\n\nFastAPI は **関数の引数の名前と型ヒント** を見て、自動で値を取り出して変換してくれます。\n\n- `task_id: int` → `\"2\"` という文字を `2` という数値にしてから渡す\n- `/tasks/abc` のように数値にできないと、関数を呼ぶ前に **422 エラー** を自動で返す（実際に試して確認済み）\n- `status: str | None = None` → `?status=` が無ければ `None`\n\n## 何を返すとどうなる？\n\n| 関数の中で | レスポンス |\n|---|---|\n| `return {\"items\": [...]}`（辞書・リスト） | `200 OK` ＋ JSON |\n| `raise HTTPException(status_code=404, detail=\"...\")` | `404` ＋ `{\"detail\": \"タスクが見つかりません\"}` |\n| 想定外の例外（バグ） | `500 Internal Server Error` |\n| `@app.post(\"/tasks\", status_code=201)` と書いておく | 成功時に `201 Created` |\n\n`raise` で例外を投げると、そこで関数が止まり、フレームワークがエラーのレスポンスに変えてくれます（Python コース「例外処理」）。\n\n## JavaScript（Express）では\n\n```javascript\nimport express from \"express\";\nconst app = express();\n\napp.get(\"/tasks/:taskId\", (req, res) => {\n  const task = tasks[Number(req.params.taskId)];\n  if (!task) return res.status(404).json({ detail: \"タスクが見つかりません\" });\n  res.json(task);\n});\n\napp.listen(8000);\n```\n\n| FastAPI（Python） | Express（JavaScript） |\n|---|---|\n| `@app.get(\"/tasks/{task_id}\")` | `app.get(\"/tasks/:taskId\", ...)` |\n| 引数 `task_id: int` に自動で入る | `req.params.taskId`（文字列。自分で `Number()` に） |\n| 引数 `status` に自動で入る | `req.query.status` |\n| `return 辞書` | `res.json(オブジェクト)` |\n| `raise HTTPException(404, ...)` | `res.status(404).json(...)` |\n\n書き方は違っても、**「メソッド ＋ パス → 関数」の対応表を作る** という考え方は同じです。\n\n## AI のコードではこう出てくる\n\n```python\nrouter = APIRouter(prefix=\"/tasks\", tags=[\"tasks\"])\n\n@router.get(\"/{task_id}\")\ndef get_task(task_id: int): ...\n\napp.include_router(router)\n```\n\n大きなアプリでは、URL のグループ（`/tasks`・`/users` …）ごとにファイルを分け、`APIRouter` でまとめてから `app` に取り付けます。Express の `express.Router()` も同じ考え方です。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`@app.delete(\"/tasks/{task_id}\")` が付いた関数が呼ばれるのは？",
+        "choices": [
+         "GET /tasks/5",
+         "DELETE /tasks/5",
+         "DELETE /tasks?task_id=5"
+        ],
+        "answer": 1,
+        "explain": "メソッドとパスの両方が一致したときに呼ばれます。"
+       },
+       {
+        "question": "`def get_task(task_id: int)` に `GET /tasks/abc` が来ると？",
+        "choices": [
+         "task_id に \"abc\" が入る",
+         "関数が呼ばれる前に 422 エラーが返る",
+         "500 エラーになる"
+        ],
+        "answer": 1,
+        "explain": "型ヒントを見て変換できないと、FastAPI が自動で断ります。"
+       },
+       {
+        "question": "「完了したタスクだけ」を絞り込む条件を渡すのに向いているのは？",
+        "choices": [
+         "パスパラメータ /tasks/done",
+         "クエリパラメータ /tasks?status=done"
+        ],
+        "answer": 1,
+        "explain": "絞り込みや並べ替えはクエリで渡すのが定番です。"
+       }
+      ]
+     ],
+     "id": "05-framework-routing"
+    },
+    {
+     "title": "入力の検証（バリデーション）",
+     "level": 2,
+     "minutes": 15,
+     "concepts": [
+      "backend",
+      "type_hints",
+      "security",
+      "errors"
+     ],
+     "summary": "届いたデータを信用せず、形と中身を確かめてから使う。Pydantic による自動チェックと 422 エラー。",
+     "body": "## このレッスンのゴール\n\n- 「サーバーは届いたデータを信用しない」理由を説明できる\n- Pydantic のモデル（`BaseModel` と `Field`）を読める\n- 422 エラーの中身を読める\n\n## 届くデータは何でもあり\n\nフロントエンドの画面からは、決まった形のデータしか送られない…とは限りません。\n利用者は開発者ツールや別のプログラムを使って、**どんな JSON でも送れます**。\n\n```json\n{\"title\": \"\", \"due\": \"来週\", \"status\": \"完了したことにしておいて\"}\n```\n\nこれをそのまま保存すると、空のタスク・読めない日付・存在しない状態がデータベースに入り、あとで画面やほかの処理が壊れます。\nだからバックエンドは、**使う前に必ず形と中身を確かめます**。これをバリデーション（検証）と呼びます。\n\n## Pydantic：データの「型紙」\n\n```python\nfrom datetime import date\nfrom typing import Literal\nfrom pydantic import BaseModel, Field\n\nclass TaskCreate(BaseModel):\n    title: str = Field(min_length=1, max_length=100)\n    due: date | None = None\n    status: Literal[\"todo\", \"doing\", \"done\"] = \"todo\"\n\n@app.post(\"/tasks\", status_code=201)\ndef create_task(body: TaskCreate):\n    new_id = max(tasks) + 1\n    task = {\"id\": new_id, **body.model_dump()}\n    tasks[new_id] = task\n    return task\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `class TaskCreate(BaseModel)` | 「タスク作成のときに受け付けるデータの形」の定義 |\n| `title: str = Field(min_length=1, max_length=100)` | 文字列で、1〜100 文字 |\n| `due: date \\| None = None` | 日付（`\"2027-01-10\"` の形）。省略してもよい |\n| `status: Literal[...]` | この 3 つのどれかだけ |\n| `body: TaskCreate` | 「リクエストのボディを TaskCreate の型紙に当てはめて」 |\n| `body.model_dump()` | 検証済みのデータを辞書にする |\n\n関数の中に来た時点で、**`body` は検証に合格したデータだけ** です。だから関数の中で「title は空じゃないか？」と書かなくて済みます。\ndataclass（Python コース Lv3）に似ていますが、Pydantic は **実際に中身を確かめて、合わなければ断る** のが違いです。\n\n## 不合格だと 422\n\n```http\nPOST /tasks\n{\"title\": \"\"}\n```\n\n```json\nHTTP/1.1 422 Unprocessable Entity\n\n{\n  \"detail\": [\n    {\n      \"type\": \"string_too_short\",\n      \"loc\": [\"body\", \"title\"],\n      \"msg\": \"String should have at least 1 character\",\n      \"input\": \"\",\n      \"ctx\": {\"min_length\": 1}\n    }\n  ]\n}\n```\n\n- `loc`：どこがダメか（ボディの title）\n- `type` / `msg`：どうダメか（短すぎる）\n\n`\"due\": \"来週\"` を送ると、`loc` が `[\"body\", \"due\"]` のエラーになります（実際に試して確認済み）。\nフロントエンドは `loc` を見て、該当する入力欄の下に赤字を出せます。\n\n## 変換もしてくれる\n\n```json\n{\"title\": \"看板を発注\", \"due\": \"2027-01-10\"}\n```\n\n文字列の `\"2027-01-10\"` は、Python の `date(2027, 1, 10)` に **変換されて** `body.due` に入ります。\n返すときは、また `\"2027-01-10\"` という文字列の JSON に戻されます。\n\n## 返す側にも型紙を使う\n\n```python\nclass UserOut(BaseModel):\n    id: int\n    name: str\n\n@app.get(\"/users/{user_id}\", response_model=UserOut)\ndef get_user(user_id: int):\n    return users[user_id]      # password_hash などが入っていても…\n```\n\n`response_model=UserOut` を付けると、**型紙に無い項目（パスワードのハッシュなど）は自動で取り除かれて** 返ります。\n「入ってくるもの」と「出ていくもの」の両方を型紙で決めておくのが、安全な API の基本です。\n\n## 検証の 3 段階\n\n| 段階 | 例 | どこで |\n|---|---|---|\n| ① 形 | title は文字列、due は日付 | Pydantic |\n| ② 範囲 | title は 1〜100 文字、status は 3 つのどれか | Pydantic（`Field`・`Literal`） |\n| ③ 業務のルール | 担当者はチームのメンバーか、締め切りは本番の日より前か | 関数の中で自分で書く（データベースを見る必要があることが多い） |\n\n③ で断るときは、`raise HTTPException(status_code=422, detail=\"...\")`（または 400・409）を使います。\n\n## JavaScript / TypeScript では\n\n```typescript\nimport { z } from \"zod\";\n\nconst TaskCreate = z.object({\n  title: z.string().min(1).max(100),\n  due: z.string().date().optional(),\n  status: z.enum([\"todo\", \"doing\", \"done\"]).default(\"todo\"),\n});\n\nconst body = TaskCreate.parse(req.body);   // 合わなければ例外\n```\n\nTypeScript コースで出てきた **zod** が、Pydantic とほぼ同じ役割です。TypeScript の型は実行時に消えてしまうので、外から届いたデータは zod で確かめます。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "フロントエンドで入力チェックをしているのに、サーバーでも検証する理由は？",
+        "choices": [
+         "利用者は画面を通さず、どんなデータでも直接送れるから",
+         "フロントエンドのチェックは遅いから",
+         "二重にチェックすると速くなるから"
+        ],
+        "answer": 0,
+        "explain": "サーバーは届いたデータを信用しない、が鉄則です。"
+       },
+       {
+        "question": "`status: Literal[\"todo\", \"doing\", \"done\"]` に `\"完了\"` を送ると？",
+        "choices": [
+         "そのまま保存される",
+         "422 エラーで断られる",
+         "\"done\" に自動で直される"
+        ],
+        "answer": 1,
+        "explain": "決められた 3 つ以外は検証で不合格になります。"
+       },
+       {
+        "question": "`response_model=UserOut` を付ける主な目的は？",
+        "choices": [
+         "処理を速くするため",
+         "返してはいけない項目（パスワードのハッシュなど）を自動で取り除くため",
+         "入力を検証するため"
+        ],
+        "answer": 1,
+        "explain": "出ていくデータの形も型紙で決めておくと、うっかり漏らす事故を防げます。"
+       }
+      ]
+     ],
+     "id": "06-validation"
+    },
+    {
+     "title": "データベースの基本 ― SQL で CRUD",
+     "level": 2,
+     "minutes": 20,
+     "concepts": [
+      "database",
+      "backend",
+      "security"
+     ],
+     "summary": "テーブル・行・列の考え方と、SELECT・INSERT・UPDATE・DELETE。プレースホルダとトランザクション。",
+     "body": "## このレッスンのゴール\n\n- テーブル・行・列・主キーを説明できる\n- SELECT / INSERT / UPDATE / DELETE の 4 つを読める\n- `?`（プレースホルダ）を使う理由と、トランザクションの意味が分かる\n\n## データベース＝鍵付きの巨大な表計算ソフト\n\nこれまでのレッスンでは、タスクを Python の辞書に入れていました。これだと **サーバーを再起動すると全部消えます**。\nデータを確実に残し、たくさんの人が同時に読み書きしても壊れないようにするのが **データベース** です。\n\n最もよく使われるのは **リレーショナルデータベース**（RDB）で、データを表の形で持ちます。\n\n`tasks` テーブル\n\n| id（主キー） | title | status | due |\n|---|---|---|---|\n| 1 | 会場を探す | todo | 2027-01-10 |\n| 2 | チラシを作る | done | NULL |\n\n| 用語 | 意味 |\n|---|---|\n| テーブル | 1 種類のデータの表（tasks・users …） |\n| 行（レコード） | 1 件のデータ |\n| 列（カラム） | 項目。列ごとに型が決まっている |\n| 主キー（PRIMARY KEY） | 行を 1 つに特定する番号。重複しない |\n| NULL | 値が無いこと（Python の None） |\n\n代表的な RDB：**PostgreSQL**（本番の定番）、**MySQL**、**SQLite**（1 ファイルで動く。Python に最初から入っている）。\n\n## SQL：データベースへの命令文\n\nPython の標準ライブラリ `sqlite3` で、実際に動かせます（このレッスンのコードはすべて実行して確認済み）。\n\n### テーブルを作る\n\n```python\nimport sqlite3\nconn = sqlite3.connect(\"app.db\")\n\nconn.execute(\"\"\"\nCREATE TABLE tasks (\n    id      INTEGER PRIMARY KEY AUTOINCREMENT,\n    title   TEXT    NOT NULL,\n    status  TEXT    NOT NULL DEFAULT 'todo',\n    due     TEXT\n)\"\"\")\n```\n\n`NOT NULL` は「空は許さない」、`DEFAULT 'todo'` は「省略したら todo」、`AUTOINCREMENT` は「id を自動で 1, 2, 3 … と振る」。\nバリデーション（レッスン 6）とは別に、**データベース自身にもルールを持たせる** のが安全です。\n\n### C：追加（INSERT）\n\n```python\ncur = conn.execute(\"INSERT INTO tasks (title, due) VALUES (?, ?)\", (\"会場を探す\", \"2027-01-10\"))\nprint(cur.lastrowid)   # 1 ← 振られた id\nconn.commit()\n```\n\n### R：取得（SELECT）\n\n```python\nrows = conn.execute(\n    \"SELECT id, title, status FROM tasks WHERE status = ? ORDER BY id\",\n    (\"todo\",),\n).fetchall()\n# [(1, '会場を探す', 'todo'), (2, 'チラシを作る', 'todo')]\n```\n\nSELECT は英語の文のように読めます。「tasks から、status が todo の行の、id・title・status を、id 順で選ぶ」。\n\n| 句 | 意味 | Python で言うと |\n|---|---|---|\n| `SELECT 列` | どの列を | `[(t[\"id\"], t[\"title\"]) for t in ...]` |\n| `FROM テーブル` | どの表から | `tasks` |\n| `WHERE 条件` | どの行を | `if t[\"status\"] == \"todo\"` |\n| `ORDER BY 列` | 並び順 | `sorted(..., key=...)` |\n| `LIMIT 20` | 何件まで | `[:20]` |\n\n### U：更新（UPDATE）と D：削除（DELETE）\n\n```python\nconn.execute(\"UPDATE tasks SET status = ? WHERE id = ?\", (\"done\", 1))\nconn.execute(\"DELETE FROM tasks WHERE id = ?\", (2,))\nconn.commit()\n```\n\n⚠️ **`WHERE` を書き忘れると、全部の行が変更・削除されます**。AI のコードでも人間のコードでも、UPDATE と DELETE を見たら必ず WHERE を確かめましょう。\n\n## `?`（プレースホルダ）を必ず使う\n\n```python\nname = \"x' OR '1'='1\"\n\n# ❌ 危険：文字列に直接埋め込む\nconn.execute(f\"SELECT title FROM tasks WHERE title = '{name}'\")\n# → SELECT title FROM tasks WHERE title = 'x' OR '1'='1'\n# → 「または 1=1（常に真）」になり、全件が返ってしまう\n\n# ⭕ 安全：? で値を別に渡す\nconn.execute(\"SELECT title FROM tasks WHERE title = ?\", (name,))\n# → 「x' OR '1'='1」という名前のタスクを探すだけ（0 件）\n```\n\n実際に試すと、危険な書き方では他人の「秘密のタスク」まで返ってきました。これが **SQL インジェクション** という、昔から最も多い攻撃の 1 つです（レッスン 11 で詳しく）。\n**SQL に f-string や `+` で値を埋め込んでいたら、AI のコードでも必ず直してもらいましょう。**\n\n## トランザクション：全部やるか、全部やらないか\n\n銀行の振り込みは「A の口座から引く」と「B の口座に足す」の 2 つで 1 セットです。片方だけ成功すると、お金が消えたり増えたりします。\n\n```python\ntry:\n    with conn:                     # トランザクションの開始\n        conn.execute(\"UPDATE accounts SET balance = balance - 1000 WHERE id = 1\")\n        conn.execute(\"UPDATE accounts SET balance = balance + 1000 WHERE id = 2\")\n    # ブロックを無事に抜けたら commit（確定）\nexcept Exception:\n    # 途中でエラーが起きたら rollback（全部なかったことに）\n    ...\n```\n\n`commit` で確定、`rollback` で取り消し。**途中で失敗したら全部なかったことになる** のがトランザクションです（途中で例外を起こして、変更が取り消されることを確認済み）。\n\n## SQL 以外のデータベース（NoSQL）\n\n| 種類 | 例 | 特徴 |\n|---|---|---|\n| ドキュメント型 | **Firestore**（popup2027）、MongoDB | JSON のような形で保存。表の形に縛られない |\n| キー・バリュー型 | Redis | 名前と値の組。とても速い。キャッシュによく使う（レッスン 14） |\n\n迷ったら、まずは PostgreSQL や SQLite のような RDB から、が一般的です。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`DELETE FROM tasks` を実行すると？",
+        "choices": [
+         "何も起きない",
+         "tasks テーブルの全部の行が消える",
+         "tasks テーブル自体が消える"
+        ],
+        "answer": 1,
+        "explain": "WHERE が無いので全行が対象です。テーブル自体を消すのは DROP TABLE です。"
+       },
+       {
+        "question": "SQL に値を入れるとき `?` を使う一番の理由は？",
+        "choices": [
+         "SQL インジェクションを防ぐため",
+         "SQL が短くなるから",
+         "処理が速くなるから"
+        ],
+        "answer": 0,
+        "explain": "値を命令文と分けて渡すので、値の中の記号が命令として解釈されません。"
+       },
+       {
+        "question": "トランザクションの途中でエラーが起きたら？",
+        "choices": [
+         "成功した部分だけ保存される",
+         "それまでの変更が全部取り消される（rollback）",
+         "データベースが壊れる"
+        ],
+        "answer": 1,
+        "explain": "全部やるか、全部やらないか、がトランザクションです。"
+       }
+      ]
+     ],
+     "id": "07-sql-crud"
+    },
+    {
+     "title": "ORM とマイグレーション",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "database",
+      "classes",
+      "tooling"
+     ],
+     "summary": "SQL をクラスとメソッドで書ける ORM（SQLAlchemy）と、テーブルの変更を履歴として管理するマイグレーション。",
+     "body": "## このレッスンのゴール\n\n- ORM が何をしてくれるか、メリットと注意点を説明できる\n- SQLAlchemy のモデル定義と `select(...)` を読める\n- マイグレーションとは何か、なぜ必要か説明できる\n\n## ORM：表をクラスとして扱う\n\n**ORM**（Object-Relational Mapping）は、データベースの **テーブルをクラス、行をオブジェクト** として扱えるようにする道具です。SQL を直接書く代わりに、Python のコードで操作できます。\n\n| データベース | ORM（Python） |\n|---|---|\n| テーブル `tasks` | クラス `Task` |\n| 1 行 | `Task` のインスタンス |\n| 列 `title` | 属性 `task.title` |\n| 別のテーブルとのつながり | `task.assignee.name` のようにたどれる |\n\n## モデルの定義（SQLAlchemy 2.0）\n\n```python\nfrom sqlalchemy import String, ForeignKey, select\nfrom sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session\n\nclass Base(DeclarativeBase):\n    pass\n\nclass User(Base):\n    __tablename__ = \"users\"\n    id: Mapped[int] = mapped_column(primary_key=True)\n    name: Mapped[str] = mapped_column(String(50))\n    tasks: Mapped[list[\"Task\"]] = relationship(back_populates=\"assignee\")\n\nclass Task(Base):\n    __tablename__ = \"tasks\"\n    id: Mapped[int] = mapped_column(primary_key=True)\n    title: Mapped[str] = mapped_column(String(100))\n    status: Mapped[str] = mapped_column(String(10), default=\"todo\")\n    assignee_id: Mapped[int | None] = mapped_column(ForeignKey(\"users.id\"))\n    assignee: Mapped[\"User | None\"] = relationship(back_populates=\"tasks\")\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `__tablename__ = \"tasks\"` | このクラスは tasks テーブル |\n| `Mapped[int]` | この属性は int（型ヒント） |\n| `mapped_column(primary_key=True)` | 主キーの列 |\n| `ForeignKey(\"users.id\")` | **外部キー**：users テーブルの id を指す。「このタスクの担当者」 |\n| `relationship(...)` | つながった相手を属性としてたどれるようにする |\n\n`User` と `Task` は **1 対多**（1 人のユーザーが、たくさんのタスクを持つ）の関係です。\n\n## 使ってみる\n\n```python\nwith Session(engine) as session:\n    ryo = User(name=\"Ryo\")\n    session.add(ryo)\n    session.add(Task(title=\"会場を探す\", assignee=ryo))\n    session.add(Task(title=\"チラシを作る\", assignee=ryo, status=\"done\"))\n    session.commit()\n\n    stmt = select(Task).where(Task.assignee_id == ryo.id, Task.status == \"todo\")\n    for task in session.scalars(stmt):\n        print(task.title, task.assignee.name)   # 会場を探す Ryo\n\n    print([t.title for t in ryo.tasks])         # ['会場を探す', 'チラシを作る']\n```\n\n裏では SQLAlchemy が SQL を作っています。`print(stmt)` で見ると、こうなっていました。\n\n```sql\nSELECT tasks.id, tasks.title, tasks.status, tasks.assignee_id\nFROM tasks\nWHERE tasks.assignee_id = :assignee_id_1 AND tasks.status = :status_1\n```\n\n`:assignee_id_1` はプレースホルダ（レッスン 7 の `?` と同じ）なので、**ORM を使うと SQL インジェクションも自然に防げます**。\n`Session` は「データベースとの 1 回分のやりとり」で、`commit()` で確定します（トランザクション）。\n\n## ORM のメリットと注意点\n\n| メリット | 注意点 |\n|---|---|\n| Python のクラスとして書ける。型ヒントでエディタが補完してくれる | 裏でどんな SQL が出ているか見えにくい |\n| PostgreSQL・SQLite などの違いを吸収してくれる | `task.assignee` を何百回もたどると、そのたびに SQL が飛んで遅くなる（**N+1 問題**、レッスン 14） |\n| プレースホルダが自動で使われる | 複雑な集計は SQL を直接書いた方が分かりやすいこともある |\n\n**ORM を使っていても、SQL の基本（レッスン 7）を知っていると、遅い・おかしいときに原因が分かります。**\n\n## マイグレーション：テーブルの変更履歴\n\nアプリを作っていると、「タスクに締め切り（due）の列を足したい」のように、**テーブルの形を変えたくなります**。\nでも本番のデータベースにはすでにデータが入っているので、作り直すわけにはいきません。\n\nそこで、**テーブルの変更を、順番付きの小さなスクリプトとして残しておく** のがマイグレーションです。Git の「コミット」のデータベース版だと考えると分かりやすいです。\n\n```text\nmigrations/\n├── 0001_create_users_and_tasks.py\n├── 0002_add_due_to_tasks.py        ← 新しく足した変更\n```\n\nSQLAlchemy では **Alembic** という道具を使います。\n\n```bash\nalembic revision --autogenerate -m \"add due to tasks\"   # モデルとの差分から変更ファイルを作る\nalembic upgrade head                                     # まだ当てていない変更を全部当てる\nalembic downgrade -1                                     # 1 つ戻す\n```\n\n作られるファイルの中身はこんな形です。\n\n```python\ndef upgrade():\n    op.add_column(\"tasks\", sa.Column(\"due\", sa.Date(), nullable=True))\n\ndef downgrade():\n    op.drop_column(\"tasks\", \"due\")\n```\n\n`upgrade`（進める）と `downgrade`（戻す）がセットになっています。\n\n⚠️ AI に「列を消して」「型を変えて」と頼んだときは、**マイグレーションでデータが消えないか**（`drop_column` など）を必ず確認しましょう。本番で実行する前にバックアップを取るのが鉄則です。\n\n## 他の言語では\n\n| 言語 | ORM | マイグレーション |\n|---|---|---|\n| Python | SQLAlchemy、Django ORM | Alembic、Django の `makemigrations` |\n| TypeScript | Prisma、Drizzle、TypeORM | `prisma migrate` など |\n| Ruby | Active Record（Rails） | `rails db:migrate` |\n| PHP | Eloquent（Laravel） | `php artisan migrate` |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "ORM で `Task` クラスのインスタンス 1 つは、データベースの何にあたる？",
+        "choices": [
+         "テーブル全体",
+         "tasks テーブルの 1 行",
+         "1 つの列"
+        ],
+        "answer": 1,
+        "explain": "クラスがテーブル、インスタンスが行、属性が列です。"
+       },
+       {
+        "question": "`ForeignKey(\"users.id\")` の意味は？",
+        "choices": [
+         "この列は users テーブルの id を指している（どのユーザーのものか）",
+         "users テーブルを削除する",
+         "id を自動で振る"
+        ],
+        "answer": 0,
+        "explain": "外部キーで、別のテーブルとのつながりを表します。"
+       },
+       {
+        "question": "マイグレーションを使う一番の理由は？",
+        "choices": [
+         "SQL を書かなくて済むから",
+         "データを残したまま、テーブルの形の変更を順番に・やり直せる形で当てるため",
+         "データベースを速くするため"
+        ],
+        "answer": 1,
+        "explain": "テーブルの形の変更履歴を、Git のように管理する仕組みです。"
+       }
+      ]
+     ],
+     "id": "08-orm-migration"
+    },
+    {
+     "title": "認証と認可 ― ログインと権限",
+     "level": 2,
+     "minutes": 22,
+     "concepts": [
+      "auth",
+      "security",
+      "backend"
+     ],
+     "summary": "「あなたは誰？」（認証）と「それをしてよい？」（認可）。パスワードの保存方法、セッションとトークン（JWT）。",
+     "body": "## このレッスンのゴール\n\n- 認証と認可の違いを説明できる\n- パスワードを「ハッシュ化」して保存する理由が分かる\n- セッション（Cookie）とトークン（JWT）の違いを説明できる\n- 「他人のデータを見られない」ためのチェックを読める\n\n## 認証と認可\n\n| | 認証（Authentication） | 認可（Authorization） |\n|---|---|---|\n| 問い | **あなたは誰？** | **それをしてよい？** |\n| 例 | ユーザー名とパスワードでログイン | 自分のタスクは消せるが、他人のタスクは消せない |\n| 失敗したら | `401 Unauthorized` | `403 Forbidden`（または、存在を隠すため `404`） |\n\npopup2027 の「あなたは誰？」で名前を選ぶ仕組みは、**認証ではありません**（誰でもどの名前でも選べる）。本当の認証には、本人しか知らない・持っていないもので確かめる必要があります。\n\n## パスワードは「そのまま」保存しない\n\nデータベースが盗まれても、パスワードがばれないようにする必要があります。そこで **ハッシュ化** します。\n\n```python\nimport bcrypt\n\nhashed = bcrypt.hashpw(\"hana-2027\".encode(), bcrypt.gensalt())\n# b'$2b$12$1BfUQb7JcWaT5...'（60 文字。毎回違う文字列になる）\n\nbcrypt.checkpw(\"hana-2027\".encode(), hashed)   # True\nbcrypt.checkpw(\"wrong\".encode(), hashed)       # False\n```\n\n- **ハッシュ**：元に戻せない変換。ログインのときは、入力を同じ方法で変換して **一致するか** だけを比べる\n- **ソルト**（`gensalt()`）：ランダムな値を混ぜ、同じパスワードでも毎回違う結果にする（よくあるパスワードの一覧表で一気に解読されるのを防ぐ）\n- **わざと遅い計算**（bcrypt・Argon2 など）を使う。`$12$` は計算の重さ。総当たりで試されても時間がかかるように\n\n⚠️ AI のコードで、パスワードをそのまま保存している・`md5` や `sha256` だけで済ませている、のを見たら要注意です。\n\n## ログイン状態を覚える 2 つの方法\n\nHTTP は前のリクエストを覚えていない（レッスン 3）ので、ログインしたことを毎回伝える必要があります。\n\n### ① セッション ＋ Cookie\n\n```text\nログイン成功 → サーバーが「整理券」（セッション ID）を発行して保存\n            → レスポンスの Set-Cookie: session_id=abc123 でブラウザに渡す\n以後のリクエスト → ブラウザが自動で Cookie: session_id=abc123 を付ける\n             → サーバーは保存してある整理券と照合して「Ryo さんだ」と分かる\n```\n\n- サーバーが「誰がログイン中か」を覚えておく\n- ログアウトさせたいときは、サーバー側で整理券を消せばよい\n- 普通の Web サイトの定番\n\nCookie には安全のための設定を付けます。\n\n| 設定 | 意味 |\n|---|---|\n| `HttpOnly` | JavaScript から読めない（XSS で盗まれにくい） |\n| `Secure` | https のときだけ送る |\n| `SameSite=Lax` | 他のサイトからのリクエストには付けない（なりすましの攻撃を防ぐ） |\n\n### ② トークン（JWT）\n\n```python\nimport jwt\nfrom datetime import datetime, timedelta, timezone\n\npayload = {\"sub\": \"1\", \"exp\": datetime.now(timezone.utc) + timedelta(hours=1)}\ntoken = jwt.encode(payload, SECRET_KEY, algorithm=\"HS256\")\n# 'eyJhbGciOi...' （ヘッダー.中身.署名 の 3 つを . でつないだ文字列）\n```\n\n- サーバーは何も覚えず、**署名付きの「通行証」** を渡す\n- 以後のリクエストで `Authorization: Bearer <トークン>` を付けてもらう\n- サーバーは **署名を確かめる** だけで、「改ざんされていない、Ryo さん（sub: 1）の、期限内の通行証だ」と分かる\n- スマホアプリや、サーバー同士の API でよく使う\n\n⚠️ JWT の中身は **暗号化ではなく、誰でも読める**（Base64 という変換をしているだけ）。パスワードなどの秘密を入れてはいけません。\n⚠️ `SECRET_KEY` が漏れると、誰でも通行証を偽造できます。環境変数に置き、十分に長いランダムな値にします（短すぎるとライブラリが警告を出すことも確認しました）。\n\n```bash\npython -c \"import secrets; print(secrets.token_urlsafe(32))\"\n```\n\n| | セッション | JWT |\n|---|---|---|\n| サーバーが覚えること | 誰がログイン中か | 何も覚えない（署名の鍵だけ） |\n| すぐにログアウトさせる | 簡単（整理券を消す） | 難しい（期限が切れるまで有効。期限を短くするなどの工夫が要る） |\n| 向いている場面 | ブラウザの Web サイト | スマホアプリ・API |\n\n## FastAPI での形\n\n```python\nfrom fastapi import Depends, FastAPI, HTTPException\nfrom fastapi.security import HTTPAuthorizationCredentials, HTTPBearer\n\nbearer = HTTPBearer()\n\ndef get_current_user_id(cred: HTTPAuthorizationCredentials = Depends(bearer)) -> int:\n    try:\n        payload = jwt.decode(cred.credentials, SECRET_KEY, algorithms=[\"HS256\"])\n    except jwt.PyJWTError:\n        raise HTTPException(status_code=401, detail=\"ログインし直してください\")\n    return int(payload[\"sub\"])\n\n@app.get(\"/tasks/{task_id}\")\ndef get_task(task_id: int, user_id: int = Depends(get_current_user_id)):\n    task = TASKS.get(task_id)\n    if task is None or task[\"owner_id\"] != user_id:          # ← 認可\n        raise HTTPException(status_code=404, detail=\"タスクが見つかりません\")\n    return task\n```\n\n- `Depends(...)`：「この関数を呼ぶ前に、まず `get_current_user_id` を実行して、その結果を渡して」という **依存性注入**。ログインが必要な API すべてに 1 行足すだけで済む\n- トークンが無い・偽物・期限切れなら 401（実際に試して確認済み）\n- **`task[\"owner_id\"] != user_id` のチェックが認可**。これが無いと、ログインさえすれば **URL の数字を変えるだけで他人のタスクが見えてしまう**\n\n最後の点はとても多い脆弱性（IDOR と呼ばれます）で、AI のコードでも抜けがちです。**「ログインしているか」だけでなく「その人のデータか」を確かめているか** を必ず見ましょう。\n\n## 自分で作らない、という選択\n\nログインの仕組みは、パスワード再設定・メール確認・2 段階認証・「Google でログイン」（OAuth）など、ちゃんと作ると大仕事で、間違えると被害が大きい部分です。\n実際の開発では、**Firebase Authentication、Supabase Auth、Auth0、Clerk** などの既製品を使うことが多いです。popup2027 に本当のログインを付けるなら、Firebase Authentication が一番の近道です。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "「ログインはしているが、他人のタスクを消そうとした」ときに返すのに合うのは？",
+        "choices": [
+         "401",
+         "403（または存在を隠す 404）",
+         "500"
+        ],
+        "answer": 1,
+        "explain": "誰かは分かっているので 401 ではありません。権限が無いので 403、存在自体を隠したいなら 404 です。"
+       },
+       {
+        "question": "パスワードをデータベースに保存する正しい方法は？",
+        "choices": [
+         "そのまま保存する",
+         "暗号化して、鍵を同じサーバーに置く",
+         "bcrypt などでハッシュ化して保存する"
+        ],
+        "answer": 2,
+        "explain": "ハッシュは元に戻せないので、データベースが盗まれてもパスワードがすぐには分かりません。"
+       },
+       {
+        "question": "JWT について正しいのは？",
+        "choices": [
+         "中身は誰でも読めるので、秘密の情報を入れてはいけない",
+         "中身は暗号化されているので何を入れても安全",
+         "サーバーにすべての JWT を保存しておく必要がある"
+        ],
+        "answer": 0,
+        "explain": "署名で改ざんは防げますが、中身は Base64 で誰でも読めます。"
+       },
+       {
+        "question": "`GET /tasks/11` で、ログインはチェックしているが持ち主のチェックが無い。何が起きる？",
+        "choices": [
+         "ログインした人なら、数字を変えるだけで他人のタスクが見える",
+         "自動で自分のタスクだけになる",
+         "必ず 401 になる"
+        ],
+        "answer": 0,
+        "explain": "認可（その人のデータかの確認）が抜けた、よくある脆弱性です。"
+       }
+      ]
+     ],
+     "id": "09-auth"
+    },
+    {
+     "title": "エラー処理とログ",
+     "level": 3,
+     "minutes": 18,
+     "concepts": [
+      "errors",
+      "backend",
+      "security"
+     ],
+     "summary": "失敗を正しいステータスで返し、利用者には必要なことだけ、開発者にはログで詳しく伝える。",
+     "body": "## このレッスンのゴール\n\n- 「利用者に見せるエラー」と「ログに残すエラー」を分ける理由を説明できる\n- FastAPI の例外ハンドラを読める\n- 良いログ・悪いログを見分けられる\n\n## エラーは 2 人に向けて出す\n\n| 相手 | 知りたいこと | 出す場所 |\n|---|---|---|\n| **利用者（フロントエンド）** | 何がダメで、どうすれば直るか | レスポンス（ステータス ＋ 短いメッセージ） |\n| **開発者（あなた・AI）** | どこで、なぜ失敗したか（細かい情報） | **ログ** |\n\nこの 2 つを混ぜてはいけません。たとえば 500 エラーのときに、プログラムの中身（どのファイルの何行目か・SQL 文・設定値）をレスポンスに出すと、**攻撃者にヒントを与えてしまいます**。\n\nFastAPI は、想定外のエラーが起きると、利用者には `500 Internal Server Error` という文字だけを返します（実際に `1 / 0` を起こして確認しました）。詳しい内容はサーバーのログにだけ出ます。\n\n## 想定内のエラーは、決まった形で返す\n\n```python\nclass TaskNotFound(Exception):\n    def __init__(self, task_id: int):\n        self.task_id = task_id\n\n@app.exception_handler(TaskNotFound)\nasync def task_not_found_handler(request: Request, exc: TaskNotFound):\n    return JSONResponse(\n        status_code=404,\n        content={\"error\": {\"code\": \"task_not_found\", \"message\": f\"タスク {exc.task_id} はありません\"}},\n    )\n\n@app.get(\"/tasks/{task_id}\")\ndef get_task(task_id: int, db = Depends(get_db)):\n    row = db.execute(\"SELECT id, title FROM tasks WHERE id = ?\", (task_id,)).fetchone()\n    if row is None:\n        raise TaskNotFound(task_id)\n    return {\"id\": row[0], \"title\": row[1]}\n```\n\n- 自分用の例外（`TaskNotFound`）を作り、`raise` するだけにする\n- `@app.exception_handler(...)` で、その例外を **どんなレスポンスにするか** を 1 か所にまとめる\n- どの API でも同じ形のエラー（レッスン 4 の `code` ＋ `message`）が返るので、フロントエンドが扱いやすい\n\n## どのステータスを返すか\n\n| 状況 | ステータス |\n|---|---|\n| 形がおかしい・検証で不合格 | 400 / 422 |\n| ログインしていない | 401 |\n| 権限が無い | 403（隠したいなら 404） |\n| 見つからない | 404 |\n| すでにある・同時に更新された（例：同じメールアドレスで登録） | 409 |\n| 呼びすぎ | 429 |\n| 想定外のバグ | 500（**利用者には詳細を見せない**） |\n| 外部サービス（Notion・決済など）が落ちている | 502 / 503 |\n\n**「何でも 500」「何でも 200 で `{\"ok\": false}`」は避けましょう**。ステータスで分かれていると、リトライしてよいか（5xx）、入力を直すべきか（4xx）が呼ぶ側で判断できます。\n\n## ログ：開発者への手紙\n\n```python\nimport logging\nlog = logging.getLogger(\"app\")\n\nlog.info(\"task created id=%s user=%s\", task_id, user_id)\nlog.warning(\"notion api slow elapsed_ms=%d\", elapsed)\nlog.exception(\"failed to send email task_id=%s\", task_id)   # except の中で使うと、エラーの詳細も残る\n```\n\n| レベル | 使いどころ |\n|---|---|\n| `DEBUG` | 開発中だけ見たい細かい情報 |\n| `INFO` | 普通の出来事（作成した・ログインした） |\n| `WARNING` | 気をつけたいが動いている（遅い・リトライした） |\n| `ERROR` | 失敗した |\n| `CRITICAL` | サービス全体が危ない |\n\nfashion_news が `log.info(\"%s: %d件\", ...)` や `log.warning(...)` を使っていたのは、GitHub Actions のログで後から確認するためでした。\n\n### 良いログの条件\n\n- **後から検索できる**：`task created id=42 user=1` のように、何が・どれが、が分かる。本番では JSON の形で出すことも多い\n- **1 つのリクエストを追える**：リクエストごとの ID（リクエスト ID）を全部のログに付けておくと、「このエラーの直前に何があったか」をたどれる\n- **時刻とレベルが付いている**\n\n### 書いてはいけないもの\n\n- ❌ パスワード・トークン・API キー（`log.info(\"login %s %s\", user, password)`）\n- ❌ クレジットカード番号など、必要以上の個人情報\n- ❌ `print()` だけで済ませる（レベル分けや出力先の切り替えができない）\n\nAI のコードで、デバッグ用の `print(request_body)` が残っていたら、秘密が混ざっていないか確認しましょう。\n\n## エラーを握りつぶさない\n\n```python\ntry:\n    send_email(user)\nexcept Exception:\n    pass          # ❌ 失敗に誰も気づけない\n```\n\n```python\ntry:\n    send_email(user)\nexcept EmailError:\n    log.exception(\"failed to send email user=%s\", user.id)   # ⭕ 記録して、\n    # 必要ならリトライ用に印を付ける、利用者に「メールは後で送ります」と伝える、など\n```\n\nPython コースの「例外処理」で学んだ `except Exception: pass` の危うさは、バックエンドでは特に重大です。誰も画面を見ていないので、**ログに残らない失敗は、無かったことになってしまいます**。\n\n## 本番では「見張り」を付ける\n\nログは出しているだけでは誰も読みません。本番では次のような道具で、問題が起きたら知らせてもらいます。\n\n- **エラー監視**（Sentry など）：500 が起きたら、エラーの詳細と一緒に通知\n- **死活監視**：数分ごとにアクセスして、応答が無ければ通知\n- **ログの集約**（クラウドのログ画面など）：複数のサーバーのログをまとめて検索\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "500 エラーのレスポンスに、SQL 文やファイルの行番号を含めるべき？",
+        "choices": [
+         "含めるべき。利用者が原因を調べられるから",
+         "含めない。詳細はログにだけ残す"
+        ],
+        "answer": 1,
+        "explain": "中身の情報は攻撃者へのヒントになります。"
+       },
+       {
+        "question": "同じメールアドレスでユーザー登録しようとした。合うステータスは？",
+        "choices": [
+         "500",
+         "409",
+         "200"
+        ],
+        "answer": 1,
+        "explain": "すでにあるものとぶつかった（衝突）ので 409 Conflict が合います。"
+       },
+       {
+        "question": "ログに書いてはいけないものは？",
+        "choices": [
+         "タスクの ID",
+         "処理にかかった時間",
+         "ログイン時に入力されたパスワード"
+        ],
+        "answer": 2,
+        "explain": "ログは多くの人や道具が読むので、秘密情報を書いてはいけません。"
+       }
+      ]
+     ],
+     "id": "10-errors-logging"
+    },
+    {
+     "title": "バックエンドのセキュリティ定番 10",
+     "level": 3,
+     "minutes": 22,
+     "concepts": [
+      "security",
+      "backend",
+      "auth"
+     ],
+     "summary": "AI のバックエンドを確認するときに必ず見たい、代表的な攻撃と守り方のチェックリスト。",
+     "body": "## このレッスンのゴール\n\n- 代表的な攻撃（SQL インジェクション・XSS・CSRF・IDOR など）の名前と仕組みをざっくり説明できる\n- AI が書いたバックエンドを、チェックリストで点検できる\n\nこれまでのレッスンに出てきたものも含めて、**よくある 10 個** にまとめます。全部を深く理解できなくても、「この観点で見る」と知っているだけで大きく違います。\n\n## ① SQL インジェクション\n\n入力した文字が SQL の命令として解釈されてしまう攻撃（レッスン 7）。\n\n```python\ndb.execute(f\"SELECT * FROM users WHERE name = '{name}'\")      # ❌\ndb.execute(\"SELECT * FROM users WHERE name = ?\", (name,))     # ⭕\n```\n\n**守り方**：プレースホルダか ORM を使う。SQL に f-string・`+`・`%` で値を埋め込まない。\n\n## ② 認可漏れ（IDOR）\n\nログインしていれば、URL の数字を変えるだけで他人のデータが見える・変えられる（レッスン 9）。\n\n```python\ntask = db.get(Task, task_id)\nif task.owner_id != current_user.id:      # ← この確認があるか\n    raise HTTPException(404)\n```\n\n**守り方**：すべての取得・更新・削除で「その人のデータか」を確かめる。データベースから取るときに `WHERE owner_id = ?` を付けるのが確実。\n\n## ③ パスワードの保存ミス\n\n**守り方**：bcrypt・Argon2 でハッシュ化（レッスン 9）。そのまま・md5 だけ、は NG。ログイン失敗が続いたら待たせる・ロックする。\n\n## ④ 秘密情報の漏えい\n\nAPI キー・データベースのパスワード・JWT の鍵がコードや Git に入っている。\n\n**守り方**：環境変数や、クラウドの「シークレット管理」に置く。`.env` は `.gitignore` に入れる（AI と開発するコース「秘密情報と環境変数」）。漏れたらすぐ無効化。\n\n## ⑤ XSS（クロスサイトスクリプティング）\n\n利用者が入力した `<script>` などが、他の人の画面でプログラムとして動いてしまう。\n\n**守り方**：表示するときに無害化する（popup2027 の `esc()`）。React などは自動で無害化してくれる。サーバー側では、入力を検証し、レスポンスの `Content-Type` を正しく返す。\n\n## ⑥ CSRF（クロスサイト・リクエスト・フォージェリ）\n\nログイン中の利用者が、悪いサイトを開いただけで、知らないうちに「送金」などのリクエストを送らされてしまう攻撃。Cookie が自動で付くことを悪用します。\n\n**守り方**：Cookie に `SameSite=Lax`（または `Strict`）を付ける。データを変える操作は GET にしない（レッスン 3）。フレームワークの CSRF 対策（トークン）を使う。\n\n## ⑦ CORS の設定ミス\n\nブラウザは基本的に、**別のサイト（オリジン）の API の結果を JavaScript で読むこと** を止めています。それを「このサイトからなら許す」と緩める設定が **CORS** です。\n\n```python\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"https://myapp.example.com\"],   # ⭕ 自分のフロントエンドだけ\n    allow_credentials=True,\n    allow_methods=[\"*\"],\n    allow_headers=[\"*\"],\n)\n```\n\nAI は「CORS エラーが出た」と言われると、`allow_origins=[\"*\"]`（どこからでも OK）にしがちです。**ログインのある API で「どこからでも」は危険** なので、自分のサイトの URL だけを書くようにしましょう。\n\n## ⑧ 呼ばれすぎ（レート制限が無い）\n\nログイン API を 1 秒に何千回も呼ばれてパスワードを総当たりされる、AI の API を大量に呼ばれて請求が膨らむ、など。\n\n**守り方**：1 人（1 IP）あたりの回数制限をかけ、超えたら `429`。ログイン・登録・メール送信・AI 呼び出しなど、**お金や安全に関わる API は特に**。\n\n## ⑨ 入力の大きさ・種類の制限が無い\n\n1GB の JSON、巨大な画像、想定外のファイル形式（画像のふりをしたプログラム）。\n\n**守り方**：文字数・件数・ファイルサイズに上限を付ける（レッスン 6 の `max_length`）。アップロードはファイルの種類を確かめ、元のファイル名をそのまま使わない。\n\n## ⑩ 古いライブラリ\n\n使っているライブラリに見つかった穴（脆弱性）を、そのままにしている。\n\n**守り方**：`pip list --outdated` や `npm audit`、GitHub の Dependabot で定期的に更新する。AI が提案したライブラリは、本物か・今も更新されているかを確認する（AI と開発するコース「AI の得意・苦手」）。\n\n## チェックリスト（AI のバックエンドを読むとき）\n\n| # | 見るところ | 確認すること |\n|---|---|---|\n| 1 | SQL を書いている所 | `?`・ORM を使っているか。f-string で埋め込んでいないか |\n| 2 | 取得・更新・削除の API | 持ち主・権限の確認があるか |\n| 3 | ユーザー登録・ログイン | パスワードをハッシュ化しているか。回数制限があるか |\n| 4 | 設定・定数 | 秘密がコードに直書きされていないか |\n| 5 | HTML を返す・表示する所 | 無害化しているか |\n| 6 | Cookie の設定 | `HttpOnly`・`Secure`・`SameSite` |\n| 7 | CORS の設定 | `allow_origins=[\"*\"]` になっていないか |\n| 8 | お金・安全に関わる API | 回数制限 |\n| 9 | 入力の受け取り | 長さ・サイズ・種類の上限 |\n| 10 | `requirements.txt` / `package.json` | 古すぎるもの・聞いたことのないものが無いか |\n\nAI に「このコードを、OWASP の観点でセキュリティレビューして」と頼むのも有効です（**OWASP** は Web のセキュリティの代表的な指針を出している団体です）。ただし最終確認は、このチェックリストで自分の目でも。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "「CORS エラーが出るので allow_origins を [\"*\"] にしました」と AI が言った。ログインのある API で問題になりうる？",
+        "choices": [
+         "なりうる。どのサイトからでも API を使えてしまう",
+         "ならない。CORS はセキュリティに関係ない"
+        ],
+        "answer": 0,
+        "explain": "自分のフロントエンドの URL だけを許可するのが基本です。"
+       },
+       {
+        "question": "ログイン API にレート制限を付ける主な理由は？",
+        "choices": [
+         "サーバーの電気代を節約するため",
+         "パスワードの総当たりを防ぐため",
+         "ログを減らすため"
+        ],
+        "answer": 1,
+        "explain": "短い時間に何度も試せないようにして、総当たり攻撃を防ぎます。"
+       },
+       {
+        "question": "次のうち、SQL インジェクションの心配がある書き方は？",
+        "choices": [
+         "db.execute(\"SELECT * FROM t WHERE id = ?\", (id,))",
+         "db.execute(\"SELECT * FROM t WHERE id = \" + id)",
+         "session.scalars(select(T).where(T.id == id))"
+        ],
+        "answer": 1,
+        "explain": "文字列をつなげて SQL を作ると、入力が命令として解釈される危険があります。"
+       }
+      ]
+     ],
+     "id": "11-security"
+    },
+    {
+     "title": "API のテスト",
+     "level": 3,
+     "minutes": 18,
+     "concepts": [
+      "testing",
+      "backend",
+      "database"
+     ],
+     "summary": "TestClient で API を呼んで確かめる。テスト用のデータベースへの差し替えと、何をテストすべきか。",
+     "body": "## このレッスンのゴール\n\n- API のテストコード（pytest ＋ TestClient）を読める\n- テストのときに本物のデータベースを使わない工夫（差し替え）が分かる\n- 「何をテストすべきか」の定番を挙げられる\n\n## API のテスト＝偽物のブラウザで呼んでみる\n\nAI と開発するコース「テストで AI のコードを確かめる」では、関数を直接呼んで `assert` しました。\nAPI の場合は、**サーバーを起動せずに、偽物のクライアントから HTTP リクエストを送って** 確かめます。\n\n```python\nfrom fastapi.testclient import TestClient\nfrom app import app\n\nclient = TestClient(app)\n\ndef test_create_and_get_task():\n    res = client.post(\"/tasks\", json={\"title\": \"会場を探す\"})\n    assert res.status_code == 201\n    task_id = res.json()[\"id\"]\n\n    res = client.get(f\"/tasks/{task_id}\")\n    assert res.status_code == 200\n    assert res.json()[\"title\"] == \"会場を探す\"\n```\n\n確かめているのは、**ステータスコード** と **返ってきた JSON の中身** の 2 つです。これはフロントエンドが実際に頼りにしている「約束」そのものです。\n\n## 本物のデータベースを使わない\n\nテストのたびに本物のデータベースにタスクが増えていくのは困ります。そこで、**テストの間だけ、データベースを使い捨てのものに差し替えます**。\n\nアプリ側は、データベースの接続を `Depends(get_db)` で受け取るように作っておきます。\n\n```python\ndef get_db():\n    conn = sqlite3.connect(\"app.db\")\n    try:\n        yield conn          # ← この接続を API の関数に渡す\n    finally:\n        conn.close()        # ← リクエストが終わったら閉じる\n\n@app.post(\"/tasks\", status_code=201)\ndef create_task(body: TaskCreate, db = Depends(get_db)):\n    ...\n```\n\nテスト側で、`get_db` を **差し替え** ます。\n\n```python\nimport pytest\n\n@pytest.fixture\ndef client(tmp_path):\n    conn = sqlite3.connect(tmp_path / \"test.db\", check_same_thread=False)\n    conn.execute(\"CREATE TABLE tasks (id INTEGER PRIMARY KEY, title TEXT NOT NULL)\")\n\n    def override_get_db():\n        yield conn\n\n    app.dependency_overrides[get_db] = override_get_db    # ← 差し替え\n    yield TestClient(app)\n    app.dependency_overrides.clear()                       # ← 元に戻す\n    conn.close()\n\ndef test_create_and_get_task(client):\n    ...\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `@pytest.fixture` | テストの **準備と後片付け** をまとめた関数。テストの引数に `client` と書くと自動で渡される |\n| `tmp_path` | pytest が用意してくれる、テストごとの使い捨てフォルダ |\n| `yield` | ここでテストを実行し、終わったら続き（後片付け）を実行する |\n| `app.dependency_overrides[get_db] = ...` | 「`get_db` の代わりにこちらを使って」 |\n\nレッスン 9 の `Depends` は、ログインのチェックだけでなく、**テストで部品を差し替えやすくする** ためにも役立っているのです。\n\nこのレッスンのテストは、実際に 4 つとも通ることを確認しました。\n\n```text\n$ pytest -q\n....                                   [100%]\n4 passed in 0.27s\n```\n\n## 何をテストすべきか\n\n「うまくいく場合」だけでなく、**断るべきものをちゃんと断るか** が大事です。\n\n| 種類 | 例 | 期待 |\n|---|---|---|\n| 正常 | 正しいデータでタスクを作る | 201 と中身 |\n| 検証 | タイトルが空 | 422 |\n| 存在しない | `GET /tasks/999` | 404 |\n| 認証 | トークン無しで呼ぶ | 401 |\n| **認可** | **他人のタスクを取得・削除** | **403 / 404** |\n| 境界 | 100 文字ちょうど・101 文字 | 通る・断る |\n| 副作用 | 作成したら通知が送られる | 通知の記録が増えている |\n\n特に **認可のテスト**（他人のデータを触れないこと）は、AI のコードで抜けやすく、抜けると被害が大きいので必ず入れてもらいましょう。\n\n## テストの種類\n\n| 種類 | 何を | 速さ |\n|---|---|---|\n| 単体テスト | 関数 1 つ（計算・変換） | とても速い |\n| **API テスト（結合テスト）** | API を呼んで、データベースまで通して確かめる | 速い |\n| E2E テスト | 本物のブラウザで画面を操作する（Playwright など） | 遅い |\n\nバックエンドでは **API テストを中心に** 書くと、少ない量で安心感が大きくなります。\n\n## 自動で毎回実行する（CI）\n\n```yaml\n# .github/workflows/test.yml\non: [push, pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@v5\n        with: { python-version: \"3.12\" }\n      - run: pip install -r requirements-dev.txt\n      - run: pytest\n```\n\npush のたびに GitHub Actions でテストを実行し、失敗したら分かるようにする仕組みを **CI**（継続的インテグレーション）と呼びます。fashion_news の解説で「テストを自動で動かす設定が無い」と書いたのは、これのことです。\n\n## JavaScript では\n\n```javascript\nimport request from \"supertest\";\nimport { app } from \"./app.js\";\n\ntest(\"タスクを作れる\", async () => {\n  const res = await request(app).post(\"/tasks\").send({ title: \"会場を探す\" });\n  expect(res.status).toBe(201);\n});\n```\n\n`supertest` が TestClient にあたり、`expect(...).toBe(...)` が `assert ... == ...` にあたります。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`app.dependency_overrides[get_db] = override_get_db` の目的は？",
+        "choices": [
+         "テストの間だけ、データベースを使い捨てのものに差し替える",
+         "本番のデータベースを速くする",
+         "get_db を削除する"
+        ],
+        "answer": 0,
+        "explain": "Depends で受け取る部品は、テストで差し替えられます。"
+       },
+       {
+        "question": "API のテストで特に入れておきたいのは？",
+        "choices": [
+         "正しいデータで作れることだけ",
+         "他人のデータを取得・削除できないこと（認可）も",
+         "画面のデザインの確認"
+        ],
+        "answer": 1,
+        "explain": "断るべきものを断れるかのテストは、セキュリティの守りになります。"
+       },
+       {
+        "question": "`@pytest.fixture` の中の `yield` の役割は？",
+        "choices": [
+         "そこでテストを実行し、終わったら後片付けを続ける",
+         "値を 2 回返す",
+         "テストを飛ばす"
+        ],
+        "answer": 0,
+        "explain": "準備 → テスト → 後片付け、を 1 つの関数で書けます。"
+       }
+      ]
+     ],
+     "id": "12-testing-api"
+    },
+    {
+     "title": "非同期処理と、裏で動く仕事（ジョブ）",
+     "level": 3,
+     "minutes": 18,
+     "concepts": [
+      "async",
+      "backend",
+      "deploy"
+     ],
+     "summary": "待ち時間を有効に使う async と、レスポンスのあとで動かす処理・定時に動かす処理・キュー。",
+     "body": "## このレッスンのゴール\n\n- バックエンドで async が役立つ場面を説明できる\n- 「すぐ返して、重い仕事は裏で」という考え方が分かる\n- バックグラウンドタスク・ジョブキュー・定時実行（cron）を見分けられる\n\n## バックエンドは「待ち時間」だらけ\n\n1 つのリクエストの中で、サーバーは意外と **待って** ばかりいます。\n\n```text\nリクエストが来る\n → データベースに聞く        （待つ 5ms）\n → 外部の API に聞く         （待つ 300ms）\n → 計算する                  （0.1ms）\n → 返す\n```\n\n待っている間、何もしないのはもったいないので、**待っている間に別のリクエストの処理を進める** のが async です（Python コース Lv4「デコレータと async/await」）。\n\n```python\nimport httpx\n\n@app.get(\"/weather\")\nasync def weather():\n    async with httpx.AsyncClient() as client:\n        res = await client.get(\"https://api.example.com/forecast\", timeout=10)\n    return res.json()\n```\n\n- `async def`：途中で待つかもしれない関数\n- `await`：ここで待つ。待っている間、サーバーは他のリクエストを処理できる\n- `httpx` の `AsyncClient`：`requests` の async 版\n\n### ⚠️ async の落とし穴\n\n```python\n@app.get(\"/slow\")\nasync def slow():\n    time.sleep(3)             # ❌ async の中で「待たせない書き方」の待ち → サーバー全体が 3 秒止まる\n    requests.get(url)         # ❌ これも同じ\n```\n\n`async def` の中で、`time.sleep` や `requests` のような **普通の（同期の）待ち** を使うと、他のリクエストまで止まってしまいます。\n\nFastAPI では、\n\n- `async` 対応のライブラリ（httpx の AsyncClient など）を使うなら → `async def`\n- 普通のライブラリ（requests・sqlite3 など）を使うなら → **普通の `def`**（FastAPI が別のスレッドで動かしてくれる）\n\nと使い分けるのが安全です。AI のコードで `async def` の中に `requests.get` を見つけたら、確認ポイントです。\n\n## すぐ返して、重い仕事は裏で\n\n「タスクを作ったら、メンバー全員にメールで知らせる」場合、メールを 10 通送り終わるまで利用者を待たせるのはよくありません。\n\n```python\nfrom fastapi import BackgroundTasks\n\ndef send_notification(title: str):\n    ...  # メールを送る（数秒かかる）\n\n@app.post(\"/tasks\", status_code=201)\ndef create_task(body: TaskCreate, background: BackgroundTasks, db = Depends(get_db)):\n    task_id = save_task(db, body)\n    background.add_task(send_notification, body.title)   # ← レスポンスのあとで実行\n    return {\"id\": task_id, \"title\": body.title}\n```\n\n`BackgroundTasks` は、**レスポンスを返したあとに** 仕事を実行します（レッスン 12 のテストで、通知が実行されることも確認しました）。利用者はすぐに「作成しました」を受け取れます。\n\nただし、サーバーが再起動すると消えてしまうので、**数秒で終わる・失敗しても困らない仕事** 向けです。\n\n## 大事な仕事はジョブキューへ\n\n「動画の変換」「1 万人へのメール」「決済の後処理」のように、**時間がかかる・絶対に失敗させたくない** 仕事は、**ジョブキュー** を使います。\n\n```text\nAPI サーバー ──「この仕事をお願い」──▶ キュー（行列）──▶ ワーカー（仕事専用のプログラム）\n     │                                   （Redis など）          失敗したらやり直す\n     └─ すぐに「受け付けました」と返す\n```\n\n| 道具 | 言語・環境 |\n|---|---|\n| Celery、RQ、arq | Python |\n| BullMQ | Node.js |\n| Cloud Tasks、SQS | クラウドのサービス |\n\nキューを使うと、仕事が多いときは **ワーカーを増やす**、失敗したら **自動でやり直す**、ができます。\n\n## 定時に動かす（cron）\n\n「毎朝 6:30 に」「毎晩 0 時に集計」のように、**時刻を決めて動かす** 仕事もバックエンドの大事な役割です。\nfashion_news がまさにこれで、GitHub Actions の `cron: \"30 21 * * *\"` で動いていました。\n\n| 方法 | 例 |\n|---|---|\n| サーバーの cron | Linux の `crontab` |\n| GitHub Actions の schedule | fashion_news |\n| クラウドのスケジューラ | Cloud Scheduler、EventBridge |\n\n## やり直しに強くする（べき等）\n\n裏の仕事は失敗してやり直すことがあるので、**2 回実行されても困らない** ように作るのが大事です（レッスン 3 の「べき等」）。\n\n- fashion_news は「同じタイトルのページが既にあれば作らない」「掲載済み URL を記録する」ことで、2 回動いても二重にならないようにしていました\n- 決済などでは、リクエストに **一意の ID（べき等キー）** を付け、「この ID はもう処理済み」なら何もしない、という作りにします\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`async def` の API の中で `time.sleep(3)` を呼ぶと？",
+        "choices": [
+         "その API だけが 3 秒待つ",
+         "サーバー全体が 3 秒止まり、他のリクエストも待たされる",
+         "エラーになる"
+        ],
+        "answer": 1,
+        "explain": "async の中では await asyncio.sleep(3) のように「譲る」待ち方をする必要があります。"
+       },
+       {
+        "question": "「タスクを作ったら通知メールを送る」。利用者を待たせない方法は？",
+        "choices": [
+         "BackgroundTasks やジョブキューで、レスポンスのあとに送る",
+         "メールを送り終えてからレスポンスを返す",
+         "メールを送らない"
+        ],
+        "answer": 0,
+        "explain": "すぐ返して、重い仕事は裏で、が定番です。"
+       },
+       {
+        "question": "裏で動く仕事を「2 回実行されても困らない」ように作る理由は？",
+        "choices": [
+         "2 回実行すると速くなるから",
+         "失敗してやり直すことがあり、二重に処理されると困るから",
+         "1 回では動かないから"
+        ],
+        "answer": 1,
+        "explain": "二重のメール・二重の決済を防ぐための考え方（べき等）です。"
+       }
+      ]
+     ],
+     "id": "13-async-jobs"
+    },
+    {
+     "title": "速さの基本 ― N+1・インデックス・キャッシュ",
+     "level": 4,
+     "minutes": 20,
+     "concepts": [
+      "performance",
+      "database",
+      "backend"
+     ],
+     "summary": "バックエンドが遅くなる原因の大半を占める 3 つと、その直し方。実際に測った数字つき。",
+     "body": "## このレッスンのゴール\n\n- N+1 問題を見つけて、直し方を説明できる\n- インデックスが何をしているか説明できる\n- キャッシュの使いどころと注意点が分かる\n- 「まず測る」を習慣にできる\n\n## まず測る\n\n「遅い気がする」で直し始めると、関係ない所をいじりがちです。\n\n- どの API が遅いか（ログに処理時間を出す。レッスン 10）\n- その API の中で、何に時間がかかっているか（データベース？ 外部 API？ 計算？）\n\nバックエンドが遅い原因は、多くの場合 **データベースへの問い合わせ** です。次の 2 つがその代表です。\n\n## ① N+1 問題\n\nタスク一覧を、担当者の名前つきで返す API を考えます（レッスン 8 のモデル）。\n\n```python\ntasks = session.scalars(select(Task)).all()          # ① タスクを全部取る：1 回\nreturn [{\"title\": t.title, \"assignee\": t.assignee.name} for t in tasks]\n                                                       # ② t.assignee のたびに 1 回ずつ問い合わせ\n```\n\n`t.assignee` は、**たどった瞬間にデータベースへ聞きに行く**（遅延読み込み）ので、タスクが 50 件あると、\n\n```text\n1 回（タスク一覧）＋ 50 回（担当者を 1 人ずつ）＝ 51 回\n```\n\nの問い合わせになります。これが **N+1 問題** です（実際に数えて 51 回でした）。件数が増えるほど、どんどん遅くなります。\n\n**直し方**：最初に「担当者もまとめて取ってきて」と頼みます。\n\n```python\nfrom sqlalchemy.orm import selectinload\n\ntasks = session.scalars(select(Task).options(selectinload(Task.assignee))).all()\n```\n\nこれで問い合わせは **2 回**（タスク一覧 ＋ 担当者をまとめて 1 回）になりました（実測）。\n\n| ORM | まとめて取る書き方 |\n|---|---|\n| SQLAlchemy | `selectinload(...)` / `joinedload(...)` |\n| Django | `select_related(...)` / `prefetch_related(...)` |\n| Prisma | `include: { assignee: true }` |\n| Rails | `includes(:assignee)` |\n\n**見つけ方**：開発中に SQL のログを出す（SQLAlchemy なら `create_engine(..., echo=True)`）。同じ形の SELECT がずらっと並んでいたら N+1 です。\n**AI のコードで、ループの中で関連データをたどっていたら要注意** です。\n\n## ② インデックスが無い\n\n```sql\nSELECT count(*) FROM tasks WHERE owner_id = ?\n```\n\nインデックスが無いと、データベースは **表を最初から最後まで全部見て** 探します。本の中から言葉を探すのに、1 ページ目から全部めくるようなものです。\n\n**インデックス** は本の **索引** です。「owner_id が 5 の行はここ」という一覧を別に作っておき、すぐに見つけられるようにします。\n\n```sql\nCREATE INDEX idx_tasks_owner ON tasks(owner_id);\n```\n\n100 万行のテーブルで実際に測ると、こうなりました（このパソコンでの例）。\n\n| | 調べ方（EXPLAIN の結果） | 1 回あたり |\n|---|---|---|\n| インデックス無し | `SCAN tasks`（全部見る） | 約 22 ms |\n| インデックスあり | `SEARCH tasks USING ... INDEX`（索引で探す） | 約 0.02 ms |\n\n**約 1,000 倍** 速くなりました。\n\n- **`WHERE`・`ORDER BY`・`JOIN` によく使う列** にインデックスを付ける\n- 主キーには最初から付いている\n- 付けすぎると、追加・更新のたびに索引の更新が必要になり、書き込みが遅くなる\n- `EXPLAIN`（PostgreSQL なら `EXPLAIN ANALYZE`）で、インデックスが使われているか確かめられる\n\n## ③ キャッシュ：同じ答えを使い回す\n\n「何度聞かれても、しばらくは同じ答え」のものは、**一度計算した結果をとっておいて使い回す** と速くなります。これがキャッシュです。\n\n| 置き場所 | 例 |\n|---|---|\n| ブラウザ | `Cache-Control: max-age=3600`（1 時間は再取得しない） |\n| CDN（世界中にある配信用サーバー） | 画像・CSS・JavaScript・公開ページ |\n| サーバーのメモリ・**Redis** | ランキング、外部 API の結果、重い集計 |\n\n```python\ndef get_weather(city: str):\n    cached = redis.get(f\"weather:{city}\")\n    if cached:\n        return json.loads(cached)                          # あればそれを返す\n    data = call_weather_api(city)                          # 無ければ取ってきて\n    redis.set(f\"weather:{city}\", json.dumps(data), ex=600) # 10 分とっておく\n    return data\n```\n\n### キャッシュの難しさ\n\n> コンピュータサイエンスで難しいことは 2 つだけ。キャッシュの無効化と、名前付けだ。（よく引用される言葉）\n\n- **古い情報が出る**：元のデータが変わったのに、キャッシュの古い答えが返る。**期限（`ex=600`）を必ず付ける**、更新したらキャッシュを消す\n- **人によって違うものをキャッシュしない**：ログインした人ごとのデータを全員共通のキャッシュに入れると、**他人の情報が見えてしまう** 事故になる\n\n## その他の定番\n\n| 対策 | 内容 |\n|---|---|\n| ページ分け | 一覧を全件返さない（レッスン 4） |\n| 必要な列だけ取る | `SELECT *` ではなく、使う列だけ |\n| 重い仕事は裏へ | レッスン 13 |\n| 接続の使い回し | データベースへの接続を毎回作らず、プール（ためておく仕組み）で使い回す。多くのフレームワークや ORM が自動でやってくれる |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "タスク 100 件を取って、ループの中で `task.assignee.name` をたどると、問い合わせは何回になりやすい？",
+        "choices": [
+         "1 回",
+         "2 回",
+         "101 回"
+        ],
+        "answer": 2,
+        "explain": "一覧 1 回＋担当者を 1 件ずつ 100 回。N+1 問題です。selectinload などでまとめて取ります。"
+       },
+       {
+        "question": "インデックスを付けると速くなるのはどんな問い合わせ？",
+        "choices": [
+         "その列で WHERE や ORDER BY をする問い合わせ",
+         "すべての INSERT",
+         "テーブルの削除"
+        ],
+        "answer": 0,
+        "explain": "索引で目的の行をすぐ見つけられるようになります。書き込みは少し遅くなります。"
+       },
+       {
+        "question": "キャッシュで特に避けるべきことは？",
+        "choices": [
+         "期限を付けること",
+         "ログインした人ごとのデータを、全員共通のキャッシュに入れること",
+         "外部 API の結果を入れること"
+        ],
+        "answer": 1,
+        "explain": "他人の情報が見えてしまう事故につながります。"
+       }
+      ]
+     ],
+     "id": "14-performance"
+    },
+    {
+     "title": "デプロイと本番環境",
+     "level": 4,
+     "minutes": 20,
+     "concepts": [
+      "deploy",
+      "tooling",
+      "security"
+     ],
+     "summary": "手元で動いたバックエンドを、インターネットに公開して動かし続けるまで。環境変数・Docker・ホスティングの種類・CI/CD。",
+     "body": "## このレッスンのゴール\n\n- 開発環境と本番環境の違いを説明できる\n- Dockerfile を読んで、何をしているか分かる\n- ホスティングの種類（PaaS・サーバーレス・VPS・BaaS）を見分けられる\n- デプロイの前後に確認すべきことが分かる\n\n## 「手元で動いた」から「みんなが使える」へ\n\n`localhost:8000`（レッスン 2）は自分のパソコンの中だけ。みんなに使ってもらうには、**インターネットにつながったサーバーで動かす** 必要があります。これを **デプロイ**（配置）と呼びます。\n\n| | 開発環境 | 本番環境 |\n|---|---|---|\n| どこで | 自分のパソコン | クラウドのサーバー |\n| データベース | SQLite・使い捨て | PostgreSQL など・**本物のデータ** |\n| 秘密情報 | `.env` | クラウドのシークレット管理 |\n| エラー表示 | 詳しく出す | 利用者には最小限、詳細はログへ |\n| `--reload` | 付ける | 付けない |\n\n## 設定は環境変数で切り替える\n\n同じコードを、開発でも本番でも動かせるように、**違いは全部「環境変数」で渡します**（AI と開発するコース「秘密情報と環境変数」）。\n\n```python\nimport os\nDATABASE_URL = os.environ[\"DATABASE_URL\"]       # 開発：sqlite:///app.db  本番：postgresql://...\nSECRET_KEY = os.environ[\"SECRET_KEY\"]\nDEBUG = os.environ.get(\"DEBUG\") == \"1\"\n```\n\nコードの中に「本番ならこうする」と書き分けないのがコツです。\n\n## Docker：動く環境ごと箱に詰める\n\n「私のパソコンでは動いたのに、サーバーでは動かない」の多くは、Python のバージョンやライブラリの違いが原因です。\n**Docker** は、アプリと、それが動く環境（OS・Python・ライブラリ）を **1 つの箱（コンテナ）** に詰めて、どこでも同じように動かす道具です。\n\n```dockerfile\nFROM python:3.12-slim                         # ① 土台：Python 3.12 が入った小さな Linux\nWORKDIR /app                                  # ② 作業フォルダ\nCOPY requirements.txt .                       # ③ ライブラリの一覧を先にコピーして\nRUN pip install --no-cache-dir -r requirements.txt   #    インストール\nCOPY . .                                      # ④ アプリのコードをコピー\nCMD [\"uvicorn\", \"main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]   # ⑤ 起動コマンド\n```\n\n| 命令 | 意味 |\n|---|---|\n| `FROM` | どの箱を土台にするか |\n| `WORKDIR` | 以降の作業をするフォルダ |\n| `COPY` | パソコンのファイルを箱の中へ |\n| `RUN` | 箱を作るときに 1 回だけ実行するコマンド |\n| `CMD` | 箱を起動したときに実行するコマンド |\n\n- `--host 0.0.0.0`：箱の **外から** のアクセスを受け付ける（`127.0.0.1` だと箱の中からしか届かない）\n- ③ で先に requirements.txt だけコピーするのは、コードを変えただけのときに、インストールをやり直さずに済ませる工夫（Docker はステップごとに結果を覚えている）\n\n## ホスティングの種類\n\n| 種類 | 例 | 自分で面倒を見る範囲 | 向いている場面 |\n|---|---|---|---|\n| **BaaS** | Firebase、Supabase | ほぼ無し（ルールの設定くらい） | 小さなアプリ・試作（popup2027） |\n| **PaaS** | Render、Railway、Fly.io、Google Cloud Run | コード（や Docker）を渡すだけ | 個人〜中規模の Web API |\n| **サーバーレス関数** | AWS Lambda、Cloudflare Workers、Vercel Functions | 関数だけ | アクセスが少ない・波がある API |\n| **VPS / 仮想マシン** | EC2、さくらの VPS | OS の更新・セキュリティまで全部 | 細かく制御したい |\n\n**初めてなら、BaaS か PaaS がおすすめ** です。サーバーの OS の更新やセキュリティ対策を、サービス側が引き受けてくれます。\n\n## CI/CD：テストして、自動で出す\n\n```text\npush → テスト（CI、レッスン 12）→ 合格したら自動でデプロイ（CD）\n```\n\nGitHub Actions で「main に入ったらテストして、通ったら Cloud Run にデプロイ」のように組むのが一般的です。このサイトの「claude/ ブランチを自動で main に取り込む」仕組みも、CI/CD の一種です。\n\n## デプロイのチェックリスト\n\n| いつ | 確認すること |\n|---|---|\n| 前 | テストが通っている |\n| 前 | 環境変数・シークレットが本番に設定されている（**コードに入っていない**） |\n| 前 | **マイグレーション**（レッスン 8）でデータが消えないか。**バックアップ** を取った |\n| 前 | `DEBUG` が切れている |\n| 後 | 主要な API を実際に呼んで確かめる（ヘルスチェック用の `GET /health` を作っておくと便利） |\n| 後 | エラー監視・ログに異常が出ていない（レッスン 10） |\n| いざというとき | **前の版に戻す方法**（ロールバック）を知っている |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "開発と本番で、データベースの接続先を切り替えるよい方法は？",
+        "choices": [
+         "コードの中で if 本番: と書き分ける",
+         "環境変数 DATABASE_URL で渡す",
+         "本番用のファイルを別に作ってコピーする"
+        ],
+        "answer": 1,
+        "explain": "同じコードのまま、外から渡す設定だけを変えるのが基本です。"
+       },
+       {
+        "question": "Dockerfile の `CMD` の役割は？",
+        "choices": [
+         "箱を作るときにライブラリをインストールする",
+         "箱を起動したときに実行するコマンドを決める",
+         "ファイルをコピーする"
+        ],
+        "answer": 1,
+        "explain": "RUN は作るときに 1 回、CMD は起動するたびに実行されます。"
+       },
+       {
+        "question": "デプロイ前に特に気をつけたいことは？",
+        "choices": [
+         "マイグレーションでデータが消えないか確認し、バックアップを取る",
+         "コードのコメントを全部消す",
+         "テストを消して速くする"
+        ],
+        "answer": 0,
+        "explain": "本番のデータは取り返しがつかないので、必ず確認とバックアップを。"
+       }
+      ]
+     ],
+     "id": "15-deploy"
+    },
+    {
+     "title": "設計とスケール ― 大きくなっても壊れない作り",
+     "level": 4,
+     "minutes": 20,
+     "concepts": [
+      "performance",
+      "backend",
+      "deploy"
+     ],
+     "summary": "ステートレス・水平スケール・層の分け方・モノリスとマイクロサービス。規模に合った作りを選ぶ考え方。",
+     "body": "## このレッスンのゴール\n\n- 「ステートレスにする」と、なぜサーバーを増やせるのか説明できる\n- コードを層（ルーター・サービス・リポジトリ）に分ける理由が分かる\n- モノリスとマイクロサービスの違いと、選び方の考え方を説明できる\n\n## 利用者が増えたらどうする？\n\n| 方法 | 内容 | たとえ |\n|---|---|---|\n| **垂直スケール** | サーバーを強くする（CPU・メモリを増やす） | 料理人を腕のいい人に替える |\n| **水平スケール** | サーバーの台数を増やす | 料理人を何人も雇う |\n\n垂直スケールは簡単ですが、限界があります。大きなサービスは **水平スケール** で伸びていきます。\n\n```text\n               ┌─▶ サーバー A ─┐\n利用者 ─▶ ロードバランサー ─┼─▶ サーバー B ─┼─▶ データベース\n               └─▶ サーバー C ─┘\n```\n\n**ロードバランサー** が、届いたリクエストを空いているサーバーに振り分けます。\n\n## ステートレス：どのサーバーに来てもよい作り\n\n水平スケールの前提は、**どのサーバーにリクエストが来ても同じように処理できる** ことです。\n\n```python\n# ❌ サーバーのメモリにログイン状態やデータを持つ\nsessions = {}          # サーバー A で覚えても、次のリクエストがサーバー B に行くと「知らない人」\ntasks = {}             # レッスン 5 の辞書。サーバーごとに中身がバラバラになる\n```\n\n```text\n⭕ 状態はサーバーの外に置く\n  - データ          → データベース\n  - ログイン状態    → JWT（毎回持ってきてもらう）か、Redis などの共有の置き場所\n  - アップロードされたファイル → ファイル置き場（S3・Cloud Storage など）\n```\n\nサーバー自身は何も覚えていない（**ステートレス**）ので、台数を増やしても減らしても大丈夫になります。\nレッスン 3 の「HTTP は覚えていない」と同じ考え方を、サーバーにも当てはめるわけです。\n\n## コードを層に分ける\n\nAI が書く中〜大規模のバックエンドは、よくこういうフォルダ構成になっています。\n\n```text\napp/\n├── main.py            アプリの組み立て（ルーターの取り付け・設定）\n├── routers/           ① 窓口：HTTP の受け取りと返事（ステータス・検証）\n│   └── tasks.py\n├── services/          ② 業務のルール：「締め切りは本番より前」「完了したら通知」\n│   └── task_service.py\n├── repositories/      ③ データの出し入れ：SQL・ORM はここだけ\n│   └── task_repo.py\n├── models.py          テーブルの定義（ORM）\n└── schemas.py         入出力の型紙（Pydantic）\n```\n\n| 層 | 知っていること | 知らなくていいこと |\n|---|---|---|\n| ① ルーター | HTTP（URL・ステータス） | SQL |\n| ② サービス | 業務のルール | HTTP・SQL |\n| ③ リポジトリ | データベース | HTTP |\n\nこう分けると、\n\n- 「データベースを PostgreSQL から別のものに替える」→ ③ だけ直せばよい\n- 「同じルールを、API からも定時の処理（レッスン 13）からも使う」→ ② を呼べばよい\n- テストで ③ を偽物に差し替えて、② のルールだけを確かめられる\n\nfashion_news で「notion.py だけ取り替えれば LINE に送れる」、popup2027 で「store が保存先の違いを隠している」と話したのも、同じ **役割を分けて、境目をはっきりさせる** 考え方です。\n\n**AI のバックエンドを読むときは、まずこのフォルダ構成を見て、「どの層の話か」を意識すると迷子になりません**（レッスン 17）。\n\n## モノリスとマイクロサービス\n\n| | モノリス | マイクロサービス |\n|---|---|---|\n| 形 | 1 つのアプリにすべての機能 | 機能ごとに別々のアプリ（ユーザー・注文・決済…）が API で話す |\n| 良い点 | 作りやすい・テストしやすい・速い | 機能ごとに別のチームが別々に開発・デプロイ・スケールできる |\n| 悪い点 | 大きくなると、ちょっとした変更でも全体に影響しやすい | 通信の失敗・データの食い違い・運用の手間が一気に増える |\n| 向いている | **ほとんどの小〜中規模のサービス** | 何十人・何百人の開発者がいる大きな組織 |\n\n**最初はモノリスで、層をきれいに分けて作る** のが、今の多くの現場での定石です。「マイクロサービスにしましょう」と AI が提案してきたら、本当にその規模か考えましょう。\n\n## 規模に合った作りを選ぶ\n\n| 規模 | 例 | 作り |\n|---|---|---|\n| 自分・数人 | popup2027、fashion_news | BaaS（Firebase）や、GitHub Actions の定時処理で十分 |\n| 〜数千人 | 小さな Web サービス | PaaS ＋ モノリス ＋ PostgreSQL |\n| それ以上 | 大きなサービス | 水平スケール・キャッシュ・ジョブキュー・必要に応じてサービス分割 |\n\n**大は小を兼ねません**。小さなアプリに大きな仕組みを入れると、作るのも直すのも大変になります。AI は頼まれると立派な構成を作りがちなので、「今の規模にこれは必要？」と聞き返すのも大事な仕事です。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "サーバーを 3 台に増やしたら、ログインしたのに「ログインしていません」と言われることがある。原因として考えられるのは？",
+        "choices": [
+         "ログイン状態を各サーバーのメモリに持っていて、別のサーバーにリクエストが届いた",
+         "ロードバランサーが無いから",
+         "データベースが遅いから"
+        ],
+        "answer": 0,
+        "explain": "状態をサーバーの外（JWT・Redis など）に置き、ステートレスにします。"
+       },
+       {
+        "question": "「SQL を書いてよいのはリポジトリ層だけ」にしておくと、何がうれしい？",
+        "choices": [
+         "処理が必ず速くなる",
+         "データベースを替えるときに、直す場所が 1 か所にまとまる",
+         "SQL インジェクションが起きなくなる"
+        ],
+        "answer": 1,
+        "explain": "役割を分けておくと、変更の影響が狭い範囲に収まります。"
+       },
+       {
+        "question": "3 人で使う予定の小さなアプリを作るとき、まず選ぶのに合う作りは？",
+        "choices": [
+         "BaaS やモノリスなど、シンプルな構成",
+         "機能ごとに 10 個のマイクロサービス",
+         "サーバーを 100 台用意する"
+        ],
+        "answer": 0,
+        "explain": "規模に合わない大きな構成は、作るのも直すのも大変になります。"
+       }
+      ]
+     ],
+     "id": "16-architecture"
+    },
+    {
+     "title": "総まとめ ― AI が書いたバックエンドを読む手順",
+     "level": 4,
+     "minutes": 15,
+     "concepts": [
+      "reading",
+      "backend",
+      "security",
+      "ai_coding"
+     ],
+     "summary": "このコースで学んだことを、知らないバックエンドのコードを読む「手順書」にまとめる。",
+     "body": "## このレッスンのゴール\n\n- 知らないバックエンドのリポジトリを、決まった順番で読み始められる\n- 読みながら、品質と安全のチェックができる\n- AI に何を聞けば理解が深まるか分かる\n\n## 読む順番（8 ステップ）\n\nはじめての「コードを読む」コースの「5 つのコツ」を、バックエンド用に具体的にしたものです。\n\n### ① 全体の地図を見る\n\n- フォルダ構成（レッスン 16 の層：routers・services・repositories・models・schemas）\n- README（起動方法・必要な環境変数）\n- 依存ライブラリ（`requirements.txt` / `pyproject.toml` / `package.json`）→ FastAPI か Express か、どの ORM か\n\n### ② 入口を探す\n\n- Python：`app = FastAPI()` と `uvicorn` の起動コマンド\n- Node.js：`app.listen(...)`、`package.json` の `scripts`\n- Docker：`Dockerfile` の `CMD`（レッスン 15）\n\n### ③ API の一覧を作る\n\nルーティングのデコレータ（`@app.get` / `@router.post` / `app.get(...)`）を全部探して、表にします（レッスン 5）。\n\n| メソッド | パス | ログイン必要？ | 何をする |\n|---|---|---|---|\n| GET | /tasks | ✅ | 自分のタスク一覧 |\n| POST | /tasks | ✅ | タスク作成 |\n| ... | | | |\n\nFastAPI なら、起動して `/docs` を開くと、この表がほぼ自動で見られます。\n\n### ④ データの形を見る\n\n- テーブルの定義（ORM のモデル・マイグレーション）→ どんなデータを持つアプリか\n- 入出力の型紙（Pydantic・zod）→ 何を受け付けて、何を返すか\n\n**データの形が分かると、アプリの半分は分かった** と言えます。\n\n### ⑤ 1 つの API を、入口から出口までたどる\n\n一番大事な API（たとえば「タスクを作る」）を 1 つ選び、\n\n```text\nルーター → 検証 → 認証・認可 → サービス（業務のルール）→ リポジトリ（データベース）→ レスポンス\n```\n\nの順に、関数を 1 つずつ追いかけます。バックエンドの仕事の 6 ステップ（レッスン 1）がどこに書かれているかを探すイメージです。\n\n### ⑥ 設定と秘密を見る\n\n- 環境変数の一覧（`.env.example`・`settings.py`・`config.ts`）\n- 秘密がコードに直書きされていないか（レッスン 11 の ④）\n\n### ⑦ テストを読む\n\nテストは「この API はこう動くはず」という **動く仕様書** です（レッスン 12）。テストの名前だけでも、意図がかなり分かります。テストが無ければ、それ自体がチェックポイントです。\n\n### ⑧ チェックリストで点検する\n\nレッスン 11 の 10 項目に加えて：\n\n| 観点 | 見るところ |\n|---|---|\n| エラー | 想定内のエラーが正しいステータスで返るか。`except: pass` が無いか（レッスン 10） |\n| 速さ | ループの中で関連データをたどっていないか（N+1）、よく検索する列にインデックスがあるか（レッスン 14） |\n| 非同期 | `async def` の中で `requests` や `time.sleep` を使っていないか（レッスン 13） |\n| 規模 | 今の規模に対して、構成が大げさすぎないか（レッスン 16） |\n\n## AI への聞き方の例\n\n読んでいて分からないところは、遠慮なく AI に聞きましょう。聞き方で、返ってくる答えの質が変わります（AI と開発するコース「伝わる頼み方」）。\n\n> `POST /tasks` が呼ばれてから、データベースに保存されるまでに通る関数を、ファイル名つきで順番に並べて\n\n> この API で、ログインしていない人・他人のデータを触ろうとした人は、どこで止められる？\n\n> このプロジェクトで、本番環境に必要な環境変数を全部挙げて、それぞれ何に使われるか説明して\n\n> このコードを、N+1 問題・SQL インジェクション・認可漏れの観点でレビューして\n\n## 自分の言葉で説明してみる\n\n最後に、このサイトの目的に戻りましょう。読んだバックエンドについて、次の 5 つを 30 秒で話せれば合格です。\n\n1. **何をする** API か（誰が、何のために使う？）\n2. **どんなデータ** を持っているか（主なテーブル）\n3. **どうやって守っている** か（認証・認可の方法）\n4. **どこで動いている** か（ホスティング・定時処理）\n5. **気になる点** はどこか（チェックリストで見つけたこと）\n\n**読みたいバックエンドのリポジトリがあれば、「◯◯ リポジトリを解説して」と頼んでください。** このコースの観点で、ファイルごとの解説シリーズを作ります。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "知らないバックエンドを読むとき、API の一覧を作るために最初に探すとよいのは？",
+        "choices": [
+         "@app.get や @router.post などのルーティングのデコレータ",
+         "CSS ファイル",
+         "テストの中の assert"
+        ],
+        "answer": 0,
+        "explain": "ルーティングを全部集めると、その API で何ができるかの一覧になります。"
+       },
+       {
+        "question": "「データの形が分かると半分分かる」で見るべきものは？",
+        "choices": [
+         "ログの出力",
+         "ORM のモデルやマイグレーション、Pydantic の型紙",
+         "Dockerfile"
+        ],
+        "answer": 1,
+        "explain": "どんなデータを持ち、何を受け付けて返すかが、アプリの骨格です。"
+       },
+       {
+        "question": "次のうち、読みながら必ず確認したい「認可」のポイントは？",
+        "choices": [
+         "関数名が英語かどうか",
+         "データを取得・更新・削除するときに、その人のデータかを確かめているか",
+         "コメントの量"
+        ],
+        "answer": 1,
+        "explain": "認可漏れは AI のコードで抜けやすく、被害が大きいポイントです。"
+       }
+      ]
+     ],
+     "id": "17-reading-ai-backend"
+    }
+   ],
+   "status": "open"
+  },
+  {
    "title": "JavaScript",
    "icon": "🟨",
    "order": 20,
@@ -2309,23 +3155,6 @@ window.SITE_DATA = {
     "Rails のコードを読む"
    ],
    "id": "97-ruby",
-   "lessons": []
-  },
-  {
-   "title": "Web とインターネットの仕組み",
-   "icon": "🌐",
-   "order": 110,
-   "category": "topic",
-   "status": "planned",
-   "description": "ブラウザで URL を開いてから画面が出るまで。フロントエンド・バックエンド・API の関係。",
-   "outline": [
-    "URL・ドメイン・IP アドレス",
-    "HTTP のリクエストとレスポンス",
-    "フロントエンドとバックエンド",
-    "API と JSON",
-    "Cookie・セッション・ログイン"
-   ],
-   "id": "110-web-basics",
    "lessons": []
   },
   {
