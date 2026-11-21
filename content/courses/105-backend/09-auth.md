@@ -130,6 +130,8 @@ def get_task(task_id: int, user_id: int = Depends(get_current_user_id)):
 ログインの仕組みは、パスワード再設定・メール確認・2 段階認証・「Google でログイン」（OAuth）など、ちゃんと作ると大仕事で、間違えると被害が大きい部分です。
 実際の開発では、**Firebase Authentication、Supabase Auth、Auth0、Clerk** などの既製品を使うことが多いです。popup2027 に本当のログインを付けるなら、Firebase Authentication が一番の近道です。
 
+「Google でログイン」「Microsoft でサインイン」の裏側で何が起きているか（OAuth と OpenID Connect）は、レッスン 18 で詳しく見ます。
+
 ```quiz
 ? 「ログインはしているが、他人のタスクを消そうとした」ときに返すのに合うのは？
 - 401
