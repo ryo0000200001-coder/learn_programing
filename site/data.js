@@ -4267,17 +4267,393 @@ window.SITE_DATA = {
    "icon": "☁️",
    "order": 150,
    "category": "topic",
-   "status": "planned",
-   "description": "作ったものをインターネットに公開する仕組み。",
-   "outline": [
-    "ローカルと本番",
-    "ホスティングとサーバーレス",
-    "ドメインと HTTPS",
-    "環境変数と設定",
-    "Docker の基本"
-   ],
+   "description": "作ったものをインターネットに公開して、動かし続ける仕組み。ローカルと本番、静的サイトの公開（このサイトの GitHub Pages）、ドメイン・DNS・HTTPS、設定と環境変数、ホスティングの選び方、Docker、GitHub Actions、本番で困ったときの対応まで。",
+   "levels": {
+    "1": "入門：公開するとは",
+    "2": "基礎：つながる仕組みと選び方",
+    "3": "実践：箱と自動化",
+    "4": "応用：動かし続ける"
+   },
    "id": "150-deploy-cloud",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "ローカルと本番 ― 「私のパソコンでは動いた」の正体",
+     "level": 1,
+     "minutes": 14,
+     "concepts": [
+      "deploy",
+      "tooling"
+     ],
+     "summary": "開発環境・ステージング・本番の 3 つの環境と、そのあいだで変わるもの。「手元で動いたのに本番で動かない」よくある原因の一覧。",
+     "body": "## このレッスンのゴール\n\n- 開発環境・ステージング・本番環境の役割を説明できる\n- 環境のあいだで「変わるもの」「変えてはいけないもの」が分かる\n- 「手元では動いたのに本番で動かない」ときに、疑う場所の見当がつく\n\n## 3 つの環境\n\n| 環境 | 英語 | どこ | 誰が使う | データ |\n|---|---|---|---|---|\n| **開発環境** | development / local | 自分のパソコン | 自分 | 試し用。消えてもよい |\n| **ステージング** | staging | 本番そっくりのサーバー | 開発者・確認する人 | 本番に似せた試し用 |\n| **本番環境** | production | 公開しているサーバー | **利用者全員** | **本物**。消えたら大変 |\n\n個人の小さなアプリでは、ステージングを省いて「開発 → 本番」の 2 つで進めることも多いです。プルリクエストごとに一時的な確認用の環境を自動で作ってくれるサービス（**プレビュー環境**）もあります（レッスン 5）。\n\n## 環境のあいだで変わるもの\n\nバックエンドコースのレッスン 15 の表を、もう少し細かく見ます。\n\n| | 開発 | 本番 |\n|---|---|---|\n| URL | `http://localhost:8000` | `https://example.com` |\n| 通信 | http（暗号化なし） | **https**（レッスン 3） |\n| データベース | SQLite のファイル・手元の PostgreSQL | クラウドのデータベース |\n| 秘密情報 | `.env` ファイル | クラウドのシークレット管理（レッスン 4） |\n| エラーの表示 | 詳しく（どの行で落ちたか） | 利用者には「エラーが起きました」だけ。詳細はログへ（レッスン 8） |\n| 自動再起動 | `--reload`（ファイルを保存すると再起動） | 付けない |\n| OS | Windows・Mac | **Linux** がほとんど |\n| 同時に使う人 | 1 人 | たくさん |\n\n**変えてよいのは「設定」だけ、コードは同じ** にするのが基本です。「本番ならこうする」という `if` をコードのあちこちに書くと、本番でしか起きないバグの元になります。設定は環境変数で切り替えます（レッスン 4）。\n\n## 「手元では動いたのに」よくある原因\n\n| 原因 | 例 | 対策 |\n|---|---|---|\n| **OS の違い** | Windows では `Data.csv` と `data.csv` が同じだが、Linux では別（ターミナルと Git のコースのレッスン 1） | ファイル名の大文字・小文字をそろえる |\n| **バージョンの違い** | 手元は Python 3.13、本番は 3.11 | バージョンを固定（`.python-version`、Docker のレッスン 6） |\n| **ライブラリの入れ忘れ** | 手元では入っているが、`requirements.txt` に書いていない | `pip freeze` / ロックファイル（セキュリティのコースのレッスン 6） |\n| **環境変数の設定忘れ** | `.env` は Git に入れないので、本番には無い | 本番の設定画面で登録する。起動時に足りないものがあれば止まるようにする（レッスン 4） |\n| **ファイルの保存先** | アップロードした画像をサーバーのフォルダに保存したら、再起動で消えた | 多くのクラウドは再起動でファイルが消える。ファイルは保存用のサービス（S3・R2 など）に |\n| **localhost を直接書いている** | フロントエンドのコードに `http://localhost:8000/api` | API の URL も設定にする |\n| **文字コード** | Windows で作った CSV が本番で化ける（コンピュータの基礎コースのレッスン 5） | `encoding=\"utf-8\"` を明示 |\n| **時刻** | 手元は日本時間、本番のサーバーは UTC（世界標準時） | 保存は UTC、表示のときに日本時間に |\n\n## 本番のデータを守る\n\n本番環境で一番大事なのは **利用者のデータ** です。\n\n- 開発中のコードを、**本番のデータベースにつないで試さない**\n- 本番のデータを手元にコピーするときは、個人情報に注意する\n- テーブルの変更（マイグレーション）は、手元とステージングで試してから\n- **バックアップ** を取り、戻せることを確かめておく（レッスン 8）\n\nCloudflare D1 の `--local`（手元）と `--remote`（本番）の違い（バックエンドコースのレッスン 19）も、この話です。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `app.run(debug=True)`（Flask）／ `DEBUG = True`（Django） | ⚠️ 本番では必ずオフ。エラーの画面にコードや設定が出てしまう |\n| `uvicorn main:app --reload` を本番の起動コマンドに | ⚠️ 開発用 |\n| `fetch(\"http://localhost:8000/...\")` | ⚠️ 本番では届かない。設定にする |\n| `if os.environ.get(\"ENV\") == \"production\":` があちこちに | ⚠️ 本番でしか通らない道ができる。設定の値で動きを変える形に |\n| アップロードを `open(f\"uploads/{name}\", \"wb\")` で保存 | ⚠️ クラウドでは再起動で消えることが多い |\n| `datetime.now()` で保存 | サーバーの時刻帯に依存。`datetime.now(timezone.utc)` で保存すると安全 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "「本番環境」についての説明として正しいのは？",
+        "choices": [
+         "開発者が新しい機能を自由に試す場所",
+         "利用者が実際に使っている環境で、データも本物",
+         "自分のパソコンの中の環境"
+        ],
+        "answer": 1,
+        "explain": "本番のデータは利用者のものです。試すのは開発環境やステージングで行います。"
+       },
+       {
+        "question": "手元の Windows では動いたのに、本番の Linux サーバーで `No such file or directory: 'Data.csv'` になった。考えられる原因は？",
+        "choices": [
+         "実際のファイル名が `data.csv` で、Linux は大文字・小文字を区別するから",
+         "Linux では CSV が読めないから",
+         "本番のサーバーが壊れているから"
+        ],
+        "answer": 0,
+        "explain": "Windows は大文字・小文字を区別しませんが、Linux は区別します。ファイル名を正確にそろえます。"
+       },
+       {
+        "question": "開発と本番で違うべきものは、どこで切り替えるのがよい？",
+        "choices": [
+         "コードの中の `if` 文",
+         "環境変数などの設定",
+         "本番用に別のリポジトリを作る"
+        ],
+        "answer": 1,
+        "explain": "コードは同じにして、違いは設定（環境変数）だけにするのが基本です。本番でしか通らないコードを作らないためです。"
+       }
+      ]
+     ],
+     "id": "01-local-vs-production"
+    },
+    {
+     "title": "静的サイトの公開 ― このサイトを GitHub Pages に出すまで",
+     "level": 1,
+     "minutes": 16,
+     "concepts": [
+      "deploy",
+      "http_api",
+      "tooling"
+     ],
+     "summary": "サーバーで処理しない「静的サイト」と、処理する「動的サイト」の違い。このサイトの pages.yml を 1 行ずつ読み、GitHub Pages で公開する流れと、静的サイトでできないこと・してはいけないことを知る。",
+     "body": "## このレッスンのゴール\n\n- 静的サイトと動的サイトの違いを説明できる\n- このリポジトリの `.github/workflows/pages.yml` を読んで、公開までの流れを説明できる\n- 静的サイトに置いてはいけないもの（秘密情報）と、できないことが分かる\n\n## 静的と動的\n\n| | 静的サイト | 動的サイト |\n|---|---|---|\n| サーバーがすること | **置いてあるファイルを、そのまま返す** だけ | リクエストごとにプログラムを動かして、答えを作る |\n| 中身 | HTML・CSS・JavaScript・画像 | ＋ Python・Node.js などのサーバーのプログラム、データベース |\n| 例 | このサイト、会社の紹介ページ、ブログ、ドキュメント | ログインのあるサービス、掲示板、ネットショップ |\n| 公開先の例 | GitHub Pages、Cloudflare Pages、Netlify、Vercel | Render、Cloud Run、Cloudflare Workers など（レッスン 5） |\n| 費用・手間 | 無料のことが多い。ほぼ手間なし | 小さければ無料枠もあるが、管理が増える |\n\n「静的」といっても、**JavaScript でブラウザの中で動くものは作れます**。このサイトも、クイズの採点や検索はブラウザの JavaScript（`site/app.js`）が行い、進み具合はブラウザの localStorage に保存しています。サーバーは何も計算していません。\n\n## このサイトの作り\n\n```text\ncontent/（Markdown）──→ python tools/build.py ──→ site/data.js\n                                                   site/index.html\n                                                   site/app.js        ← これを置けば完成\n                                                   site/style.css\n```\n\n`tools/build.py` が Markdown をまとめて `site/data.js` を作るので、`site/` フォルダの中身を置くだけで動きます。この「事前に作っておく」作業を **ビルド** と呼びます。React などのフレームワークでも `npm run build` で `dist/` などにファイルを作り、それを公開します。\n\n## pages.yml を読む\n\nこのリポジトリには、GitHub Pages に公開するための設定がすでに入っています。\n\n```yaml\nname: Deploy site\n\non:\n  workflow_dispatch:        # ① いつ動くか：手動で「実行」ボタンを押したとき\n\npermissions:                # ② この作業に与える権限（最小権限）\n  contents: read            #    リポジトリは読むだけ\n  pages: write              #    Pages への公開はしてよい\n  id-token: write           #    GitHub に「本当にこのリポジトリの作業か」を証明する\n\nconcurrency:                # ③ 同時に 2 つ走ったら、古い方を止める\n  group: pages\n  cancel-in-progress: true\n\njobs:\n  deploy:\n    runs-on: ubuntu-latest  # ④ GitHub が用意する Linux のパソコンで動かす\n    environment:\n      name: github-pages\n      url: ${{ steps.deployment.outputs.page_url }}\n    steps:\n      - uses: actions/checkout@v4              # ⑤ リポジトリの中身を取ってくる\n      - uses: actions/setup-python@v5          # ⑥ Python 3.12 を用意\n        with:\n          python-version: \"3.12\"\n      - run: python tools/build.py             # ⑦ site/data.js を作る（ビルド）\n      - uses: actions/configure-pages@v5       # ⑧ Pages の設定を読む\n      - uses: actions/upload-pages-artifact@v3 # ⑨ site フォルダを固めてアップロード\n        with:\n          path: site\n      - id: deployment\n        uses: actions/deploy-pages@v4          # ⑩ 公開する\n```\n\n| 番号 | 読み方 |\n|---|---|\n| ① | `on:` は「きっかけ」。今は `workflow_dispatch`（手動）だけ。ファイルの先頭のコメントに、`push: branches: [main]` を戻せば main に push するたびに自動で公開される、と書かれている |\n| ② | `permissions:` で、この作業ができることを最小限にしている（セキュリティのコースのレッスン 1） |\n| ④〜⑩ | 毎回、まっさらな Linux のパソコンを借りて、取ってくる → Python を入れる → ビルド → アップロード → 公開、を順番に行う |\n| `uses:` | 他の人が作った部品（アクション）を使う。`@v4` はバージョン |\n| `run:` | コマンドをそのまま実行 |\n\nGitHub Actions の書き方は、レッスン 7 でくわしく読みます。\n\n### 公開する手順\n\nファイルの先頭のコメントのとおりです。\n\n1. GitHub のリポジトリの **Settings → Pages → Build and deployment → Source** を **GitHub Actions** にする\n2. **Actions** タブ → 「Deploy site」→ **Run workflow** を押す（または `on:` に push を戻す）\n3. 数分後に `https://ユーザー名.github.io/リポジトリ名/` で見られる\n\n⚠️ 公開すると、**URL を知っている人は誰でも見られます**。非公開のリポジトリで Pages を使うには有料プランが必要な場合があり、有料でも「サイト自体を非公開にする」機能は一部のプランだけです。見られて困るものは置かない、が原則です。\n\n## 静的サイトに置いてはいけないもの\n\n静的サイトのファイルは、**全部そのまま利用者のブラウザに送られます**。ブラウザの「ページのソースを表示」や開発者ツールで、誰でも中身を見られます。\n\n| ⚠️ 置いてはいけない | 理由 |\n|---|---|\n| API キー・パスワード・トークン | JavaScript の中に書いても丸見え（AI と開発するコースの「ブラウザで動くコードに注意」） |\n| 個人情報の入ったデータ | `data.js` や JSON も丸見え |\n| 「隠しページ」 | URL を知られたら見られる（セキュリティのコースのレッスン 1） |\n\n秘密が必要な処理（外部の API を呼ぶ、データベースに保存する）は、**サーバー側**（Cloudflare Workers などのサーバーレス関数）に置いて、静的サイトからはそこを呼ぶようにします。\n\n## 静的サイトでできないこと\n\n| やりたいこと | 静的サイトだけでは | 足すもの |\n|---|---|---|\n| 利用者どうしでデータを共有（掲示板・予約） | できない（localStorage はその人のブラウザだけ） | データベース＋API（Firebase・Supabase・Workers＋D1） |\n| ログイン | できない | 認証サービス（バックエンドコースのレッスン 18 の OAuth など） |\n| お問い合わせフォームのメール送信 | できない | フォーム送信サービス、またはサーバーレス関数 |\n| 秘密の API キーを使う | できない | サーバーレス関数 |\n\n**まず静的サイトで作れないか考える** のが、安く・安全に公開するコツです。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "このサイト（Code Reading Dojo）が「静的サイト」と言える理由は？",
+        "choices": [
+         "JavaScript を使っていないから",
+         "サーバーはファイルを返すだけで、クイズの採点なども利用者のブラウザで動いているから",
+         "内容が一度も変わらないから"
+        ],
+        "answer": 1,
+        "explain": "静的サイトでも JavaScript は動きます。サーバーがリクエストごとにプログラムを動かさない、という意味です。"
+       },
+       {
+        "question": "`pages.yml` の `run: python tools/build.py` は何をしている？",
+        "choices": [
+         "サイトを公開している",
+         "Markdown から `site/data.js` を作るビルドをしている",
+         "Python をインストールしている"
+        ],
+        "answer": 1,
+        "explain": "公開の前に、Markdown をまとめて site/data.js を作っています。Python の用意はその前の `setup-python`、公開は最後の `deploy-pages` です。"
+       },
+       {
+        "question": "静的サイトの JavaScript に、外部サービスの API キーを書いた。何が問題？",
+        "choices": [
+         "問題ない。JavaScript はブラウザで実行されるだけで、中身は見えない",
+         "ファイルはそのまま利用者に送られるので、誰でもキーを見て使えてしまう",
+         "サイトの表示が遅くなる"
+        ],
+        "answer": 1,
+        "explain": "ブラウザに届くものはすべて見られます。秘密が必要な処理は、サーバー側の関数に置きます。"
+       }
+      ]
+     ],
+     "id": "02-static-hosting"
+    },
+    {
+     "title": "ドメイン・DNS・HTTPS ― 自分の住所を持つ",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "deploy",
+      "http_api",
+      "security"
+     ],
+     "summary": "独自ドメインを取って公開したサービスにつなぐまで。DNS のレコード（A・CNAME・TXT・MX）、TTL、HTTPS の証明書と Let's Encrypt、よくあるつまずき。",
+     "body": "## このレッスンのゴール\n\n- ドメインを買ってから、サイトが表示されるまでの流れを説明できる\n- DNS のレコード（A・AAAA・CNAME・TXT・MX）が何を表しているか読める\n- HTTPS の証明書の役割と、「証明書のエラー」の意味が分かる\n\nバックエンドコースのレッスン 2 で「DNS は名前から住所（IP アドレス）を引く電話帳」と学びました。ここでは、**自分のドメインを電話帳に載せる側** に回ります。\n\n## ドメインを持つとは\n\n`ユーザー名.github.io` のような URL でも公開できますが、自分の名前の住所（`example.com`）を使いたいときは **ドメイン** を買います（年に数百円〜数千円）。\n\n| 用語 | 意味 | 例 |\n|---|---|---|\n| **ドメイン** | インターネット上の名前 | `example.com` |\n| **サブドメイン** | ドメインの前に付ける名前。自由に作れる | `www.example.com`、`api.example.com` |\n| **レジストラ** | ドメインを売っている会社 | Cloudflare Registrar、お名前.com、Squarespace（旧 Google Domains）など |\n| **DNS サーバー** | そのドメインの「電話帳」を持っている場所 | 多くはレジストラや Cloudflare が用意 |\n\n## DNS のレコード\n\n電話帳の 1 行 1 行を **レコード** と呼びます。管理画面で、こんな表を作ります。\n\n| 種類 | 名前 | 値 | 意味 |\n|---|---|---|---|\n| **A** | `example.com` | `203.0.113.10` | この名前の住所は、この **IPv4 アドレス** |\n| **AAAA** | `example.com` | `2001:db8::10` | 同じく **IPv6 アドレス**（新しい形式の住所） |\n| **CNAME** | `www` | `ユーザー名.github.io` | この名前は、**別の名前の別名**。住所はそっちで引いて |\n| **TXT** | `example.com` | `google-site-verification=...` | 自由な文字。「このドメインの持ち主です」の証明やメールの設定に使う |\n| **MX** | `example.com` | `mail.example.com` | このドメイン宛ての **メール** の受け取り先 |\n\n（`203.0.113.10` や `2001:db8::` は、説明用に予約されている住所です）\n\n試しに、この環境から `github.com` の住所を引くと、`140.82.113.3` でした（引くたびに変わることがあります）。\n\n### A と CNAME の使い分け\n\n| 公開先 | 設定するもの |\n|---|---|\n| 自分で借りたサーバー（IP アドレスが決まっている） | **A**（と AAAA） |\n| GitHub Pages・Vercel・Render などのサービス | 多くは **CNAME**（サービスの名前に向ける）。サービス側が住所を変えても、自分は何もしなくてよい |\n\n⚠️ ドメインそのもの（`example.com`、「ルートドメイン」「Apex」と呼ぶ）には、普通は CNAME を置けません。サービスの説明に従って A レコードを使うか、Cloudflare の「CNAME フラット化」のような機能を使います。\n\n### サービスとつなぐ流れ（GitHub Pages の例）\n\n1. DNS で `www` の CNAME を `ユーザー名.github.io` にする\n2. GitHub のリポジトリの Settings → Pages → **Custom domain** に `www.example.com` を入れる\n3. GitHub が DNS を確認し、HTTPS の証明書を自動で用意する\n4. 「Enforce HTTPS」にチェック\n\nサービス側（GitHub）にも「このドメインを使う」と登録する、**両側の設定が必要** なのがポイントです。\n\n## TTL：書き換えがすぐ反映されない理由\n\n各レコードには **TTL**（Time To Live、覚えておいてよい秒数）が付いています。\n\n```text\nwww.example.com   CNAME   ユーザー名.github.io   TTL 3600（1 時間）\n```\n\n世界中の DNS サーバーやパソコンは、一度引いた答えを TTL の間 **覚えておき（キャッシュ）**、その間は聞き直しません。だから、レコードを書き換えても、**最大で TTL の時間、古い住所に行く人がいます**。\n\n- 「DNS を変えたのに表示されない」→ まず少し待つ（数分〜数時間）\n- 引っ越しの予定があるなら、前もって TTL を短く（300 秒など）しておく\n\n## HTTPS と証明書\n\nHTTPS（バックエンドコースのレッスン 2）は、通信を暗号化するだけでなく、**「本当に example.com のサーバーと話しているか」を確かめる** 仕組みでもあります。そのための身分証明書が **SSL/TLS 証明書** です。\n\n| 証明書に書いてあること | 意味 |\n|---|---|\n| 対象のドメイン | `example.com`、`www.example.com` |\n| 発行者（認証局） | 信頼できる会社や団体（Let's Encrypt など） |\n| 有効期限 | この日まで有効 |\n\nブラウザは、**信頼できる発行者が、このドメインに対して発行した、期限内の証明書か** を確かめます。\n\n- **Let's Encrypt**：無料で証明書を発行してくれる団体。GitHub Pages・Cloudflare・Render などは、裏で自動的に取得・更新してくれる\n- 証明書には有効期限があり（Let's Encrypt は 90 日。今後さらに短くなる予定）、**自動で更新する** のが今の標準\n\n### よく見る証明書のエラー\n\n| ブラウザの表示 | よくある原因 |\n|---|---|\n| 「この接続ではプライバシーが保護されません」`NET::ERR_CERT_DATE_INVALID` | 証明書の期限切れ（自動更新が止まっていた） |\n| `NET::ERR_CERT_COMMON_NAME_INVALID` | `www` 付きと無しなど、証明書のドメインと違う名前でアクセスした |\n| 独自ドメインにしたら証明書のエラー | サービスがまだ証明書を発行していない（DNS の確認待ち）。少し待つ |\n| 「保護されていない通信」 | http のまま。https に転送する設定をする |\n\n⚠️ プログラムで `requests.get(url, verify=False)` や Node.js の `NODE_TLS_REJECT_UNAUTHORIZED=0` を見たら要注意です。証明書の確認を **切っている** ので、偽のサーバーにつながっても気づけません。エラーを消すために AI が提案しがちな書き方です。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| 「DNS に `CNAME www → xxx.pages.dev` を追加してください」 | サービスの名前への別名。サービス側でもドメインの登録が必要 |\n| 「TXT レコードに `_vercel` … を追加」 | ドメインの持ち主であることの証明 |\n| `verify=False` / `rejectUnauthorized: false` | ⚠️ 証明書の確認を切っている。本番では使わない |\n| `http://` の URL がコードに直接書かれている | 本番は https に |\n| CORS の設定に `https://example.com` と `https://www.example.com` | 別の名前として扱われる。両方使うなら両方書く |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "GitHub Pages に独自ドメイン `www.example.com` を向けるとき、DNS に設定するのが一般的なのは？",
+        "choices": [
+         "MX レコードで `ユーザー名.github.io` に",
+         "CNAME レコードで `ユーザー名.github.io` に",
+         "TXT レコードに IP アドレスを"
+        ],
+        "answer": 1,
+        "explain": "CNAME は「別の名前の別名」です。サービスの名前に向けておけば、サービス側で住所が変わっても対応不要です。MX はメール用です。"
+       },
+       {
+        "question": "DNS のレコードを書き換えたのに、まだ古いサイトが表示される人がいる。いちばん考えられる理由は？",
+        "choices": [
+         "TTL の間、各地の DNS やパソコンが古い答えを覚えている（キャッシュ）から",
+         "書き換えが失敗しているから",
+         "ブラウザが壊れているから"
+        ],
+        "answer": 0,
+        "explain": "レコードには覚えておいてよい時間（TTL）があり、その間は聞き直しません。少し待つと反映されます。"
+       },
+       {
+        "question": "`requests.get(url, verify=False)` で「証明書のエラーが消えた」。この直し方の問題は？",
+        "choices": [
+         "処理が遅くなる",
+         "証明書の確認を切ったので、偽のサーバーにつながっても気づけない",
+         "問題はない"
+        ],
+        "answer": 1,
+        "explain": "エラーの原因（期限切れ・名前の違いなど）を直すべきところを、確認自体を止めています。本番では使いません。"
+       }
+      ]
+     ],
+     "id": "03-domain-dns-https"
+    },
+    {
+     "title": "設定と環境変数 ― 同じコードを、どこでも動かす",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "deploy",
+      "security",
+      "type_hints"
+     ],
+     "summary": "設定を環境変数に出す理由と、読み込みの優先順位。pydantic-settings で「足りない・おかしい設定なら起動しない」ようにする。`bool(\"false\")` の罠、本番でのシークレットの登録場所。",
+     "body": "## このレッスンのゴール\n\n- 設定をコードから環境変数に出す理由と、`.env` の役割を説明できる\n- 環境変数と `.env` のどちらが優先されるかが分かる\n- 設定を型付きで読み込み、足りない設定に起動時に気づけるようにする方法が分かる\n\nAI と開発するコースの「秘密情報と環境変数」で、API キーを `.env` に置くことを学びました。ここでは、秘密だけでなく **設定全体** の扱い方を見ます。\n\n## 何を設定にするか\n\n| 設定にするもの | 例 |\n|---|---|\n| 環境ごとに違うもの | データベースの URL、API の URL、`DEBUG` のオン・オフ |\n| 秘密 | API キー、パスワード、署名の鍵（`SECRET_KEY`） |\n| あとで変えたくなる値 | メールの送信元、1 ページの件数、機能のオン・オフ |\n\n| 設定にしないもの | 例 |\n|---|---|\n| 環境で変わらないもの | 税率の計算方法、画面の文言 |\n\n## 読み込みの順番\n\n```text\n① コードに書いた初期値     （いちばん弱い）\n② .env ファイル\n③ 実際の環境変数           （いちばん強い）\n```\n\n多くのライブラリ（`python-dotenv`・`pydantic-settings`・Node.js の `dotenv`）は、**すでに環境変数があれば、`.env` の値で上書きしません**。手元では `.env`、本番ではクラウドの設定画面で登録した環境変数、と切り替えられるのはこのためです。\n\n## pydantic-settings：型付きの設定\n\n```python\nfrom pydantic_settings import BaseSettings, SettingsConfigDict\n\nclass Settings(BaseSettings):\n    model_config = SettingsConfigDict(env_file=\".env\")\n    app_env: str = \"development\"     # 初期値あり\n    database_url: str                # 初期値なし → 必須\n    debug: bool = False\n    secret_key: str                  # 必須\n\nsettings = Settings()\n```\n\n```bash\n# .env\nAPP_ENV=development\nDATABASE_URL=sqlite:///dev.db\nDEBUG=true\n```\n\n実際に、いろいろな状態で起動してみました。\n\n```text\n① .env だけ（SECRET_KEY が無い）\npydantic_core._pydantic_core.ValidationError: 1 validation error for Settings\nsecret_key\n  Field required [type=missing, ...]                         ← 起動した瞬間に止まった\n\n② SECRET_KEY=abcd1234 を環境変数で足す\ndevelopment sqlite:///dev.db True abcd...                    ← .env の値と合わせて読めた\n\n③ 環境変数で APP_ENV=production DEBUG=false DATABASE_URL=postgresql://u@db/app も足す\nproduction postgresql://u@db/app False abcd...               ← 環境変数が .env より優先された\n\n④ DEBUG=yes-please\ndebug\n  Input should be a valid boolean, unable to interpret input  ← おかしな値も止まった\n```\n\n**足りない・おかしい設定は、起動したときにすぐ止まる** のが大事です。設定の漏れに、利用者がその機能を使ったときに初めて気づく（本番で 500 エラー）より、ずっと安全です。\n環境変数の名前は大文字（`DATABASE_URL`）、Python の属性は小文字（`database_url`）ですが、pydantic-settings は大文字・小文字を区別せずに対応させてくれます。\n\n### `os.environ` で読むときの罠\n\n```python\nimport os\nDEBUG = bool(os.environ.get(\"DEBUG\"))    # ⚠️\nbool(\"false\")                            # True！\n```\n\n環境変数は **すべて文字列** です。空でない文字列は `bool()` すると全部 `True` になるので、`DEBUG=false` と書いても **デバッグがオンになります**（実行して確認）。\n\n```python\nDEBUG = os.environ.get(\"DEBUG\", \"\").lower() in (\"1\", \"true\", \"yes\")   # ✅ 自分で判定する\n```\n\n数値も `int(os.environ[\"PORT\"])` のように変換が必要です。型付きの設定ライブラリを使うと、こうした変換と確認をまとめて任せられます。\n\n## .env を共有する方法：.env.example\n\n`.env` は Git に入れませんが、**どんな設定が必要か** は共有したいものです。そこで、値を空にした見本を入れておきます。\n\n```bash\n# .env.example（Git に入れる）\nAPP_ENV=development\nDATABASE_URL=sqlite:///dev.db\nDEBUG=true\nSECRET_KEY=                # python -c \"import secrets; print(secrets.token_urlsafe(32))\" で作る\nOPENAI_API_KEY=\n```\n\n新しく始める人は `cp .env.example .env` をして、空のところを埋めます。\n\n## 本番ではどこに置く？\n\n| 置き場所 | 登録の仕方 |\n|---|---|\n| Render・Railway・Vercel・Fly.io | 管理画面の **Environment Variables** |\n| Cloudflare Workers | `npx wrangler secret put SECRET_KEY`（バックエンドコースのレッスン 19） |\n| GitHub Actions | リポジトリの **Settings → Secrets and variables → Actions**。`${{ secrets.NAME }}` で読む（レッスン 7） |\n| Docker | `docker run -e APP_ENV=production` や `--env-file`（レッスン 6） |\n| 大きなサービス | AWS Secrets Manager・Google Secret Manager など、秘密専用のサービス |\n\n⚠️ 管理画面に登録した秘密は、**ログに出さない** ように注意します。`print(settings)` や、エラーのときに設定を全部出す処理があると、ログから漏れます（pydantic の `SecretStr` 型を使うと、表示が `**********` になります）。\n\n## フロントエンドの「環境変数」は秘密ではない\n\n```javascript\n// Vite（React など）\nconst apiUrl = import.meta.env.VITE_API_URL;\n// Next.js\nconst apiUrl = process.env.NEXT_PUBLIC_API_URL;\n```\n\n`VITE_` や `NEXT_PUBLIC_` で始まる環境変数は、**ビルドのときにコードに埋め込まれて、ブラウザに送られます**。API の URL のような公開してよい値にだけ使い、秘密は入れません（レッスン 2）。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `SECRET_KEY = \"change-me\"` / `API_KEY = \"sk-...\"` がコードに直接 | ⚠️ 環境変数に |\n| `os.environ.get(\"SECRET_KEY\", \"dev-secret\")` | ⚠️ 本番で設定し忘れると、誰でも知っている値で動いてしまう。秘密には初期値を付けず、無ければ止める |\n| `bool(os.environ.get(\"DEBUG\"))` | ⚠️ `\"false\"` でも True |\n| `class Settings(BaseSettings):` | ✅ 型付きの設定 |\n| `.env.example` がある | ✅ 必要な設定が分かる |\n| `VITE_OPENAI_API_KEY` / `NEXT_PUBLIC_..._SECRET` | ⚠️ ブラウザに送られる。秘密ならサーバー側に |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`.env` に `APP_ENV=development`、実際の環境変数に `APP_ENV=production` があるとき、pydantic-settings が読むのは？",
+        "choices": [
+         "development（ファイルが優先）",
+         "production（実際の環境変数が優先）",
+         "エラーになる"
+        ],
+        "answer": 1,
+        "explain": "実際の環境変数が `.env` より優先されます。だから、本番では管理画面で登録した値が使われます。"
+       },
+       {
+        "question": "`DEBUG = bool(os.environ.get(\"DEBUG\"))` で、`DEBUG=false` と設定したときの DEBUG の値は？",
+        "choices": [
+         "True",
+         "False",
+         "None"
+        ],
+        "answer": 0,
+        "explain": "環境変数は文字列で、空でない文字列は `bool()` すると True です。文字列の中身を見て判定する必要があります。"
+       },
+       {
+        "question": "`SECRET_KEY` を必須（初期値なし）にしておく利点は？",
+        "choices": [
+         "起動が速くなる",
+         "本番で設定し忘れたとき、起動した時点で止まって気づける",
+         "秘密が自動で作られる"
+        ],
+        "answer": 1,
+        "explain": "初期値があると、設定し忘れても誰でも知っている値で動いてしまいます。必須にしておけば、起動時のエラーですぐ気づけます。"
+       }
+      ]
+     ],
+     "id": "04-config"
+    },
+    {
+     "title": "ホスティングの選び方 ― どこに置くか",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "deploy",
+      "backend",
+      "performance"
+     ],
+     "summary": "静的ホスティング・BaaS・PaaS・サーバーレス・コンテナ・VPS を、手間・料金・向き不向きで比べる。コールドスタート、無料枠の落とし穴、「作りたいもの別」の選び方。",
+     "body": "## このレッスンのゴール\n\n- ホスティングの種類ごとに、自分が面倒を見る範囲と料金の仕組みを説明できる\n- コールドスタートや無料枠のスリープなど、選ぶときに知っておくべき落とし穴が分かる\n- 作りたいものに合わせて、候補を 2〜3 個に絞れる\n\nバックエンドコースのレッスン 15 で、ホスティングの種類を表で見ました。ここでは **選ぶとき** に必要な知識を足します。\n\n## 面倒を見る範囲\n\n下に行くほど自由が増え、そのぶん自分の仕事も増えます。\n\n| 種類 | 例 | 自分が用意するもの | サービスがやってくれること |\n|---|---|---|---|\n| **静的ホスティング** | GitHub Pages、Cloudflare Pages、Netlify | HTML・CSS・JS のファイル | 配信・HTTPS・世界中への配布 |\n| **BaaS** | Firebase、Supabase | フロントエンドと、データのルール | データベース・ログイン・ファイル保存 |\n| **サーバーレス関数** | Cloudflare Workers、Vercel Functions、AWS Lambda | 関数のコード | サーバー・台数の調整・起動と停止 |\n| **PaaS** | Render、Railway、Fly.io、Heroku | アプリのコード（や Dockerfile） | サーバー・OS・HTTPS・ログ |\n| **コンテナのサービス** | Google Cloud Run、AWS App Runner、Azure Container Apps | Docker のイメージ（レッスン 6） | 台数の調整・HTTPS |\n| **VPS・仮想マシン** | AWS EC2、さくらの VPS、ConoHa | **全部**（OS の更新、セキュリティ、ファイアウォール…） | 機械と電源と回線 |\n\n**上の方から考えて、できないことがあったら下に降りる** のが、手間を減らすコツです。\n\n## 料金の仕組み\n\n| 仕組み | どんなサービス | 気をつけること |\n|---|---|---|\n| **使った分だけ**（リクエスト数・計算時間） | サーバーレス、BaaS、Cloud Run | 使わなければほぼ 0 円。ただし **攻撃や無限ループで急に高額** になることがある |\n| **起動している時間** | PaaS、VPS | アクセスが無くても動いている間はかかる。金額は読みやすい |\n| **無料枠** | ほとんどのサービス | 上限を超えたら止まるのか、課金されるのか、確認しておく |\n\n⚠️ 使った分だけのサービスでは、**予算のアラート（いくらを超えたら知らせる）** を必ず設定しましょう。AI のコードのバグで API を呼び続けて、一晩で高額の請求、という事故は珍しくありません。\n\n## 知っておきたい落とし穴\n\n### コールドスタート\n\nサーバーレスやスリープするサービスは、しばらく使われないと **止まって** います。次のリクエストが来たときに起動するので、**最初の 1 回だけ遅い** ことがあります。これを **コールドスタート** と呼びます。\n\n| サービス | コールドスタート |\n|---|---|\n| Cloudflare Workers | ほぼ気にならない（とても軽い仕組みで動くため） |\n| AWS Lambda、Cloud Run | 数百ミリ秒〜数秒（言語やライブラリの大きさによる） |\n| PaaS の無料プラン | 数十秒かかることも（使われないとスリープするプランがある） |\n\n### 無料プランのスリープ・停止\n\nPaaS の無料プランは、「15 分アクセスが無いとスリープ」「月に何時間まで」のような制限があることが多いです。個人の試作には十分ですが、**人に使ってもらうサービス** なら、制限を確かめておきます。\n\n### ファイルが消える\n\nPaaS・サーバーレス・コンテナのサービスは、**再起動すると、サーバーに保存したファイルが消える** ことがほとんどです（レッスン 1）。データはデータベースに、ファイルは保存用のサービス（AWS S3、Cloudflare R2 など）に置きます。\n\n### 長い処理ができない\n\nサーバーレスの関数には、**1 回の実行時間の上限** があります（数十秒〜数分）。動画の変換のような長い処理は、キュー（バックエンドコースのレッスン 13）と別の仕組みに分けます。\n\n## 作りたいもの別の選び方\n\n| 作りたいもの | まず考える候補 |\n|---|---|\n| このサイトのような、説明や記録のページ | **静的ホスティング**（GitHub Pages、Cloudflare Pages） |\n| React などの画面＋ログイン＋データ保存（popup2027 のようなアプリ） | **静的ホスティング ＋ BaaS**（Firebase・Supabase） |\n| 小さな API・Webhook の受け口・定期的な処理 | **サーバーレス**（Cloudflare Workers ＋ D1） |\n| FastAPI・Django・Express の普通の Web アプリ | **PaaS**（Render、Railway、Fly.io）か **Cloud Run** |\n| Next.js のアプリ | Vercel、Cloudflare（vinext など） |\n| ずっと動き続ける処理（Discord のボット、WebSocket） | PaaS（スリープしないプラン）、VPS |\n| 特殊なソフトを入れたい・細かく制御したい | VPS（ただし管理の手間が大きい） |\n\n### プレビュー環境\n\nVercel・Netlify・Cloudflare Pages・Render などは、**プルリクエストを作るたびに、その変更だけを入れた確認用の URL** を自動で作ってくれます（**プレビュー環境**）。AI が作った PR を、マージする前に実際に触って確かめられるので、とても便利です（ターミナルと Git のコースのレッスン 6）。\n\n## 選ぶときのチェックリスト\n\n| 確認すること | 例 |\n|---|---|\n| 使う言語・フレームワークに対応しているか | Python が使えるか、WebSocket が使えるか |\n| データはどこに置くか | 同じサービスのデータベースがあるか、外部につなぐか |\n| 料金：無料枠の中身と、超えたらどうなるか | 止まる？課金？予算アラートはある？ |\n| 地域（リージョン） | 利用者が日本なら、東京などの近い場所を選べるか |\n| 出ていくとき困らないか | Docker のイメージで動くなら、他のサービスにも移しやすい |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "「アクセスはたまにしか無いが、0 円に近く運用したい小さな API」に向いているのは？",
+        "choices": [
+         "VPS",
+         "サーバーレス関数（Cloudflare Workers など）",
+         "常に動いている PaaS の有料プラン"
+        ],
+        "answer": 1,
+        "explain": "サーバーレスは使った分だけの料金なので、アクセスが少なければほとんどかかりません。"
+       },
+       {
+        "question": "PaaS の無料プランに置いた API が、朝いちばんのアクセスだけ 30 秒くらいかかる。考えられる理由は？",
+        "choices": [
+         "使われない間スリープしていて、最初のリクエストで起動しているから（コールドスタート）",
+         "データベースが壊れているから",
+         "DNS の TTL のせい"
+        ],
+        "answer": 0,
+        "explain": "無料プランにはスリープするものが多く、起動に時間がかかります。気になるならスリープしないプランや別のサービスを検討します。"
+       },
+       {
+        "question": "使った分だけ課金されるサービスを使うとき、最初にしておくべきことは？",
+        "choices": [
+         "無料枠を超えないように、アプリを公開しない",
+         "予算のアラートや上限を設定しておく",
+         "一番大きなプランにしておく"
+        ],
+        "answer": 1,
+        "explain": "バグや攻撃でリクエストが急に増えると、思わぬ請求になることがあります。早めに気づけるように設定します。"
+       }
+      ]
+     ],
+     "id": "05-hosting-choices"
+    },
+    {
+     "title": "Docker の基本 ― 動く環境ごと箱に詰める",
+     "level": 3,
+     "minutes": 22,
+     "concepts": [
+      "deploy",
+      "tooling",
+      "hardware"
+     ],
+     "summary": "イメージとコンテナの違い、Dockerfile の各行とキャッシュ、ポートの対応づけ、環境変数、.dockerignore、docker compose でアプリとデータベースを一緒に動かすまで。すべて実際に動かした出力つき。",
+     "body": "## このレッスンのゴール\n\n- イメージとコンテナの違い、`docker build`・`docker run` の役割を説明できる\n- Dockerfile を読んで、キャッシュが効く順番になっているか判断できる\n- `compose.yaml` を読んで、どのサービスがどうつながっているか説明できる\n\nバックエンドコースのレッスン 15 で Dockerfile の各行の意味を見ました。ここでは、**実際にビルドして動かしたときに何が起きるか** を見ます。この環境で、小さな FastAPI のアプリを実際にビルド・実行しました。\n\n## イメージとコンテナ\n\n| | たとえ | 説明 | 作るコマンド |\n|---|---|---|---|\n| **Dockerfile** | レシピ | どう作るかの手順書 | 自分で書く |\n| **イメージ** | 冷凍食品 | 手順どおりに作った、**動かす前の完成品**。変わらない | `docker build` |\n| **コンテナ** | 温めて皿に出した料理 | イメージを **実行している最中のもの**。いくつでも作れる | `docker run` |\n\nコンピュータの基礎コースの「プログラムとプロセス」の関係に似ています。イメージがプログラム、コンテナがプロセスです。\n\n## アプリと Dockerfile\n\n```python\n# main.py\nimport os\nfrom fastapi import FastAPI\napp = FastAPI()\n\n@app.get(\"/\")\ndef root():\n    return {\"message\": \"hello\", \"env\": os.environ.get(\"APP_ENV\", \"development\")}\n```\n\n```dockerfile\nFROM python:3.12-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nCMD [\"uvicorn\", \"main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n```\n\n（この環境では、ネットワークの事情で証明書の設定を 2 行足してビルドしました。普通のパソコンでは上のままで動きます。下の出力の `[3/6]` などの番号は、その 2 行を足した版のものです）\n\n## ビルドする\n\n```text\n$ docker build -t hello-api .\n#5 [1/6] FROM docker.io/library/python:3.12-slim\n#7 [3/6] WORKDIR /app\n#8 [4/6] COPY requirements.txt .\n#9 [5/6] RUN pip install --no-cache-dir -r requirements.txt\n#9 DONE 7.7s\n#10 [6/6] COPY . .\n#11 naming to docker.io/library/hello-api:latest done\n```\n\n| 部分 | 意味 |\n|---|---|\n| `-t hello-api` | できたイメージに `hello-api` という名前（タグ）を付ける |\n| `.` | 今のディレクトリのファイルを材料（ビルドコンテキスト）として使う |\n| `[5/6] RUN pip install ...` `DONE 7.7s` | ライブラリのインストールに 7.7 秒かかった |\n\n### キャッシュ：変わったところから下だけ作り直す\n\n`main.py` を 1 行変えて、もう一度ビルドしました。\n\n```text\n#6 [3/6] WORKDIR /app\n#6 CACHED\n#8 [4/6] COPY requirements.txt .\n#8 CACHED\n#9 [5/6] RUN pip install --no-cache-dir -r requirements.txt\n#9 CACHED                     ← インストールはやり直していない\n#10 [6/6] COPY . .\n#10 DONE 0.0s                 ← 変わったのはここから\n```\n\nDocker は **1 行ごとの結果を覚えておき**、材料が変わっていない行は `CACHED`（使い回し）にします。ある行が変わると、**そこから下は全部作り直し** です。\n\nだから、**変わりにくいもの（ライブラリの一覧）を先に、変わりやすいもの（コード）を後に** コピーします。もし最初に `COPY . .` してから `pip install` すると、コードを 1 文字変えるたびに毎回インストールし直すことになります。\n\n### .dockerignore\n\n```text\n# .dockerignore\n.venv/\n__pycache__/\n.env\n.git/\n```\n\n`COPY . .` で **入れたくないもの** を書きます。`.gitignore` と同じ書き方です。\n\n- `.env` を入れると、**秘密がイメージの中に残ります**。イメージを共有・公開すると漏れます\n- `.venv/` や `node_modules/` を入れると、イメージが大きくなり、手元の OS 用のファイルが混ざって動かないこともあります\n\n## 動かす\n\n```text\n$ docker run -d --name hello -p 8080:8000 -e APP_ENV=production hello-api\n$ curl localhost:8080/\n{\"message\":\"hello\",\"env\":\"production\"}\n\n$ docker ps\nhello 0.0.0.0:8080->8000/tcp Up 4 seconds\n\n$ docker logs hello\nINFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)\nINFO:     172.17.0.1:52822 - \"GET / HTTP/1.1\" 200 OK\n```\n\n| オプション | 意味 |\n|---|---|\n| `-d` | 後ろで動かす（ターミナルを占領しない） |\n| `--name hello` | コンテナに名前を付ける |\n| `-p 8080:8000` | **パソコンの 8080 番** に来たものを、**コンテナの 8000 番** に渡す（左が外、右が中） |\n| `-e APP_ENV=production` | 環境変数を渡す（レッスン 4）。アプリの返事が `production` になった |\n\n| よく使うコマンド | 意味 |\n|---|---|\n| `docker ps` / `docker ps -a` | 動いているコンテナ／止まったものも含めて一覧 |\n| `docker logs 名前` | コンテナの出力（ログ） |\n| `docker stop 名前` / `docker rm 名前` | 止める／消す |\n| `docker exec -it 名前 bash` | 動いているコンテナの中に入って、コマンドを打つ |\n| `docker images` | イメージの一覧（今回の hello-api は 215MB でした） |\n\n⚠️ `--host 0.0.0.0` を付けずに `127.0.0.1` で起動すると、コンテナの **中からしか** 届かず、`-p` を付けてもつながりません。「コンテナは動いているのにブラウザで開けない」ときの定番の原因です。\n\n## docker compose：複数のコンテナをまとめて動かす\n\nアプリとデータベースのように、**複数のコンテナを一緒に** 動かすときは、`compose.yaml`（古い名前は `docker-compose.yml`）に書きます。\n\n```yaml\nservices:\n  api:                                   # 1 つ目：自分のアプリ\n    build: .                             # この場所の Dockerfile でビルド\n    ports:\n      - \"8080:8000\"\n    environment:\n      APP_ENV: production\n      DATABASE_URL: postgresql://app:app-password@db:5432/app   # ← 相手の名前「db」で届く\n    depends_on:\n      - db                               # db を先に起動する\n  db:                                    # 2 つ目：PostgreSQL\n    image: postgres:17                   # ビルドせず、公開されているイメージを使う\n    environment:\n      POSTGRES_USER: app\n      POSTGRES_PASSWORD: app-password\n      POSTGRES_DB: app\n    volumes:\n      - db-data:/var/lib/postgresql/data # データをコンテナの外に保存\nvolumes:\n  db-data:\n```\n\n```text\n$ docker compose up -d\n Container dk-db-1 Started\n Container dk-api-1 Started\n\n$ docker compose ps\napi running 0.0.0.0:8080->8000/tcp\ndb  running 5432/tcp\n\n$ docker compose exec db psql -U app -d app -c \"select 1 as ok\"\n ok\n----\n  1\n```\n\n| 読みどころ | 意味 |\n|---|---|\n| `@db:5432` | compose の中では、**サービスの名前（`db`）がそのまま住所** になる。api のコンテナから `db` を引くと `172.18.0.2` が返ってきた |\n| `db` に `ports` が無い | パソコンの外からは、データベースに直接つなげない（api からだけ届く）。安全 |\n| `volumes` | コンテナを消してもデータが残る場所。`docker compose down` の後も `db-data` が残っていた |\n| `depends_on` | 起動の順番だけ。⚠️ データベースが「使える状態」になるまで待つわけではない（`healthcheck` を足す） |\n\n⚠️ `POSTGRES_PASSWORD: app-password` のように compose に直接書いてよいのは、**手元の開発用** だけです。本番の秘密は、レッスン 4 の方法で渡します。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `COPY . .` の後に `RUN pip install` / `RUN npm install` | ⚠️ 毎回インストールし直しになる。一覧のファイルを先にコピー |\n| `.dockerignore` が無い | ⚠️ `.env` や `node_modules` がイメージに入る |\n| `FROM python:latest` | ⚠️ ビルドするたびにバージョンが変わる。`3.12-slim` のように固定 |\n| `ENV API_KEY=sk-...` を Dockerfile に | ⚠️ イメージに秘密が残る。`docker run -e` や本番の設定で渡す |\n| `CMD [\"uvicorn\", \"main:app\", \"--reload\"]` | ⚠️ 開発用。本番では外す |\n| `ports: - \"5432:5432\"`（db に） | 手元で直接つなぎたいなら便利だが、本番のサーバーでは外から届いてしまう |\n| `-slim` / `-alpine` の付いたイメージ | ✅ 小さいイメージ。`alpine` は一部の Python ライブラリでビルドに困ることがある |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`docker build` と `docker run` の関係として正しいのは？",
+        "choices": [
+         "build でイメージ（動かす前の完成品）を作り、run でそれを実行したコンテナを作る",
+         "build でコンテナを作り、run でイメージを作る",
+         "どちらも同じ意味"
+        ],
+        "answer": 0,
+        "explain": "イメージはレシピから作った完成品、コンテナはそれを動かしている最中のものです。1 つのイメージから何個でもコンテナを作れます。"
+       },
+       {
+        "question": "Dockerfile で `COPY requirements.txt .` → `RUN pip install` → `COPY . .` の順にする理由は？",
+        "choices": [
+         "そうしないとエラーになるから",
+         "コードだけを変えたとき、ライブラリのインストールをキャッシュで飛ばせるから",
+         "イメージが小さくなるから"
+        ],
+        "answer": 1,
+        "explain": "Docker は変わった行から下を作り直します。変わりにくいライブラリの一覧を先にすれば、コードを変えてもインストールは CACHED になります（実際に確認しました）。"
+       },
+       {
+        "question": "compose の `api` から `db` の PostgreSQL につなぐとき、`DATABASE_URL` の住所の部分に書くのは？",
+        "choices": [
+         "`localhost`",
+         "`db`（サービスの名前）",
+         "パソコンの IP アドレス"
+        ],
+        "answer": 1,
+        "explain": "compose の中では、サービスの名前が住所になります。api のコンテナの中の `localhost` は、api 自身のことです。"
+       }
+      ]
+     ],
+     "id": "06-docker"
+    },
+    {
+     "title": "CI/CD と GitHub Actions ― push したら自動でテスト・公開",
+     "level": 3,
+     "minutes": 20,
+     "concepts": [
+      "deploy",
+      "testing",
+      "tooling",
+      "version_control"
+     ],
+     "summary": "GitHub Actions のワークフローの読み方（on・jobs・steps・uses・run・secrets）。このリポジトリの自動マージの仕組みを読み、テストを自動で回すワークフローを組み立てる。",
+     "body": "## このレッスンのゴール\n\n- CI と CD の違い、自動化する理由を説明できる\n- GitHub Actions のワークフロー（`.github/workflows/*.yml`）を読み、いつ・何をするのか説明できる\n- `secrets`・`permissions` など、ワークフローの安全に関わる部分をチェックできる\n\n## CI と CD\n\n| | 正式な名前 | すること |\n|---|---|---|\n| **CI** | 継続的インテグレーション | push や PR のたびに、**自動でテスト** する。壊れた変更を main に入れない |\n| **CD** | 継続的デリバリー／デプロイ | テストに通ったら、**自動で公開** する |\n\n人の手でやると、テストを忘れる・手順を間違える・その人しかやり方を知らない、が起きます。**毎回同じ手順を、機械に確実にやらせる** のが CI/CD です。\n\n## GitHub Actions の部品\n\n```text\nワークフロー（.github/workflows/xxx.yml 1 つ）\n └─ on: いつ動くか（きっかけ）\n └─ jobs: 仕事のまとまり（並べて同時に動かせる）\n     └─ runs-on: どんなパソコンで動かすか\n     └─ steps: 上から順番に実行する手順\n         ├─ uses: 他の人が作った部品（アクション）を使う\n         └─ run:  コマンドを実行する\n```\n\n| きっかけ（`on:`） | いつ |\n|---|---|\n| `push:` | push されたとき（`branches:` で絞り込める） |\n| `pull_request:` | PR が作られた・更新されたとき |\n| `workflow_dispatch:` | Actions のタブから手動で実行したとき |\n| `schedule:` | 決まった時間（`cron: \"0 0 * * *\"` は毎日 0 時（UTC）） |\n\n## このリポジトリのワークフローを読む\n\n### 自動マージ（auto-merge-claude.yml）\n\n```yaml\nname: Auto merge Claude branches into main\n\non:\n  push:\n    branches: [\"claude/**\"]          # ① claude/ で始まるブランチに push されたら\n\npermissions:\n  contents: write                    # ② リポジトリへの書き込みを許可（main に push するため）\n\nconcurrency:\n  group: auto-merge-main             # ③ 同時に動くのは 1 つだけ（順番待ち）\n  cancel-in-progress: false          #    途中のものは止めない\n\njobs:\n  merge:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          ref: main                  # ④ main ブランチを取ってくる\n          fetch-depth: 0             #    履歴を全部（マージに必要）\n      - name: Merge into main\n        run: |                       # ⑤ | の後ろは、複数行のコマンド\n          git config user.name \"github-actions[bot]\"\n          git config user.email \"41898282+github-actions[bot]@users.noreply.github.com\"\n          git fetch origin \"${GITHUB_REF_NAME}\"           # push されたブランチを取ってきて\n          git merge --no-edit \"origin/${GITHUB_REF_NAME}\" # main にマージして\n          git push origin main                             # main を push する\n```\n\n| 番号 | 読み方 |\n|---|---|\n| ① | `\"claude/**\"` の `**` は「その下なら何でも」。Claude が作業ブランチを push するたびに動く |\n| ② | 普通は読むだけの権限。main に push するので書き込みが必要 |\n| ③ | 2 つの push がほぼ同時に来ても、**順番に** マージする（同時にやると後のほうが失敗する） |\n| ⑤ | `${GITHUB_REF_NAME}` は GitHub が用意してくれる環境変数で、push されたブランチの名前が入る |\n\nターミナルと Git のコースで学んだ `git fetch`・`git merge`・`git push` を、**GitHub のパソコンが代わりに実行している** だけだと分かります。マージでコンフリクトが起きると `git merge` が失敗し、このワークフローは ❌ になります。\n\n### サイトの公開（pages.yml）\n\nレッスン 2 で読んだとおり、手動のきっかけ（`workflow_dispatch`）で、ビルド → 公開をしています。これは **CD** の部分です。\n\n## テストを自動で回すワークフロー\n\nこのリポジトリにはまだありませんが、Python のアプリなら、CI はこんな形になります。\n\n```yaml\nname: Test\n\non:\n  push:\n    branches: [main]\n  pull_request:                      # PR のたびにも\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    strategy:\n      matrix:\n        python-version: [\"3.12\", \"3.13\"]     # 2 つのバージョンで同時にテスト\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@v5\n        with:\n          python-version: ${{ matrix.python-version }}\n          cache: pip                          # ライブラリのダウンロードを使い回して速く\n      - run: pip install -r requirements.txt\n      - run: pytest\n        env:\n          SECRET_KEY: test-only-not-secret    # テスト用のただの値\n          API_KEY: ${{ secrets.API_KEY }}     # 本物の秘密は Secrets から\n```\n\n| 読みどころ | 意味 |\n|---|---|\n| `matrix` | 同じ手順を、条件を変えて何通りも同時に実行する。ここでは Python 3.12 と 3.13 |\n| `${{ ... }}` | GitHub Actions の式。`matrix.python-version` や `secrets.API_KEY` の値に置き換わる |\n| `env:` | そのステップだけの環境変数（レッスン 4） |\n| `secrets.API_KEY` | リポジトリの Settings → Secrets and variables → Actions に登録した値。ログには `***` と表示される |\n\nPR を作ると、画面の **Checks** にこのテストの結果が ✅ / ❌ で出ます（ターミナルと Git のコースのレッスン 6）。リポジトリの設定（Branch protection / Rulesets）で、**テストが ✅ でないとマージできない** ようにもできます。\n\n### 失敗したら\n\nActions のタブで、失敗した実行 → 失敗した job → 赤くなったステップを開くと、**ターミナルと同じ出力** が見られます。エラーの読み方は、はじめてのコースの「エラーメッセージはヒントの手紙」と同じです。\n\n| よくある失敗 | 原因 |\n|---|---|\n| `ModuleNotFoundError` | `requirements.txt` に書き忘れたライブラリ（手元にだけ入っている） |\n| 手元では通るテストが落ちる | OS（Linux）・時刻（UTC）・ファイル名の大文字小文字の違い（レッスン 1） |\n| `secrets.XXX` が空 | Secrets に登録していない。または、フォークからの PR には秘密が渡されない（安全のため） |\n| YAML のエラー | インデント（字下げ）のずれ。スペースで書く（タブは使えない） |\n\n## ワークフローの安全\n\nワークフローは、**リポジトリの権限と秘密を持って動くプログラム** です。ここが乗っ取られると被害が大きくなります。\n\n| 見ること | ✅ | ⚠️ |\n|---|---|---|\n| `permissions:` | 必要なものだけ（`contents: read` から始める） | 書いていない（古いリポジトリでは強い権限になることがある）、`write-all` |\n| `uses:` のバージョン | `@v4` など固定。より厳しくするなら、コミットの ID（`@a1b2c3...`）で固定 | `@main`（作者が変えると、知らないうちに中身が変わる） |\n| 秘密の扱い | `secrets.` から読み、`echo` しない | 秘密をコマンドの出力やファイルに書き出す |\n| PR のタイトルなどを `run:` に | 環境変数にしてから使う | `run: echo \"${{ github.event.pull_request.title }}\"`（タイトルにコマンドを仕込める。セキュリティのコースのレッスン 3 と同じ「インジェクション」） |\n| `pull_request_target` | 使い方をよく理解しているときだけ | フォークからのコードを、秘密を持ったまま実行してしまう |\n\n## AI のコードではこう出てくる\n\nAI に「GitHub Actions でテストを自動化して」と頼むと、上のようなファイルを作ってくれます。読むときは次の順で見ます。\n\n1. **`on:`**：いつ動く？（push だけ？PR でも？手動？）\n2. **`permissions:`**：何ができる？（必要以上に強くない？）\n3. **`steps:`**：何をする？（`run:` のコマンドを 1 行ずつ。ターミナルのコースで読めるはず）\n4. **`secrets.`**：どの秘密を使う？（Settings に登録が必要）\n5. **デプロイするなら**：どのブランチの、どのきっかけで本番に出る？\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`on: pull_request:` と書いたワークフローが動くのはいつ？",
+        "choices": [
+         "main に push したときだけ",
+         "プルリクエストが作られた・更新されたとき",
+         "毎日決まった時間"
+        ],
+        "answer": 1,
+        "explain": "PR のたびにテストを回すのが CI の基本の形です。結果は PR の Checks に表示されます。"
+       },
+       {
+        "question": "このリポジトリの自動マージで、`concurrency: group: auto-merge-main` がある理由は？",
+        "choices": [
+         "ワークフローを速くするため",
+         "2 つの push がほぼ同時に来ても、マージを 1 つずつ順番に行うため",
+         "main ブランチを守るため、マージを禁止している"
+        ],
+        "answer": 1,
+        "explain": "同時に 2 つが main に push しようとすると、後のほうが失敗します。同じグループのものは順番待ちになります。"
+       },
+       {
+        "question": "ワークフローで `uses: someone/deploy-action@main` と書くことの心配な点は？",
+        "choices": [
+         "動作が遅くなる",
+         "作者が main を書き換えると、知らないうちに違う中身が、自分のリポジトリの権限と秘密を持って実行される",
+         "main という名前のブランチが必要になる"
+        ],
+        "answer": 1,
+        "explain": "部品のバージョンを固定しないと、中身が勝手に変わります。`@v4` などのバージョンや、コミットの ID で固定します（セキュリティのコースのレッスン 6 と同じ考え方）。"
+       }
+      ]
+     ],
+     "id": "07-ci-cd-actions"
+    },
+    {
+     "title": "本番で困ったとき ― ログ・監視・ロールバック・バックアップ",
+     "level": 4,
+     "minutes": 18,
+     "concepts": [
+      "deploy",
+      "errors",
+      "testing"
+     ],
+     "summary": "公開した後に「動かない」と言われたときの順番。まず戻す（ロールバック）、ログを読む、監視で先に気づく、バックアップから戻す。事故の後のふり返りまで。",
+     "body": "## このレッスンのゴール\n\n- 本番で問題が起きたとき、何から順にやるかを説明できる\n- ロールバック・ログ・監視・バックアップの役割を説明できる\n- 「戻せる」状態を、公開する前から用意しておく理由が分かる\n\n## 問題が起きたときの順番\n\n```text\n① 気づく     ……  監視・アラート、利用者からの連絡\n② 被害を止める ……  まず戻す（ロールバック）。原因探しは後\n③ 原因を探す   ……  ログ・エラー・直前の変更\n④ 直す        ……  修正 → テスト → もう一度公開\n⑤ ふり返る     ……  なぜ起きた？次はどう防ぐ？\n```\n\nいちばん大事なのは ② です。**原因が分からなくても、直前の状態に戻せば、多くの場合すぐに直ります**。本番が壊れたまま原因を探すと、その間ずっと利用者が困ります。\n\n## ロールバック：前の版に戻す\n\n| 公開の方法 | 戻し方 |\n|---|---|\n| Git の push で自動公開（このサイト、Vercel など） | 原因のコミットを `git revert` して push（ターミナルと Git のコースのレッスン 7） |\n| Vercel・Netlify・Cloudflare Pages・Render | 管理画面の「過去のデプロイ」から、前の版を選んで「Rollback」「Promote」 |\n| Cloudflare Workers | `npx wrangler rollback`（前の版に戻す） |\n| Docker のイメージ | 前のタグ（`hello-api:1.4.2`）のイメージで起動し直す |\n\n⚠️ **データベースの変更（マイグレーション）は、コードと一緒に戻らない** ことに注意します。列を消すマイグレーションを本番で実行した後にコードだけ戻すと、古いコードが「無い列」を使おうとして、さらに壊れます。\nそのため、列を消す・名前を変えるような変更は、**① 新しい列を足す → ② コードを新しい列に切り替える → ③ 古い列を消す** のように、何回かに分けて安全に進めるのが定番です。\n\n## ログを読む\n\nログは、プログラムが「何をしたか」を書き残した記録です（バックエンドコースのレッスン 10）。\n\n```text\n2026-11-21T08:12:03Z INFO  GET /tasks 200 12ms\n2026-11-21T08:12:05Z ERROR POST /orders 500 user_id=42\nTraceback (most recent call last):\n  ...\n  File \"/app/orders.py\", line 31, in create_order\n    total = price * qty\nTypeError: unsupported operand type(s) for *: 'NoneType' and 'int'\n```\n\n| 読み方 | この例では |\n|---|---|\n| 時刻（多くは UTC） | 日本時間では 17:12。「何時ごろから？」と照らし合わせる |\n| レベル | `ERROR` を探す。`INFO` は普通の記録 |\n| どのリクエスト | `POST /orders` で 500 |\n| エラーの最後の行 | `price` が `None` だった。値段の無い商品が原因かも |\n| いつから？ | 最初の `ERROR` の時刻と、**直前のデプロイの時刻** を比べる |\n\n| どこで見る | |\n|---|---|\n| PaaS・サーバーレス | 管理画面の「Logs」。Workers は `npx wrangler tail` で流れてくるログを見られる |\n| Docker | `docker logs コンテナ名`（レッスン 6） |\n| GitHub Actions | Actions のタブ（レッスン 7） |\n\n⚠️ ログに **パスワード・トークン・個人情報** を書かないこと。ログは多くの人が見られる場所に、長く残ります。\n\n## 監視：利用者より先に気づく\n\n| 種類 | 何を見る | 道具の例 |\n|---|---|---|\n| **死活監視** | サイトが応答するか（数分ごとにアクセスしてみる） | UptimeRobot、Better Stack、Cloudflare のヘルスチェック |\n| **エラー監視** | 起きた例外を集めて、まとめて知らせる | Sentry |\n| **数値の監視** | リクエスト数・エラー率・応答時間・CPU・メモリ | 各クラウドの管理画面、Grafana |\n| **料金の監視** | 請求額 | 予算のアラート（レッスン 5） |\n\n```python\n@app.get(\"/health\")\ndef health():\n    conn.execute(\"SELECT 1\")        # データベースにもつながるか確かめる\n    return {\"status\": \"ok\"}\n```\n\n死活監視のために、**「元気かどうか」だけを返す入口**（ヘルスチェック）を作っておくのが定番です。\n\nアラートは **多すぎても少なすぎてもいけません**。毎日何十通も届くと、本当に大事な知らせを見落とします。「利用者が困っている」ときだけ鳴るようにします。\n\n## バックアップ：最後の砦\n\nコードは Git に全部残っていますが、**利用者のデータは Git にはありません**。データベースが壊れた・間違って消した、に備えるのがバックアップです。\n\n| 確認すること | |\n|---|---|\n| 自動で取られているか | 多くのクラウドのデータベースには自動バックアップがある。無料プランでは無い・短いことも |\n| どこまで戻れるか | 毎日 1 回？任意の時点（D1 の Time Travel など）？何日前まで？ |\n| **戻せることを確かめたか** | 一度も戻したことのないバックアップは、本当に使えるか分からない。試しに別の場所に戻してみる |\n| 同じ場所に置いていないか | サービスごと使えなくなったときのために、別の場所にもコピー |\n\n## ふり返り：同じことを起こさない\n\n直ったら、**誰かを責めるのではなく、仕組みを直す** ためのふり返りをします。\n\n```text\n何が起きた？   ：17:12〜17:40、注文ができなかった\n原因は？       ：値段の無い商品を登録できてしまい、計算で None になった\nなぜ防げなかった？：データベースに NOT NULL が無かった。テストにも無かった\n次の対策       ：price に NOT NULL と CHECK を追加（データベース設計のコース）\n                テストに「値段の無い商品」のケースを追加\n                エラー監視を入れて、5 分以内に気づけるように\n```\n\nこのコースのあちこちで学んだこと（制約・テスト・ログ・監視）は、こうして **事故の後に、少しずつ足されていく** ものでもあります。\n\n## AI に手伝ってもらうとき\n\n本番の問題を AI に相談するときは、次をそろえて伝えると、的外れな答えが減ります（AI と開発するコースの「伝わる頼み方」）。\n\n- **いつから** 起きているか、直前に何を変えたか（デプロイの時刻・PR）\n- **エラーのログ**（秘密や個人情報は伏せる）\n- 手元では再現するか\n- すでに試したこと\n\n⚠️ AI が「本番のデータベースで、この SQL を実行してください」と言ってきたら、**バックアップがあるか確かめてから**、まずは手元やステージングで試します。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "公開した直後から注文ができなくなった。原因はまだ分からない。最初にすべきことは？",
+        "choices": [
+         "ログを全部読んで、原因が分かるまで待つ",
+         "直前の版にロールバックして、まず利用者が困らない状態に戻す",
+         "データベースを作り直す"
+        ],
+        "answer": 1,
+        "explain": "被害を止めるのが先です。原因が分からなくても、直前の版に戻せば多くの場合すぐ直ります。原因探しはその後で行います。"
+       },
+       {
+        "question": "列を削除するマイグレーションを本番で実行した後、コードだけを前の版に戻した。何が起きうる？",
+        "choices": [
+         "何も問題はない",
+         "古いコードが、もう無い列を使おうとしてエラーになる",
+         "削除した列が自動で元に戻る"
+        ],
+        "answer": 1,
+        "explain": "データベースの変更はコードと一緒に戻りません。列の削除などは、何回かに分けて安全に進めます。"
+       },
+       {
+        "question": "バックアップについて、もっとも大事な確認は？",
+        "choices": [
+         "毎秒取っているか",
+         "実際に戻せることを、一度試して確かめているか",
+         "できるだけ大きなファイルになっているか"
+        ],
+        "answer": 1,
+        "explain": "戻したことのないバックアップは、いざというとき使えるか分かりません。試しに戻してみて確かめます。"
+       }
+      ]
+     ],
+     "id": "08-operations"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "コンピュータの基礎",
