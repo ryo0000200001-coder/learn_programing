@@ -3644,17 +3644,295 @@ window.SITE_DATA = {
    "icon": "🗃️",
    "order": 140,
    "category": "topic",
-   "status": "planned",
-   "description": "テーブルの分け方と、データの関係の表し方。SQL コースの次に。",
-   "outline": [
-    "テーブルと主キー",
-    "1 対多・多対多",
-    "正規化",
-    "インデックス",
-    "ORM を読む"
-   ],
+   "description": "テーブルの分け方と、データの関係の表し方。主キー・外部キー・1 対多と多対多・正規化・インデックス・制約とトランザクション、ORM の関係の読み方まで。コード例は Python の sqlite3 と SQLAlchemy。",
+   "levels": {
+    "1": "入門：表を作る",
+    "2": "基礎：関係を表す",
+    "3": "実践：速く・壊れにくく",
+    "4": "応用：ORM で読む"
+   },
    "id": "140-database-design",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "テーブルと主キー ― 何を 1 行にするか",
+     "level": 1,
+     "minutes": 15,
+     "concepts": [
+      "database",
+      "types"
+     ],
+     "summary": "「もの」ごとにテーブルを作り、1 行を 1 件にする。列の型、NOT NULL、主キーの選び方（連番・UUID・メールアドレスはなぜダメか）。",
+     "body": "## このレッスンのゴール\n\n- アプリの「もの」から、テーブルと列を考えられる\n- 主キーの役割と、連番・UUID の違いを説明できる\n- `CREATE TABLE` を読んで、どんなデータが入るのか・入らないのかが分かる\n\nバックエンドコースのレッスン 7（SQL と CRUD）で、テーブル・行・列・主キーという言葉と、`SELECT`・`INSERT` を学びました。このコースでは、**どんなテーブルを作るか（設計）** を考えます。\n\n## まず「もの」を見つける\n\nブログアプリを作るとしたら、登場する「もの」（**エンティティ** と呼びます）は何でしょうか。\n\n| もの | 持っている情報 |\n|---|---|\n| ユーザー | 名前・メールアドレス・登録日 |\n| 投稿 | タイトル・本文・書いた人・投稿日 |\n| コメント | 本文・書いた人・どの投稿へのコメントか |\n| タグ | 名前（「日記」「Python」） |\n\n基本は **1 つの「もの」＝ 1 つのテーブル、1 件 ＝ 1 行** です。テーブル名は複数形（`users`・`posts`）にすることが多いです。\n\n## 列を決める\n\n```sql\nCREATE TABLE users (\n  id          INTEGER PRIMARY KEY,\n  name        TEXT    NOT NULL,\n  email       TEXT    NOT NULL UNIQUE,\n  created_at  TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP\n);\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `INTEGER` / `TEXT` | 列の型（整数・文字列）。他に `REAL`（小数）など |\n| `NOT NULL` | 空（NULL）を許さない |\n| `UNIQUE` | 同じ値を 2 行に入れられない |\n| `DEFAULT ...` | 省略したときの値。`CURRENT_TIMESTAMP` は今の日時 |\n| `PRIMARY KEY` | 主キー（下で説明） |\n\n```python\nconn.execute(\"INSERT INTO users (name, email) VALUES (NULL, 'z@example.com')\")\n# sqlite3.IntegrityError: NOT NULL constraint failed: users.name\n\nconn.execute(\"INSERT INTO users (name, email) VALUES ('X', 'hana@example.com')\")   # すでにある\n# sqlite3.IntegrityError: UNIQUE constraint failed: users.email\n```\n\n（実行して確認したエラーです）**データベース自身にルールを持たせておくと、プログラムのバグがあってもおかしなデータが入りません**。\n\n### ⚠️ SQLite の型はゆるい\n\n```python\nconn.execute(\"CREATE TABLE t (n INTEGER)\")\nconn.execute(\"INSERT INTO t VALUES ('abc')\")        # エラーにならない！\nconn.execute(\"SELECT n, typeof(n) FROM t\").fetchall()   # [('abc', 'text')]\n```\n\nSQLite は、`INTEGER` の列に文字列を入れても受け入れてしまいます（PostgreSQL や MySQL ではエラーになります）。\n厳しくしたいときは、テーブルの最後に `STRICT` を付けます。\n\n```python\nconn.execute(\"CREATE TABLE s (n INTEGER) STRICT\")\nconn.execute(\"INSERT INTO s VALUES ('abc')\")\n# sqlite3.IntegrityError: cannot store TEXT value in INTEGER column s.n\n```\n\n## 主キー：1 行を 1 つに決める名札\n\n**主キー（PRIMARY KEY）** は、行を 1 つに特定するための列です。**重複せず、空でもなく、変わらない** 値でなければいけません。\n\n| 方式 | 例 | よいところ | 注意 |\n|---|---|---|---|\n| **連番** | `1, 2, 3, …` | 短い・速い・分かりやすい | URL に出すと「全部で何件あるか」「他の人の番号」が推測できる |\n| **UUID** | `3f2b8c1e-...`（16 進数 32 文字） | 推測されにくい。データベースに聞かずに作れる | 長い。並び順に意味が無い（`UUIDv7` は作成順に並ぶ） |\n| メールアドレスなど（**自然キー**） | `ryo@example.com` | 意味がある | ⚠️ **変わる** ことがある。変えると関係するすべての行を直す必要がある |\n\nメールアドレスや電話番号は、**主キーにせず `UNIQUE` の列にする** のが定番です。主キーは、意味を持たない連番か UUID にします。\n\nSQLite では `INTEGER PRIMARY KEY` と書くと、自動で連番が振られます（バックエンドコースで見た `AUTOINCREMENT` は「消した番号を二度と使わない」という追加の約束）。\n\n## 1 つのマスに 1 つの値\n\n```text\n❌ よくない                              ✅ よい\nid | name | tags                          posts                post_tags\n1  | Ryo  | 日記,Python,旅行              id | title             post_id | tag\n                                          1  | 京都で Python      1       | Python\n                                                                 1       | 旅行\n```\n\n1 つのマスに `日記,Python,旅行` のように複数の値を入れると、「Python のタグが付いた投稿」を探すのも、タグの名前を変えるのも大変です。\n複数あるものは **別のテーブルに分けます**（次のレッスンの「多対多」）。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `email TEXT PRIMARY KEY` | ⚠️ メールアドレスを主キーにしている。変更できるようにするなら連番か UUID に |\n| `NOT NULL` がほとんど無い | ⚠️ 必須の項目まで空を許している |\n| `tags TEXT` にカンマ区切りで保存 | ⚠️ 1 マスに複数の値。別テーブルに |\n| `price REAL` | ⚠️ お金を小数で持っている（コンピュータの基礎コースの「数値の落とし穴」）。整数で持つ |\n| `created_at TEXT` に `2026-11-21 17:36:18` | SQLite には日付の型が無いので、文字列で持つのが普通。並べ替えられる形（年-月-日）になっているか |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "ユーザーのテーブルの主キーとして、いちばん適切なのは？",
+        "choices": [
+         "メールアドレス",
+         "名前",
+         "意味を持たない連番か UUID"
+        ],
+        "answer": 2,
+        "explain": "メールアドレスは変わることがあり、名前は重複します。主キーは変わらない値にし、メールアドレスは `UNIQUE` の列にします。"
+       },
+       {
+        "question": "`email TEXT NOT NULL UNIQUE` の列に、すでにあるメールアドレスを INSERT するとどうなる？",
+        "choices": [
+         "`UNIQUE constraint failed` のエラーになり、入らない",
+         "古い行が上書きされる",
+         "警告だけ出て、2 行目として入る"
+        ],
+        "answer": 0,
+        "explain": "UNIQUE は重複を許しません。データベースがエラーにして守ってくれます。"
+       },
+       {
+        "question": "投稿にタグを複数付けたい。設計としてよいのは？",
+        "choices": [
+         "`tags` 列に「日記,Python」とカンマ区切りで入れる",
+         "`tag1`・`tag2`・`tag3` の列を作る",
+         "投稿とタグの組み合わせを入れる別のテーブルを作る"
+        ],
+        "answer": 2,
+        "explain": "1 マスに複数の値を入れたり、列を増やしたりすると、検索や変更が大変になります。組み合わせのテーブル（次のレッスン）で表します。"
+       }
+      ]
+     ],
+     "id": "01-tables-keys"
+    },
+    {
+     "title": "1 対多・多対多 ― テーブルをつなぐ外部キー",
+     "level": 2,
+     "minutes": 20,
+     "concepts": [
+      "database",
+      "collections"
+     ],
+     "summary": "「ユーザーは投稿をたくさん持つ」「投稿とタグはお互いにたくさん」を表す外部キーと中間テーブル。JOIN で読み、ON DELETE で消し方を決める。SQLite の落とし穴も。",
+     "body": "## このレッスンのゴール\n\n- 1 対多・多対多の関係を見分け、外部キーと中間テーブルで表せる\n- `JOIN` を使った SQL を読み、何と何をつないでいるか説明できる\n- `ON DELETE CASCADE` と、SQLite で外部キーを有効にする方法が分かる\n\n## 関係の 3 つの形\n\n| 関係 | 例 | 表し方 |\n|---|---|---|\n| **1 対 1** | ユーザー と プロフィール | 片方に相手の ID を持たせる（1 つのテーブルにまとめることも多い） |\n| **1 対多** | ユーザー 1 人 と 投稿たくさん | **「多」の側** に「1」の側の ID を持たせる |\n| **多対多** | 投稿 と タグ（投稿にタグがたくさん、タグも投稿がたくさん） | **中間テーブル** を作る |\n\n## 1 対多：外部キー\n\n```sql\nCREATE TABLE users (\n  id    INTEGER PRIMARY KEY,\n  name  TEXT NOT NULL\n);\n\nCREATE TABLE posts (\n  id       INTEGER PRIMARY KEY,\n  user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  title    TEXT NOT NULL\n);\n```\n\n`posts.user_id` は「この投稿を書いたユーザーの id」です。`REFERENCES users(id)` は「この値は、必ず `users` テーブルの `id` のどれかでなければならない」という約束で、こういう列を **外部キー（FOREIGN KEY）** と呼びます。\n\n```text\nusers                    posts\nid | name                id | user_id | title\n1  | Ryo      ←──────── 1  | 1       | はじめての投稿\n            ←──────────  2  | 1       | 2 つ目\n2  | Hana     ←──────── 3  | 2       | こんにちは\n```\n\n⚠️ よくある間違いは、`users` の側に `post_ids` のような列を作ることです。「1」の側に「多」を入れると、1 マスに複数の値（前のレッスン）になってしまいます。**ID を持つのは「多」の側** です。\n\n### JOIN で読む\n\n```python\nconn.execute(\"\"\"\n    SELECT users.name, posts.title\n    FROM posts\n    JOIN users ON users.id = posts.user_id\n    ORDER BY posts.id\n\"\"\").fetchall()\n# [('Ryo', 'はじめての投稿'), ('Ryo', '2 つ目'), ('Hana', 'こんにちは')]\n```\n\n`JOIN users ON users.id = posts.user_id` は「posts の各行に、`user_id` と同じ `id` を持つ users の行をくっつける」という意味です。\n\n```python\nconn.execute(\"\"\"\n    SELECT users.name, COUNT(posts.id)\n    FROM users\n    LEFT JOIN posts ON posts.user_id = users.id\n    GROUP BY users.id\n\"\"\").fetchall()\n# [('Ryo', 2), ('Hana', 1)]\n```\n\n| JOIN の種類 | 結果 |\n|---|---|\n| `JOIN`（`INNER JOIN`） | 両方にある組み合わせだけ。投稿が 0 件のユーザーは出てこない |\n| `LEFT JOIN` | 左（`FROM` の側）は全部出す。相手がいなければ `NULL`（投稿 0 件のユーザーも 0 として数えられる） |\n\n## 消し方を決める：ON DELETE\n\nユーザーを消したら、その人の投稿はどうするか？を決めておきます。\n\n| 書き方 | ユーザーを消すと |\n|---|---|\n| `ON DELETE CASCADE` | 投稿も一緒に消える |\n| `ON DELETE SET NULL` | 投稿は残り、`user_id` が NULL になる（「退会したユーザー」） |\n| `ON DELETE RESTRICT`（または指定なし） | 投稿が残っている間は、ユーザーを消せない（エラー） |\n\n```python\nconn.execute(\"DELETE FROM users WHERE id = 1\")\nconn.execute(\"SELECT * FROM posts\").fetchall()\n# [(3, 2, 'こんにちは')]      ← Ryo の投稿 2 件も消えた（CASCADE）\n```\n\n## ⚠️ SQLite の外部キーは、初期設定で「オフ」\n\nここが SQLite 最大の落とし穴です。**何もしないと、外部キーの約束は守られません**。\n\n```python\nconn = sqlite3.connect(\"app.db\")\nconn.execute(\"INSERT INTO posts (user_id, title) VALUES (99, '幽霊')\")   # 存在しないユーザー 99 でも入ってしまう\n```\n\n接続するたびに、**最初に** 次の 1 行を実行します。\n\n```python\nconn = sqlite3.connect(\"app.db\")\nconn.execute(\"PRAGMA foreign_keys = ON\")     # 接続ごとに必要\n\nconn.execute(\"INSERT INTO posts (user_id, title) VALUES (99, '幽霊')\")\n# sqlite3.IntegrityError: FOREIGN KEY constraint failed   ← 守られた\n```\n\n実際に試したところ、**トランザクションの途中（INSERT や DELETE の後、commit の前）で実行しても効きませんでした**。必ず接続した直後に書きます。\nPostgreSQL・MySQL（InnoDB）では最初から有効です。\n\n## 多対多：中間テーブル\n\n投稿とタグのように、**どちらから見ても「たくさん」** の関係は、組み合わせを 1 行ずつ記録するテーブルを作ります。\n\n```sql\nCREATE TABLE tags (\n  id    INTEGER PRIMARY KEY,\n  name  TEXT NOT NULL UNIQUE\n);\n\nCREATE TABLE post_tags (\n  post_id  INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,\n  tag_id   INTEGER NOT NULL REFERENCES tags(id)  ON DELETE CASCADE,\n  PRIMARY KEY (post_id, tag_id)\n);\n```\n\n```text\nposts                    post_tags              tags\nid | title               post_id | tag_id       id | name\n3  | こんにちは           3       | 1     ───→  1  | 日記\n10 | 京都で Python        10      | 2     ───→  2  | Python\n                         10      | 3     ───→  3  | 旅行\n```\n\n`PRIMARY KEY (post_id, tag_id)` は「**2 つの列の組み合わせ** が主キー」という意味で、同じ投稿に同じタグを 2 回付けられなくなります。\n\n```python\nconn.execute(\"INSERT INTO post_tags VALUES (10, 2)\")    # もう付いている\n# sqlite3.IntegrityError: UNIQUE constraint failed: post_tags.post_id, post_tags.tag_id\n```\n\n### 2 回 JOIN して読む\n\n```python\nconn.execute(\"\"\"\n    SELECT posts.title, tags.name\n    FROM posts\n    JOIN post_tags ON post_tags.post_id = posts.id\n    JOIN tags      ON tags.id = post_tags.tag_id\n    ORDER BY posts.id, tags.id\n\"\"\").fetchall()\n# [('こんにちは', '日記'), ('京都でPython', 'Python'), ('京都でPython', '旅行')]\n```\n\nposts → post_tags → tags と、**中間テーブルを通って 2 回つなぐ** のが多対多の読み方です。\n\n中間テーブルには、組み合わせについての情報を足すこともできます（例：`enrollments`（受講）テーブルに、学生 ID・講座 ID に加えて「受講開始日」「成績」）。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `user_id INTEGER REFERENCES users(id)` | 1 対多の「多」の側。ユーザーごとに何件もある |\n| `PRIMARY KEY (a_id, b_id)` だけのテーブル | 多対多の中間テーブル |\n| `sqlite3.connect(...)` の後に `PRAGMA foreign_keys = ON` が無い | ⚠️ SQLite なら外部キーが守られていない |\n| `ON DELETE CASCADE` | ✅／⚠️ 便利だが、親を 1 件消すと関係するものが **全部消える**。本当にそれでよいか |\n| `JOIN` と `LEFT JOIN` | 0 件のものを結果に含めたいかどうかで使い分けているか |\n| ID の列に外部キーの指定が無い（`user_id INTEGER` だけ） | ⚠️ 存在しない ID が入っても気づけない |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "「ユーザー 1 人がたくさんの注文をする」関係で、外部キーを置くのはどこ？",
+        "choices": [
+         "users テーブルに `order_ids` 列を作る",
+         "orders テーブルに `user_id` 列を作る",
+         "必ず中間テーブルを作る"
+        ],
+        "answer": 1,
+        "explain": "1 対多では「多」の側（orders）に「1」の側（users）の ID を持たせます。中間テーブルは多対多のときに使います。"
+       },
+       {
+        "question": "SQLite で `user_id INTEGER REFERENCES users(id)` と書いたのに、存在しない user_id の行が入ってしまった。原因は？",
+        "choices": [
+         "REFERENCES の書き方が間違っている",
+         "接続ごとに `PRAGMA foreign_keys = ON` を実行していない",
+         "SQLite は外部キーに対応していない"
+        ],
+        "answer": 1,
+        "explain": "SQLite は初期設定で外部キーのチェックがオフです。接続した直後に `PRAGMA foreign_keys = ON` を実行します。"
+       },
+       {
+        "question": "学生と講座（1 人が何講座も取り、1 講座に何人もいる）を表す設計として正しいのは？",
+        "choices": [
+         "students に `course_id` を持たせる",
+         "courses に `student_id` を持たせる",
+         "`student_id` と `course_id` の組み合わせを入れる中間テーブルを作る"
+        ],
+        "answer": 2,
+        "explain": "どちらから見ても「たくさん」なので多対多です。片方に ID を持たせると、1 人 1 講座しか表せません。"
+       }
+      ]
+     ],
+     "id": "02-relations"
+    },
+    {
+     "title": "正規化 ― 同じことを 2 回書かない",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "database",
+      "reading"
+     ],
+     "summary": "Excel の表のような 1 枚のテーブルで起きる「直し漏れ」「消えてしまう」問題と、テーブルを分けて解決する正規化。あえて分ける・分けないの判断も。",
+     "body": "## このレッスンのゴール\n\n- 1 枚の大きな表で起きる 3 つの問題（更新・削除・追加の異常）を説明できる\n- 表を見て、「同じことが何度も書かれている」部分を見つけ、テーブルに分けられる\n- あえて正規化しない（非正規化する）場面と、その注意点が分かる\n\n## Excel のような 1 枚の表\n\n注文を Excel で管理していたら、こんな表になりそうです。\n\n| order_id | customer | customer_phone | product | price | qty |\n|---|---|---|---|---|---|\n| 1 | Ryo | 090-1111-1111 | りんご | 120 | 3 |\n| 2 | Ryo | 090-1111-1111 | 牛乳 | 200 | 1 |\n| 3 | Hana | 080-2222-2222 | りんご | 120 | 2 |\n\n一見わかりやすいですが、**Ryo の電話番号が 2 回、りんごの値段が 2 回** 書かれています。これが問題の元です。\n\n## 3 つの問題（異常）\n\nこのテーブルを実際に SQLite に作って試しました。\n\n### ① 更新の異常：直し漏れ\n\n```python\nconn.execute(\"UPDATE orders SET customer_phone = '090-9999-9999' WHERE order_id = 1\")\nconn.execute(\"SELECT DISTINCT customer, customer_phone FROM orders WHERE customer = 'Ryo'\").fetchall()\n# [('Ryo', '090-9999-9999'), ('Ryo', '090-1111-1111')]   ← Ryo の電話番号が 2 つになった\n```\n\n1 行だけ直すと、**同じ人なのに電話番号が食い違います**。どちらが正しいのか、もう分かりません。\n\n### ② 削除の異常：一緒に消えてしまう\n\n```python\nconn.execute(\"DELETE FROM orders WHERE customer = 'Hana'\")   # Hana の注文を取り消した\nconn.execute(\"SELECT customer_phone FROM orders WHERE customer = 'Hana'\").fetchall()\n# []   ← Hana の電話番号まで消えた\n```\n\n注文を消しただけなのに、**お客さんの情報そのものが無くなりました**。\n\n### ③ 追加の異常：入れる場所がない\n\nまだ何も注文していない新しいお客さんや、まだ売れていない新商品を登録しようとすると、`order_id` や `qty` が空の、おかしな行を作るしかありません。\n\n## 分ける：正規化\n\n原因は、**「お客さん」「商品」「注文」という別々のものを 1 枚に詰め込んでいる** ことです。それぞれをテーブルにします。\n\n```sql\nCREATE TABLE customers (\n  id     INTEGER PRIMARY KEY,\n  name   TEXT NOT NULL,\n  phone  TEXT\n);\n\nCREATE TABLE products (\n  id     INTEGER PRIMARY KEY,\n  name   TEXT NOT NULL,\n  price  INTEGER NOT NULL          -- 円の整数\n);\n\nCREATE TABLE orders (\n  id           INTEGER PRIMARY KEY,\n  customer_id  INTEGER NOT NULL REFERENCES customers(id),\n  ordered_at   TEXT NOT NULL\n);\n\nCREATE TABLE order_items (          -- 1 つの注文に、商品がいくつも入る\n  order_id    INTEGER NOT NULL REFERENCES orders(id),\n  product_id  INTEGER NOT NULL REFERENCES products(id),\n  qty         INTEGER NOT NULL,\n  unit_price  INTEGER NOT NULL,      -- 注文した時点の値段（下で説明）\n  PRIMARY KEY (order_id, product_id)\n);\n```\n\n| 問題 | 分けた後 |\n|---|---|\n| ① 電話番号の直し漏れ | 電話番号は `customers` に 1 回だけ。1 か所直せば全部に反映 |\n| ② 注文を消すとお客さんも消える | 注文を消しても `customers` は残る |\n| ③ 注文前のお客さんを登録できない | `customers` に 1 行足すだけ |\n\nこのように、**1 つの事実を 1 か所にだけ書く** ようにテーブルを分けることを **正規化** と呼びます。\n\n### 正規化のルール（ざっくり）\n\n教科書では「第 1 正規形・第 2 正規形・第 3 正規形…」と段階で説明されますが、実際の設計では次の 3 つを確かめれば十分です。\n\n| 確かめること | ダメな例 |\n|---|---|\n| 1 マスに 1 つの値か（第 1 正規形） | `tags` に「日記,Python」 |\n| その列は、そのテーブルの「もの」の情報か | 注文のテーブルにお客さんの電話番号 |\n| 他の列から決まる値を、二重に持っていないか | `price` と `qty` があるのに `total` 列も持つ |\n\n## わざと「同じことを 2 回」書くとき\n\n### 注文時の値段は別に持つ\n\n上の `order_items.unit_price` は、`products.price` と同じ値が入るので、二重に書いているように見えます。\nでも、商品の値段は後で **値上げされる** かもしれません。`products.price` だけを見ていると、**過去の注文の金額まで変わってしまいます**。\n\n「注文した時点の値段」は、商品の今の値段とは **別の事実** なので、注文の側に持つのが正しい設計です。住所・税率なども同じです。\n\n### 速さのための非正規化\n\n正規化すると、読むときに JOIN が増えます。アクセスがとても多い画面では、あえて集計した値を持つことがあります。\n\n```sql\nALTER TABLE posts ADD COLUMN comment_count INTEGER NOT NULL DEFAULT 0;\n-- コメントが増えるたびに +1 する。一覧画面で毎回 COUNT しなくて済む\n```\n\nこれを **非正規化** と呼びます。⚠️ 代わりに、**コメントを追加・削除するすべての場所で、数を更新し忘れない** 必要があります（更新の異常と同じ危険が戻ってくる）。\n**最初は正規化して作り、測って遅かったところだけ非正規化する** のが基本の順番です（バックエンドコースの「速さの基本」：まず測る）。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| 1 つのテーブルに `customer_name`・`customer_email`・`product_name`… と何でも入っている | ⚠️ 正規化されていない。直し漏れが起きる |\n| `orders` に `total` 列がある | 合計を二重に持っている。`order_items` と食い違わないように、計算して入れているか |\n| `order_items` に `unit_price` がある | ✅ 注文時点の値段を残している |\n| `comment_count`・`likes_count` | 非正規化。増減のたびに更新しているか、ずれたときに数え直す仕組みがあるか |\n| NoSQL（Firestore・MongoDB）で、同じ情報を何か所にもコピー | NoSQL は JOIN が苦手なので、コピーするのが普通。その代わり、更新のときに全部のコピーを直す必要がある |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "1 枚の注文表で、お客さんの電話番号を 1 行だけ直したら、同じ人の電話番号が 2 種類になった。この問題を何と呼ぶ？",
+        "choices": [
+         "更新の異常",
+         "削除の異常",
+         "追加の異常"
+        ],
+        "answer": 0,
+        "explain": "同じ事実が何か所にも書かれていると、直し漏れで食い違いが起きます。お客さんのテーブルに分ければ、1 か所直すだけで済みます。"
+       },
+       {
+        "question": "`order_items` に、`products.price` と同じ値の `unit_price` 列を持たせる理由は？",
+        "choices": [
+         "JOIN を書くのが面倒だから",
+         "商品の値段が後で変わっても、注文した時点の値段を残すため",
+         "正規化のルールでそう決まっているから"
+        ],
+        "answer": 1,
+        "explain": "「今の値段」と「注文したときの値段」は別の事実です。注文の側に持たないと、値上げで過去の注文の金額まで変わってしまいます。"
+       },
+       {
+        "question": "非正規化（集計値などをわざと持たせること）について正しいのは？",
+        "choices": [
+         "いつも正規化より優れているので、最初から使う",
+         "読むのは速くなるが、元のデータが変わるたびに更新し忘れない仕組みが必要",
+         "データベースが自動で値をそろえてくれるので、注意はいらない"
+        ],
+        "answer": 1,
+        "explain": "非正規化は速さと引き換えに、食い違いの危険を自分で管理するやり方です。測って必要なところにだけ使います。"
+       }
+      ]
+     ],
+     "id": "03-normalization"
+    },
+    {
+     "title": "インデックス ― 本の索引で速く探す",
+     "level": 3,
+     "minutes": 20,
+     "concepts": [
+      "database",
+      "performance"
+     ],
+     "summary": "インデックスの仕組みと、EXPLAIN QUERY PLAN で「全部読んでいるか、索引を使っているか」を確かめる方法。複合インデックスの列の順番、効かない書き方、書き込みが遅くなる代償。",
+     "body": "## このレッスンのゴール\n\n- インデックスが何で、なぜ検索が速くなるのかを説明できる\n- `EXPLAIN QUERY PLAN` の結果（`SCAN` と `SEARCH`）を読める\n- 複合インデックスの列の順番と、インデックスが使われない書き方が分かる\n\nバックエンドコースのレッスン 14 で「インデックスを付けたら速くなった」ことを見ました。ここでは **どこに付けるか・本当に使われているか** を確かめる方法を学びます。\n\n## インデックス ＝ 本の索引\n\n1000 ページの本で「正規化」という言葉を探すとき、1 ページ目から全部読むのは大変です。巻末の **索引** を見れば、「正規化 …… 213 ページ」とすぐ分かります。\n\nデータベースの **インデックス** も同じで、**ある列の値を並べた、別の小さな表** です。値が並んでいるので、辞書を引くように素早く探せます（中身は B-tree という木の形）。\n\n## 実際に測る\n\n100 万件の注文テーブルで試しました。\n\n```python\nconn.execute(\"\"\"CREATE TABLE orders (\n    id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL,\n    status TEXT NOT NULL, created_at TEXT NOT NULL)\"\"\")\n# … 100 万行を入れる …\n\nsql = \"SELECT * FROM orders WHERE user_id = 1234\"\n```\n\n| | 1 回の検索にかかった時間 |\n|---|---|\n| インデックスなし | 約 50 ミリ秒 |\n| `CREATE INDEX idx_orders_user_id ON orders(user_id)` の後 | 約 0.035 ミリ秒（**約 1400 倍速い**） |\n\n（この環境での測定。数字は機械によって変わりますが、桁違いに速くなることは変わりません）\n\n## EXPLAIN QUERY PLAN：どう探すつもりか聞く\n\nSQL の前に `EXPLAIN QUERY PLAN` を付けると、データベースが **どうやって探すつもりか**（実行計画）を教えてくれます。\n\n```python\nfor row in conn.execute(\"EXPLAIN QUERY PLAN \" + sql):\n    print(row[3])\n```\n\n| インデックス | 表示 | 意味 |\n|---|---|---|\n| なし | `SCAN orders` | テーブルを **全部** 1 行ずつ読む（本を 1 ページ目から全部読む） |\n| あり | `SEARCH orders USING INDEX idx_orders_user_id (user_id=?)` | 索引を使って **探す** |\n\n**`SCAN` が出たら、インデックスが使われていない** と読みます。PostgreSQL では `EXPLAIN`（`EXPLAIN ANALYZE` で実際の時間も）を使い、`Seq Scan` が全件、`Index Scan` が索引です。\n\n## 複合インデックス：列の順番が大事\n\n```sql\nSELECT * FROM orders WHERE user_id = 1234 AND status = 'paid' ORDER BY created_at\n```\n\n`user_id` だけのインデックスだと、こうなりました。\n\n```text\nSEARCH orders USING INDEX idx_orders_user_id (user_id=?)\nUSE TEMP B-TREE FOR ORDER BY          ← 並べ替えのために、別に作業している\n```\n\n複数の列をまとめたインデックスを作ります。\n\n```sql\nCREATE INDEX idx_orders_user_status_created ON orders(user_id, status, created_at);\n```\n\n```text\nSEARCH orders USING COVERING INDEX idx_orders_user_status_created (user_id=? AND status=?)\n```\n\n`user_id` と `status` で絞り込み、`created_at` の順番もインデックスの中で決まっているので、**並べ替えの作業が消えました**。`COVERING INDEX` は「必要な列が全部インデックスに入っていたので、テーブル本体を見に行かずに済んだ」という意味です。\n\n### ⚠️ 左から順にしか使えない\n\n複合インデックスは、**電話帳の「名字 → 名前」の順** のようなものです。名字が分からないと、名前だけでは引けません。\n\n```sql\n-- インデックスは (user_id, status, created_at)\nSELECT * FROM orders WHERE status = 'paid' AND created_at >= '2026-12-01'\n```\n\n```text\nSCAN orders          ← 先頭の user_id を使っていないので、索引が使えない\n```\n\n| WHERE で使う列 | `(user_id, status, created_at)` のインデックスは |\n|---|---|\n| `user_id` | ✅ 使える |\n| `user_id` と `status` | ✅ 使える |\n| `user_id` と `status` と `created_at` | ✅ 使える |\n| `status` だけ／`status` と `created_at` | ❌ 使えない（先頭が無い） |\n\n**よく一緒に絞り込む列を、絞り込みに使う順（等しい `=` の列を先、範囲 `>=` や並べ替えの列を後）に並べる** のが基本です。\n\n## インデックスが使われない書き方\n\n実際に `EXPLAIN QUERY PLAN` で `SCAN` になったものです。\n\n| 書き方 | なぜ使えない | 直し方 |\n|---|---|---|\n| `WHERE created_at LIKE '%-12-%'` | 先頭が `%`（何でもよい）だと、索引のどこから探せばよいか分からない | `created_at >= '2026-12-01' AND created_at < '2027-01-01'` |\n| `WHERE user_id + 0 = 1234` | 列に計算をすると、索引の値とそのまま比べられない | `WHERE user_id = 1234` |\n| `WHERE lower(email) = ?` | 関数を通すのも同じ | 保存するときに小文字にそろえる（または関数のインデックスを作る） |\n\n## インデックスの代償\n\nインデックスはタダではありません。行を追加・変更するたびに、**索引も書き直す** 必要があります。\n\n| 30 万行の INSERT | かかった時間 |\n|---|---|\n| インデックスなし | 約 0.14 秒 |\n| インデックス 3 つ | 約 1.28 秒（約 9 倍） |\n\n| 付けるとよい列 | 付けなくてよい列 |\n|---|---|\n| `WHERE` でよく絞り込む列 | ほとんど検索に使わない列 |\n| `JOIN` でつなぐ外部キー（`posts.user_id` など） | 行がとても少ないテーブル（全部読んでも一瞬） |\n| `ORDER BY` でよく並べ替える列 | 値の種類が少ない列だけ（`status` だけ、など。複合の 2 番目以降なら有効） |\n\n主キーと `UNIQUE` の列には、自動でインデックスが作られます。**外部キーには自動では作られない**（SQLite・PostgreSQL）ので、JOIN に使う `user_id` などには自分で付けるのが定番です。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `user_id INTEGER REFERENCES users(id)` はあるが、`CREATE INDEX ... (user_id)` が無い | ⚠️ JOIN や「この人の注文一覧」が、データが増えると遅くなる |\n| 全部の列に `CREATE INDEX` | ⚠️ 書き込みが遅くなり、容量も増える。使う検索に合わせて付ける |\n| `WHERE name LIKE '%' \\|\\| ? \\|\\| '%'`（部分一致の検索） | 普通のインデックスは効かない。件数が多いなら全文検索の仕組み（SQLite の FTS5 など）を検討 |\n| マイグレーションに `CREATE INDEX` がある | ✅ どの検索を速くするためか、PR の説明で確認 |\n| 「遅い」と言われてインデックスを足した | ✅ 足す前と後で `EXPLAIN` と時間を測っているか |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`EXPLAIN QUERY PLAN` の結果が `SCAN orders` だった。意味は？",
+        "choices": [
+         "テーブルの全部の行を順番に読んでいる（インデックスを使っていない）",
+         "インデックスを使って素早く探している",
+         "SQL に文法の間違いがある"
+        ],
+        "answer": 0,
+        "explain": "SCAN は全件を読むこと。`SEARCH ... USING INDEX` と出ていれば、索引を使っています。"
+       },
+       {
+        "question": "インデックス `(user_id, status, created_at)` があるとき、使われ**ない**検索は？",
+        "choices": [
+         "`WHERE user_id = 1`",
+         "`WHERE user_id = 1 AND status = 'paid'`",
+         "`WHERE status = 'paid'`"
+        ],
+        "answer": 2,
+        "explain": "複合インデックスは左の列から順にしか使えません。先頭の user_id を使わない検索では索引を引けません。"
+       },
+       {
+        "question": "「とりあえず全部の列にインデックスを付けよう」という案の問題点は？",
+        "choices": [
+         "インデックスは 1 テーブルに 1 つしか作れない",
+         "INSERT や UPDATE のたびに全部の索引を書き直すので、書き込みが遅くなり容量も増える",
+         "検索がかえって遅くなる"
+        ],
+        "answer": 1,
+        "explain": "実際に、インデックス 3 つで INSERT が約 9 倍遅くなりました。よく使う検索に合わせて、必要なものだけ付けます。"
+       }
+      ]
+     ],
+     "id": "04-indexes"
+    },
+    {
+     "title": "制約とトランザクション ― データを壊さない仕組み",
+     "level": 3,
+     "minutes": 20,
+     "concepts": [
+      "database",
+      "errors",
+      "security"
+     ],
+     "summary": "CHECK・UNIQUE・外部キーでデータベースにルールを持たせ、トランザクションで「全部成功か、全部なかったことに」する。在庫の取り合いを 1 行の UPDATE で防ぐ方法も。",
+     "body": "## このレッスンのゴール\n\n- 制約（CHECK・UNIQUE・NOT NULL・外部キー）をデータベースに持たせる理由を説明できる\n- トランザクションの「全部か無しか」を、送金の例で説明できる\n- 「読んでから書く」コードの競合に気づき、条件付きの UPDATE で直せる\n\n## 制約：データベースが守るルール\n\nアプリのコード（バックエンドコースのレッスン 6 のバリデーション）でチェックしていても、バグ・別のプログラム・手作業の SQL から、おかしなデータが入ることがあります。**最後の砦として、データベース自身にもルールを持たせます**。\n\n| 制約 | 例 | 守ること |\n|---|---|---|\n| `NOT NULL` | `name TEXT NOT NULL` | 空を許さない |\n| `UNIQUE` | `email TEXT UNIQUE` | 重複を許さない |\n| `CHECK` | `stock INTEGER CHECK (stock >= 0)` | 条件を満たさない値を許さない |\n| 外部キー | `user_id ... REFERENCES users(id)` | 存在しない相手を指さない |\n| `DEFAULT` | `status TEXT DEFAULT 'todo'` | 省略時の値（ルールではないが、空を防ぐ） |\n\n```python\nconn.execute(\"CREATE TABLE items (id INTEGER PRIMARY KEY, stock INTEGER NOT NULL CHECK (stock >= 0))\")\nconn.execute(\"INSERT INTO items VALUES (1, 1)\")\nconn.execute(\"UPDATE items SET stock = stock - 2 WHERE id = 1\")\n# sqlite3.IntegrityError: CHECK constraint failed: stock >= 0\n```\n\n在庫が 1 個しかないのに 2 個減らそうとすると、データベースが止めてくれました。\n\n### エラーを受け止める\n\n```python\ntry:\n    conn.execute(\"INSERT INTO users (name, email) VALUES (?, ?)\", (name, email))\n    conn.commit()\nexcept sqlite3.IntegrityError:\n    return {\"error\": \"このメールアドレスはすでに登録されています\"}, 409\n```\n\n「先に SELECT して、無ければ INSERT」と書くより、**INSERT してみて、UNIQUE のエラーを受け止める** ほうが確実です。SELECT と INSERT の間に、別の人が同じメールアドレスで登録するかもしれないからです（下の「競合」）。\n\n## トランザクション：全部か、無しか\n\nA さんから B さんに 300 円送金する処理は、2 つの UPDATE でできています。\n\n```text\n① B の残高を +300\n② A の残高を -300\n```\n\n① の後で ② が失敗したら、**お金が 300 円増えてしまいます**。そこで、2 つを **トランザクション** にまとめます。トランザクションの中の処理は、**全部成功して確定（commit）するか、1 つでも失敗したら全部なかったこと（rollback）になる** かのどちらかです。\n\n```python\nconn.executescript(\"\"\"\nCREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0));\nINSERT INTO accounts VALUES ('A', 1000), ('B', 0);\n\"\"\")\n\ndef transfer(amount):\n    try:\n        with conn:      # ← この中がトランザクション。抜けるときに commit、例外なら rollback\n            conn.execute(\"UPDATE accounts SET balance = balance + ? WHERE name = 'B'\", (amount,))\n            conn.execute(\"UPDATE accounts SET balance = balance - ? WHERE name = 'A'\", (amount,))\n    except sqlite3.IntegrityError as e:\n        print(\"失敗:\", e)\n\ntransfer(300)\n# [('A', 700), ('B', 300)]\n\ntransfer(5000)\n# 失敗: CHECK constraint failed: balance >= 0\n# [('A', 700), ('B', 300)]     ← ① の「B に +5000」も取り消されている\n```\n\n（実際に実行した結果です）5000 円の送金では、① の UPDATE は成功していましたが、② が CHECK で失敗したので、**① ごと取り消されました**。\n\n| 書き方 | 意味 |\n|---|---|\n| `with conn:`（Python の sqlite3） | ブロックを抜けたら commit、例外が起きたら rollback |\n| `BEGIN; ... COMMIT;` | SQL で書くトランザクション。失敗したら `ROLLBACK;` |\n| `with Session(engine) as s, s.begin():`（SQLAlchemy） | 同じことを ORM で |\n\n⚠️ Python の `sqlite3` は、`commit()` を呼ぶまで変更が確定しません。AI のコードで、INSERT した後に `conn.commit()`（または `with conn:`）が無いと、**プログラムが終わったときに変更が消えます**。\n\n## 競合：読んでから書くと、ずれる\n\n「残り 1 個の商品を、2 人がほぼ同時に買う」場面を考えます。\n\n```python\n# ⚠️ 読んでから書く\nstock = conn.execute(\"SELECT stock FROM items WHERE id = 1\").fetchone()[0]   # 2 人とも 1 を読む\nif stock >= 1:\n    conn.execute(\"UPDATE items SET stock = ? WHERE id = 1\", (stock - 1,))    # 2 人とも 0 を書く\n    # → 2 人とも「買えた」ことになるが、在庫は 1 しか減っていない\n```\n\nコンピュータの基礎コースの「プロセスとスレッド」で見た **競合状態** と同じです。読んでから書くまでの間に、別の人が割り込みます。\n\n### 直し方：条件付きの UPDATE を 1 回で\n\n```python\ncur = conn.execute(\"UPDATE items SET stock = stock - 1 WHERE id = 1 AND stock >= 1\")\nif cur.rowcount == 0:\n    return {\"error\": \"売り切れました\"}, 409\n```\n\n```text\n1 人目：rowcount 1   ← 在庫を 1 減らせた\n2 人目：rowcount 0   ← 条件 stock >= 1 に合わなかったので、何も変わらなかった\n```\n\n「在庫があれば減らす」を **データベースへの 1 つの命令** にすると、データベースが順番に処理するので、割り込まれません。`rowcount`（変わった行の数）で、成功したかが分かります。\nもっと複雑な処理では、PostgreSQL の `SELECT ... FOR UPDATE`（読んだ行に鍵をかける）などを使います。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| 金額・在庫の列に `CHECK (... >= 0)` が無い | ⚠️ マイナスの残高・在庫が入りうる |\n| 複数の INSERT/UPDATE が、`with conn:` やトランザクションの外にバラバラにある | ⚠️ 途中で失敗すると、半分だけ変わった状態が残る |\n| `SELECT` で数を読み、Python で計算して `UPDATE ... SET stock = ?` | ⚠️ 競合でずれる。`SET stock = stock - 1 WHERE ... AND stock >= 1` に |\n| `SELECT` で重複を確認してから `INSERT` | ⚠️ 同時の登録で重複しうる。UNIQUE 制約＋`IntegrityError` の処理に |\n| `except Exception: pass` でデータベースのエラーを握りつぶす | ⚠️ 失敗に気づけない。rollback されたのかも分からない |\n| `conn.commit()` が無い | ⚠️ 変更が保存されない |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "送金処理で「B に +300」は成功し、「A から -300」が失敗した。トランザクションにしていた場合、どうなる？",
+        "choices": [
+         "B だけ 300 円増えた状態で確定する",
+         "両方とも取り消され、送金前の状態に戻る",
+         "A の残高がマイナスになる"
+        ],
+        "answer": 1,
+        "explain": "トランザクションは「全部成功するか、全部なかったことになるか」です。途中で失敗したら、成功していた部分も rollback されます。"
+       },
+       {
+        "question": "在庫を減らす処理として、2 人が同時に買っても安全なのは？",
+        "choices": [
+         "SELECT で在庫を読み、Python で 1 引いた値を UPDATE する",
+         "`UPDATE items SET stock = stock - 1 WHERE id = ? AND stock >= 1` を 1 回実行し、rowcount を確認する",
+         "SELECT を 2 回して、同じ値なら UPDATE する"
+        ],
+        "answer": 1,
+        "explain": "読んでから書くと、その間に割り込まれます。条件付きの UPDATE 1 回なら、データベースが順番に処理するので安全です。"
+       },
+       {
+        "question": "アプリでバリデーションしているのに、データベースにも CHECK や UNIQUE を付ける理由は？",
+        "choices": [
+         "付けないと SQL が動かないから",
+         "アプリのバリデーションが不要になるから",
+         "バグ・別のプログラム・同時アクセスなど、アプリのチェックをすり抜ける場合でもデータを守れるから"
+        ],
+        "answer": 2,
+        "explain": "データベースの制約は最後の砦です。アプリのチェックと両方あると、より確実です。"
+       }
+      ]
+     ],
+     "id": "05-constraints-transactions"
+    },
+    {
+     "title": "ORM でテーブルの関係を読む ― relationship と N+1",
+     "level": 4,
+     "minutes": 20,
+     "concepts": [
+      "database",
+      "classes",
+      "performance"
+     ],
+     "summary": "SQLAlchemy の ForeignKey・relationship・back_populates が、外部キーと 1 対多をどう表しているか。user.posts の裏で走る SQL と、N+1 を selectinload で直す方法。Prisma との対応も。",
+     "body": "## このレッスンのゴール\n\n- ORM のモデル定義を読んで、テーブルと関係（1 対多・多対多）を図にできる\n- `user.posts` のような書き方の裏で、いつ SQL が実行されるか説明できる\n- N+1 問題を見つけ、`selectinload` などで直す方法が分かる\n\nバックエンドコースのレッスン 8（ORM とマイグレーション）の続きで、**テーブルどうしの関係** に注目します。\n\n## モデルを読む\n\n```python\nfrom sqlalchemy import ForeignKey, String\nfrom sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship\n\nclass Base(DeclarativeBase):\n    pass\n\nclass User(Base):\n    __tablename__ = \"users\"\n    id: Mapped[int] = mapped_column(primary_key=True)\n    name: Mapped[str] = mapped_column(String(50))\n    posts: Mapped[list[\"Post\"]] = relationship(back_populates=\"author\", cascade=\"all, delete-orphan\")\n\nclass Post(Base):\n    __tablename__ = \"posts\"\n    id: Mapped[int] = mapped_column(primary_key=True)\n    title: Mapped[str] = mapped_column(String(200))\n    user_id: Mapped[int] = mapped_column(ForeignKey(\"users.id\"))\n    author: Mapped[\"User\"] = relationship(back_populates=\"posts\")\n```\n\n| コード | テーブルでの意味 |\n|---|---|\n| `__tablename__ = \"posts\"` | テーブル名 |\n| `mapped_column(primary_key=True)` | 主キー（レッスン 1） |\n| `ForeignKey(\"users.id\")` | **外部キー**。`posts.user_id` は `users.id` を指す（レッスン 2） |\n| `relationship(...)` | **テーブルの列ではない**。Python から相手をたどるための通り道 |\n| `Mapped[list[\"Post\"]]` | 相手が **たくさん**（1 対多の「1」の側） |\n| `Mapped[\"User\"]` | 相手が **1 つ**（1 対多の「多」の側） |\n| `back_populates=\"author\"` | 反対側の relationship の名前。`post.author` と `user.posts` がつながる |\n| `cascade=\"all, delete-orphan\"` | ユーザーを消したら投稿も消す（Python 側の `ON DELETE CASCADE`） |\n\n図にすると、レッスン 2 と同じ形です。\n\n```text\nUser (users)            Post (posts)\nid                 ←──  user_id   （ForeignKey：実際の列）\nposts ─────────────────→ author   （relationship：たどる道。列ではない）\n```\n\n**外部キーの列（`user_id`）は「多」の側にだけある** こと、**relationship は両側にある** ことが読み取れれば OK です。\n\n## 関係をたどる\n\n```python\nfrom sqlalchemy import select\nfrom sqlalchemy.orm import Session\n\nwith Session(engine) as s:\n    p = s.get(Post, 1)\n    print(p.title, \"by\", p.author.name)          # post1-0 by user1\n\n    posts = s.scalars(\n        select(Post).join(Post.author).where(User.name == \"user2\")\n    ).all()                                      # user2 の投稿\n```\n\n`p.author` と書くだけで、裏で `SELECT ... FROM users WHERE users.id = ?` が実行されます。SQL を書かなくてよいのが ORM の便利なところですが、**いつ SQL が走っているか見えにくい** のが弱点です。\n\n## N+1：知らないうちに SQL が大量に\n\nユーザー 5 人（それぞれ投稿 3 件）で試しました。実行された SQL の数を数えています。\n\n```python\nwith Session(engine) as s:\n    for u in s.scalars(select(User)):       # ① ユーザー一覧：SQL 1 回\n        print(u.name, len(u.posts))         # ② 1 人ごとに投稿を取る：SQL 1 回 × 5 人\n# 実行された SQL：6 回\n```\n\n`u.posts` に **初めて触ったときに** 、その人の投稿を取る SQL が走ります（**遅延読み込み**、lazy loading）。\nユーザーが 1000 人なら 1001 回。これが **N+1 問題**（1 回 ＋ N 人分）です。バックエンドコースのレッスン 14 で、速さの問題の代表として見ました。\n\n### 直し方：最初にまとめて取る\n\n```python\nfrom sqlalchemy.orm import selectinload\n\nwith Session(engine) as s:\n    for u in s.scalars(select(User).options(selectinload(User.posts))):\n        len(u.posts)\n# 実行された SQL：2 回（ユーザー一覧 1 回 ＋ 全員の投稿をまとめて 1 回）\n```\n\n| 書き方 | SQL | 向いている場面 |\n|---|---|---|\n| 何も指定しない（遅延読み込み） | 1 ＋ N 回 | 相手をたまにしか使わない |\n| `selectinload(User.posts)` | 2 回（`WHERE user_id IN (1, 2, …)`） | 1 対多の「たくさん」の側を取る（定番） |\n| `joinedload(Post.author)` | 1 回（JOIN） | 1 対多の「1」の側を取る |\n\n（SQLAlchemy 2.1 で、実行した SQL の数を数えて確認しました）\n\nSQL を見たいときは、`create_engine(..., echo=True)` にすると、実行されたすべての SQL が画面に出ます。**「ループの中で relationship に触っていないか」** を探すのが、N+1 を見つけるコツです。\n\n## 多対多の書き方\n\n```python\nfrom sqlalchemy import Column, Table\n\npost_tags = Table(                                   # 中間テーブル（レッスン 2）\n    \"post_tags\", Base.metadata,\n    Column(\"post_id\", ForeignKey(\"posts.id\"), primary_key=True),\n    Column(\"tag_id\", ForeignKey(\"tags.id\"), primary_key=True),\n)\n\nclass Tag(Base):\n    __tablename__ = \"tags\"\n    id: Mapped[int] = mapped_column(primary_key=True)\n    name: Mapped[str] = mapped_column(unique=True)\n    posts: Mapped[list[\"Post\"]] = relationship(secondary=post_tags, back_populates=\"tags\")\n\n# Post の側にも：\n#   tags: Mapped[list[\"Tag\"]] = relationship(secondary=post_tags, back_populates=\"posts\")\n```\n\n`secondary=post_tags` が「中間テーブルを通ってつながる」という意味です。`post.tags.append(tag)` と書くと、ORM が `post_tags` に行を足してくれます。\n\n## 他の ORM では\n\nJavaScript / TypeScript でよく使われる **Prisma** では、同じ関係をこう書きます。\n\n```prisma\nmodel User {\n  id    Int    @id @default(autoincrement())\n  name  String\n  posts Post[]                                  // relationship（たくさん）\n}\n\nmodel Post {\n  id     Int    @id @default(autoincrement())\n  title  String\n  userId Int                                    // 外部キーの列\n  author User   @relation(fields: [userId], references: [id])   // relationship（1 つ）\n}\n```\n\n```typescript\nconst users = await prisma.user.findMany({ include: { posts: true } });   // まとめて取る（N+1 を防ぐ）\n```\n\n| | SQLAlchemy（Python） | Prisma（TypeScript） | Django（Python） |\n|---|---|---|---|\n| 外部キー | `ForeignKey(\"users.id\")` | `@relation(fields: [userId], ...)` | `models.ForeignKey(User, ...)` |\n| たくさんの側 | `Mapped[list[\"Post\"]]` | `Post[]` | `user.post_set`（自動で作られる） |\n| まとめて取る | `selectinload` / `joinedload` | `include` | `prefetch_related` / `select_related` |\n\n書き方は違いますが、**外部キーの列・たどる道・まとめて取る指定** の 3 つを探せば、どの ORM でも同じように読めます。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `for x in ...:` の中で `x.posts`・`x.author` に触っている | ⚠️ N+1。`selectinload` / `joinedload` / `include` があるか |\n| `relationship` はあるが `ForeignKey` が無い | ⚠️ ORM がどの列でつなぐか分からずエラーになる |\n| `back_populates` の名前が反対側と合っていない | ⚠️ 起動時にエラー。両側の名前を確認 |\n| `cascade=\"all, delete-orphan\"` | 親を消すと子も消える。本当にそれでよいか（レッスン 2 の ON DELETE と同じ判断） |\n| API で一覧を返すときに、関係するデータも全部入れて返す | ⚠️ データが多いと遅く重くなる。必要な分だけ・ページ分けを |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "SQLAlchemy の `relationship(...)` について正しいのは？",
+        "choices": [
+         "テーブルに新しい列を作る",
+         "列ではなく、Python から相手のオブジェクトをたどるための通り道",
+         "外部キーの代わりなので、ForeignKey は不要になる"
+        ],
+        "answer": 1,
+        "explain": "実際の列は `ForeignKey` を付けた `user_id` だけです。relationship は、`user.posts` のようにたどるための仕組みです。"
+       },
+       {
+        "question": "ユーザー 100 人の一覧を表示し、ループの中で `len(u.posts)` を表示した。遅延読み込みのままだと、SQL は何回くらい実行される？",
+        "choices": [
+         "1 回",
+         "2 回",
+         "101 回"
+        ],
+        "answer": 2,
+        "explain": "一覧の 1 回に加えて、1 人ごとに投稿を取る SQL が 100 回走ります。これが N+1 問題です。"
+       },
+       {
+        "question": "上の N+1 を直す方法として適切なのは？",
+        "choices": [
+         "`select(User).options(selectinload(User.posts))` で、投稿をまとめて取っておく",
+         "ループを `while` に書き換える",
+         "`len()` の代わりに `count()` を使う"
+        ],
+        "answer": 0,
+        "explain": "selectinload を指定すると、全員の投稿を 1 回の SQL（`WHERE user_id IN (...)`）でまとめて取るので、合計 2 回で済みます。"
+       }
+      ]
+     ],
+     "id": "06-orm-relations"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "公開とクラウド",
