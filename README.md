@@ -42,13 +42,12 @@ Claude は `CLAUDE.md` の指示に従って
 
 のように頼むと、同じ仕組みでレッスンが追加されます。
 
-## GitHub Pages で公開する（任意）
+## スマホ・ほかのパソコンから見る（GitHub Pages）
 
-1. このリポジトリの変更を `main` ブランチにマージする
-2. GitHub のリポジトリ → **Settings → Pages → Build and deployment → Source** を **GitHub Actions** にする
-3. 以後 `main` に push されるたびに `.github/workflows/pages.yml` が自動でサイトを公開する
+https://ryo0000200001-coder.github.io/learn_programing/
 
-（非公開リポジトリで Pages を使うには、GitHub の有料プランが必要な場合があります）
+main が更新されるたびに `.github/workflows/pages.yml` が自動で公開し直します（Settings → Pages → Source は「GitHub Actions」）。
+リポジトリが公開なので、この URL は誰でも見られます。進み具合はブラウザごとに別々に記録されます。
 
 ## フォルダ構成
 
