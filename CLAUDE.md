@@ -157,5 +157,7 @@ site/                        サイト本体（index.html をブラウザで開�
 自動で main に取り込む（利用者の了承済み）。利用者に「main に反映して」と頼んでもらう必要はない。
 利用者は Windows で、リポジトリ直下の `open-site.vbs`（黒い画面を出さずに git pull してから `site/index.html` を開く）を
 `wscript.exe` のショートカット経由でタスクバーに固定して使っている（`open-site.bat` は同じ処理の、画面にメッセージが出る版）。
+main が更新されると `.github/workflows/pages.yml` が GitHub Pages（https://ryo0000200001-coder.github.io/learn_programing/ ）に
+自動で公開する。利用者はスマホからはこの URL で見ている。
 試しの作業など main に入れたくないものは、`claude/` 以外の名前のブランチで行う。
 自動取り込みが失敗した（衝突した）と分かったときは、利用者に伝えて対処を相談する。

@@ -1,9 +1,17 @@
-# サイトをビルドして GitHub Pages に公開する（今は手動実行のみ）。
-# 使うには: リポジトリを公開にして Settings → Pages → Source を「GitHub Actions」にし、
-# 下の on: に「push: branches: [main]」を戻す。
+# サイトをビルドして GitHub Pages に公開する。
+# 公開先: https://ryo0000200001-coder.github.io/learn_programing/
+# - main に直接 push されたとき
+# - claude/ ブランチの自動取り込み（auto-merge-claude.yml）が終わったとき
+#   （GitHub Actions 自身が main に push した場合は push のきっかけが起きないため、こちらで拾う）
+# - Actions の画面から手動で
 name: Deploy site
 
 on:
+  push:
+    branches: [main]
+  workflow_run:
+    workflows: ["Auto merge Claude branches into main"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -17,12 +25,16 @@ concurrency:
 
 jobs:
   deploy:
+    # 自動取り込みが失敗したときは公開しない
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
