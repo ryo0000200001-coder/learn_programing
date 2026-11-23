@@ -3,13 +3,10 @@
  "icon": "🐘",
  "order": 90,
  "category": "language",
- "status": "planned",
- "description": "WordPress や Laravel で使われる Web サーバーの言語。既存サイトを触るときに出会う。",
- "outline": [
-  "<?php と echo",
-  "変数の $ と配列",
-  "関数とクラス",
-  "フォームとデータベース",
-  "WordPress のテーマを読む"
- ]
+ "description": "WordPress や Laravel で使われる Web サーバーの言語。<?php と echo、$ の変数とゆるい比較（== と ===）、配列と関数、クラス、フォームとデータベース（PDO・htmlspecialchars）、最後に WordPress と Laravel のコードを読む。PHP 8.3 で実行して確かめたもの。",
+ "levels": {
+  "1": "入門：変数と配列",
+  "2": "基礎：関数とクラス",
+  "3": "実践：Web とフレームワーク"
+ }
 }

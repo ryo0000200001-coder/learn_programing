@@ -4738,17 +4738,253 @@ window.SITE_DATA = {
    "icon": "🐘",
    "order": 90,
    "category": "language",
-   "status": "planned",
-   "description": "WordPress や Laravel で使われる Web サーバーの言語。既存サイトを触るときに出会う。",
-   "outline": [
-    "<?php と echo",
-    "変数の $ と配列",
-    "関数とクラス",
-    "フォームとデータベース",
-    "WordPress のテーマを読む"
-   ],
+   "description": "WordPress や Laravel で使われる Web サーバーの言語。<?php と echo、$ の変数とゆるい比較（== と ===）、配列と関数、クラス、フォームとデータベース（PDO・htmlspecialchars）、最後に WordPress と Laravel のコードを読む。PHP 8.3 で実行して確かめたもの。",
+   "levels": {
+    "1": "入門：変数と配列",
+    "2": "基礎：関数とクラス",
+    "3": "実践：Web とフレームワーク"
+   },
    "id": "90-php",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "<?php と echo・$ の変数 ― == の落とし穴まで",
+     "level": 1,
+     "minutes": 16,
+     "concepts": [
+      "variables",
+      "types",
+      "operators",
+      "strings"
+     ],
+     "summary": "PHP のファイルの形（<?php）、echo、$ で始まる変数、. で文字列をつなぐ、\" と ' の違い。== がゆるい比較なので === を使う理由を、実際の結果で。未定義の変数と ??。",
+     "body": "## このレッスンのゴール\n\n- `<?php`・`echo`・`$変数` を読める\n- 文字列のつなぎ方（`.`）と、`\"...\"` と `'...'` の違いが分かる\n- `==` と `===` の違いを説明し、AI のコードで `==` を見たら確認できる\n\n## PHP とは\n\n**PHP** は、Web サーバーの上で動いて HTML を作る言語です。世界中の Web サイトのかなりの割合で使われていて、特に **WordPress**（ブログ・会社のサイト）や **Laravel**（Web アプリのフレームワーク）で出会います。「既存のサイトを少し直してほしい」と頼まれたときに、読めると役立つ言語です。\n\n## ファイルの形と echo\n\n```php\n<?php\n$name = \"Ryo\";\n$price = 120;\n$count = 3;\necho \"こんにちは、$name さん\\n\";\necho 'こんにちは、$name さん' . \"\\n\";\necho \"合計 \" . ($price * $count) . \" 円\\n\";\necho \"合計 {$price} 円 × {$count}\\n\";\n```\n\n```text\nこんにちは、Ryo さん\nこんにちは、$name さん\n合計 360 円\n合計 120 円 × 3\n```\n\n（このコースの出力は、すべて PHP 8.3 で実際に実行したものです）\n\n| PHP | 意味 | Python で言うと |\n|---|---|---|\n| `<?php` | ここから PHP のコード（ファイルの先頭に書く） | — |\n| `$name = \"Ryo\";` | 変数。**名前の前に必ず `$`**、文の終わりに `;` | `name = \"Ryo\"` |\n| `echo ...;` | 出力する（Web なら HTML に書き出される） | `print(...)` |\n| `\"...$name...\"` | ダブルクォートの中では **変数が置き換わる** | `f\"...{name}...\"` |\n| `'...$name...'` | シングルクォートでは **そのまま** | `\"...$name...\"` |\n| `\"...\" . \"...\"` | **`.` で文字列をつなぐ**（`+` ではない） | `\"...\" + \"...\"` |\n| `{$price}` | 変数の範囲をはっきりさせる | `{price}` |\n\n`\"` と `'` の違いは、シェルコースのレッスン 2 とまったく同じです。PHP はシェルや Perl の影響を受けているので、`$` の変数もそこから来ています。\n\n⚠️ JavaScript や Python の癖で `\"合計 \" + $total` と書くと、PHP は **数の足し算** をしようとします（`\"合計 \"` は数にならないので、PHP 8 ではエラー）。つなぐのは `.` です。\n\n### HTML の中に埋め込む\n\nPHP は、もともと **HTML の中に少しだけプログラムを埋め込む** ために作られました。\n\n```php\n<p>こんにちは、<?= htmlspecialchars($name) ?> さん</p>\n```\n\n`<?= ... ?>` は `<?php echo ... ?>` の短い書き方です。`htmlspecialchars` は XSS を防ぐためのエスケープ（レッスン 4・セキュリティのコースのレッスン 4）です。\n\n## 型を見る：var_dump\n\n```php\nvar_dump($price, \"120\", 1.5, true, null);\n```\n\n```text\nint(120)\nstring(3) \"120\"\nfloat(1.5)\nbool(true)\nNULL\n```\n\n`var_dump` は、**型と値を両方** 表示します（Python の `repr()` と `type()` を合わせたもの）。`string(3)` の 3 は **バイト数** です。\n\n```php\nvar_dump(strlen(\"りんご\"), mb_strlen(\"りんご\"));\n// int(9)  int(3)\n```\n\n`strlen` はバイト数、`mb_strlen` は文字数です（コンピュータの基礎コースの「文字コード」）。日本語を扱うときは `mb_` で始まる関数を使います。\n\n## ⚠️ == はゆるい、=== は厳しい\n\nPHP の比較でいちばん大事なところです。\n\n```php\nvar_dump(\"120\" == 120);     // bool(true)   ← 文字列と数なのに等しい\nvar_dump(\"120\" === 120);    // bool(false)\nvar_dump(\"1e3\" == \"1000\");  // bool(true)   ← \"1e3\" を 1000 という数だと解釈した\nvar_dump(null == false);    // bool(true)\nvar_dump(\"0\" == false);     // bool(true)\nvar_dump(\"abc\" == 0);       // bool(false)  （PHP 7 までは true だった）\nvar_dump(0 == \"\");          // bool(false)  （PHP 7 までは true だった）\n```\n\n| 演算子 | 意味 |\n|---|---|\n| `==` | **型をそろえてから** 比べる（ゆるい比較）。文字列が数っぽければ数として比べる |\n| `===` | **型も値も同じ** なら真（厳しい比較） |\n| `!=` / `!==` | その否定 |\n\n`\"1e3\" == \"1000\"` が真になるのは、どちらも「数として読める文字列」なので、数（1000）に変換してから比べたからです。パスワードのハッシュやトークンを `==` で比べると、まったく違う値が等しくなってしまう、という有名な脆弱性もありました。\n\n```php\nvar_dump(md5(\"240610708\") == md5(\"QNKCDZO\"));    // bool(true)   ← 違う文字列なのに\nvar_dump(md5(\"240610708\") === md5(\"QNKCDZO\"));   // bool(false)\n```\n\n2 つの MD5 の値は、どちらも `0e` の後に数字だけが続く文字列になり、PHP が「0 × 10 の何乗 ＝ 0」という数だと解釈して、0 == 0 で真にしてしまいます（実際に実行した結果です）。\n\n**PHP では、基本的に `===` を使う** のが安全です。JavaScript の `==` と `===`（JavaScript コースのレッスン 1）と同じ考え方です。\n\n### 数っぽい文字列\n\n```php\n$x = \"5 apples\";\nvar_dump((int)$x);           // int(5)\nvar_dump(intdiv(7, 2), 7 / 2, 7 % 2);   // int(3) float(3.5) int(1)\n```\n\n`(int)` で数に変換すると、先頭の数の部分だけが使われます。`7 / 2` は Python 3 と同じく **3.5**（小数）で、整数の割り算は `intdiv` です。\n\n## 未定義の変数と ??\n\n```php\necho $nope;\necho \"\\n続きます\\n\";\n```\n\n```text\nPHP Warning:  Undefined variable $nope in .../p1.php on line 16\n\n続きます\n```\n\n存在しない変数を使うと、**警告を出して、空として先に進みます**（シェルの空の変数と同じ。Python なら `NameError` で止まる）。\n\n```php\nvar_dump($undefined ?? \"default\");   // string(7) \"default\"\n```\n\n`??` は「**左が無い（null）なら右**」です。Python の `x if x is not None else \"default\"`、JavaScript の `??` と同じです。フォームの値（`$_POST['name'] ?? ''`）でよく使います（レッスン 4）。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `if ($a == $b)` | ⚠️ ゆるい比較。型の違うものが等しくなりうる。`===` に |\n| `\"...\" + $x` で文字列をつなごうとしている | ⚠️ PHP は `.` でつなぐ |\n| `strlen($name) > 20` で文字数の制限 | ⚠️ バイト数。日本語は `mb_strlen` |\n| `$_GET['id'] ?? null` | ✅ 無ければ null |\n| `@$undefined` | `@` は警告を **消す**。問題を隠しているので要注意 |\n| `declare(strict_types=1);` | 関数の引数の型を厳しくチェックする設定（レッスン 2） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "PHP で `\"120\" == 120` の結果は？",
+        "choices": [
+         "true（文字列を数に変換してから比べる）",
+         "false（型が違う）",
+         "エラー"
+        ],
+        "answer": 0,
+        "explain": "`==` は型をそろえてから比べるゆるい比較です。型も同じか確かめたいときは `===` を使います（こちらは false）。"
+       },
+       {
+        "question": "PHP で文字列をつなぐ演算子は？",
+        "choices": [
+         "`+`",
+         "`.`",
+         "`&`"
+        ],
+        "answer": 1,
+        "explain": "PHP では `\"合計 \" . $total . \" 円\"` のように `.` でつなぎます。`+` は数の足し算です。"
+       },
+       {
+        "question": "`echo '合計 $total 円';` の出力は？",
+        "choices": [
+         "合計 360 円",
+         "合計 $total 円",
+         "エラー"
+        ],
+        "answer": 1,
+        "explain": "シングルクォートの中では変数が置き換わりません。置き換えたいならダブルクォートです。"
+       }
+      ]
+     ],
+     "id": "01-php-echo-variables"
+    },
+    {
+     "title": "配列と関数 ― リストも辞書も「配列」",
+     "level": 1,
+     "minutes": 18,
+     "concepts": [
+      "collections",
+      "functions",
+      "type_hints"
+     ],
+     "summary": "PHP の配列は、リストと辞書を兼ねる。[] で追加、=> でキー、foreach、isset と ??、array_filter と array_map、json_encode。関数の型と strict_types、関数の中から外の変数が見えないスコープ。",
+     "body": "## このレッスンのゴール\n\n- PHP の配列（番号の配列・キーの配列）と `foreach` を読める\n- `array_filter`・`array_map`・`json_encode` を読める\n- 関数の型の書き方と、`declare(strict_types=1)`、スコープの違いが分かる\n\n## 配列：リストと辞書が同じもの\n\n```php\n$fruits = [\"りんご\", \"バナナ\"];\n$fruits[] = \"みかん\";                         // 末尾に追加\necho count($fruits), \" \", $fruits[0], \"\\n\";   // 3 りんご\n\n$prices = [\"りんご\" => 120, \"バナナ\" => 90];\n$prices[\"みかん\"] = 80;\n```\n\nPHP には、Python のリストと辞書の区別がありません。どちらも **配列**（array）です。\n\n| PHP | Python |\n|---|---|\n| `[\"りんご\", \"バナナ\"]` | `[\"りんご\", \"バナナ\"]`（リスト） |\n| `[\"りんご\" => 120]` | `{\"りんご\": 120}`（辞書） |\n| `$a[] = \"x\"` | `a.append(\"x\")` |\n| `count($a)` | `len(a)` |\n| `$a[\"りんご\"]` | `a[\"りんご\"]` |\n| `unset($a[\"りんご\"])` | `del a[\"りんご\"]` |\n\n番号の配列も、実は **0・1・2 というキーを自動で振った** キーの配列です。古いコードでは `array(\"りんご\", \"バナナ\")` という書き方も見かけます（同じ意味）。\n\n## foreach\n\n```php\nforeach ($prices as $name => $price) {\n    echo \"$name: $price 円\\n\";\n}\n```\n\n```text\nりんご: 120 円\nバナナ: 90 円\nみかん: 80 円\n```\n\n| PHP | Python |\n|---|---|\n| `foreach ($a as $v)` | `for v in a:` |\n| `foreach ($a as $k => $v)` | `for k, v in a.items():` |\n\n順番は **入れた順** が保たれます（Python 3.7 以降の辞書と同じ）。\n\n## あるかどうか\n\n```php\nvar_dump(isset($prices[\"ぶどう\"]));            // bool(false)\nvar_dump($prices[\"ぶどう\"] ?? 0);              // int(0)\nvar_dump(array_key_exists(\"りんご\", $prices)); // bool(true)\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `isset($a[\"k\"])` | キーがあり、値が null ではない |\n| `$a[\"k\"] ?? 0` | 無ければ 0（レッスン 1） |\n| `array_key_exists(\"k\", $a)` | キーがある（値が null でも true） |\n| `in_array(\"x\", $a)` | 値として入っている（Python の `\"x\" in a`）。⚠️ ゆるい比較なので、`in_array(\"x\", $a, true)` と第 3 引数を true に |\n\n無いキーを `$prices[\"ぶどう\"]` と直接読むと、`Undefined array key` という警告が出て null になります。\n\n## 配列の関数\n\n```php\n$cheap = array_filter($prices, fn($p) => $p < 100);\n$withTax = array_map(fn($p) => intdiv($p * 110, 100), $prices);\nprint_r($cheap);\nprint_r($withTax);\n```\n\n```text\nArray\n(\n    [バナナ] => 90\n    [みかん] => 80\n)\nArray\n(\n    [りんご] => 132\n    [バナナ] => 99\n    [みかん] => 88\n)\n```\n\n| PHP | Python |\n|---|---|\n| `fn($p) => $p < 100` | `lambda p: p < 100`（アロー関数） |\n| `array_filter($a, 条件)` | `{k: v for k, v in a.items() if 条件}` |\n| `array_map(変換, $a)` | `{k: 変換(v) for k, v in a.items()}` |\n| `array_keys($a)` / `array_values($a)` | `list(a.keys())` / `list(a.values())` |\n| `usort($a, fn($x, $y) => $x <=> $y)` | `a.sort()`（`<=>` は大小を -1・0・1 で返す） |\n| `implode(\"、\", $a)` / `explode(\",\", $s)` | `\"、\".join(a)` / `s.split(\",\")` |\n| `print_r($a)` | `print(a)`（人が読む形で表示） |\n\n⚠️ `array_filter` と `array_map` は **引数の順番が逆**（filter は配列が先、map は関数が先）です。PHP の有名な不揃いなので、AI のコードを読むときは引数をよく見ましょう。\n\n## JSON\n\n```php\necho json_encode([\"name\" => \"Ryo\", \"tags\" => [\"a\", \"b\"]], JSON_UNESCAPED_UNICODE);\n// {\"name\":\"Ryo\",\"tags\":[\"a\",\"b\"]}\n\nvar_dump(json_decode('{\"id\": 1, \"title\": \"牛乳\"}', true));\n// array(2) { [\"id\"]=> int(1)  [\"title\"]=> string(6) \"牛乳\" }\n```\n\nキーの配列は JSON のオブジェクトに、番号の配列は JSON の配列になります。`JSON_UNESCAPED_UNICODE` を付けないと、日本語が `牛乳` のように変換されます。`json_decode(..., true)` の `true` は「配列で返して」（付けないとオブジェクトになる）。\n\n## 関数\n\n```php\nfunction withTax(int $price, float $rate = 0.1): int {\n    return (int) round($price * (1 + $rate));\n}\n\necho withTax(120), \" \", withTax(120, 0.08), \" \", withTax(rate: 0.08, price: 200);\n// 132 130 216\n```\n\n| PHP | Python |\n|---|---|\n| `function withTax(int $price, float $rate = 0.1): int` | `def with_tax(price: int, rate: float = 0.1) -> int:` |\n| `withTax(rate: 0.08, price: 200)` | `with_tax(rate=0.08, price=200)`（名前付き引数。PHP 8 から） |\n\n### 型のチェックと strict_types\n\n```php\nfunction withTax(int $price): int { return intdiv($price * 110, 100); }\necho withTax(\"120\");     // 132   ← 文字列 \"120\" が int に変換されて動いた\necho withTax(\"abc\");     // TypeError: withTax(): Argument #1 ($price) must be of type int, string given\n```\n\n初期設定では、`\"120\"` のような **数っぽい文字列は自動で int に変換** されます。ファイルの先頭に `declare(strict_types=1);` を書くと、**変換せずに TypeError** にします。\n\n```php\n<?php\ndeclare(strict_types=1);\n...\nwithTax(\"120\");   // TypeError: ... must be of type int, string given\n```\n\nLaravel などの今の PHP のコードには、たいてい書かれています。Python の型ヒントと違い、PHP の型は **実行したときに本当にチェックされます**。\n\n### ⚠️ 関数の中から外の変数は見えない\n\n```php\n$total = 0;\nfunction addBad($n) { $total += $n; return $total; }\necho addBad(5), \" / total=\", $total;\n```\n\n```text\nPHP Warning:  Undefined variable $total in .../p2c.php on line 6\n5 / total=0\n```\n\nPHP の関数の中からは、**外の変数が見えません**（Python なら読むことはできる）。関数の中の `$total` は別の（未定義の）変数として扱われ、外の `$total` は 0 のままでした。外の値は **引数で渡す** のが基本です（`global $total;` と書けば使えますが、古いコードの書き方です）。\n\nアロー関数 `fn($p) => ...` だけは、外の変数を自動で使えます。`function () use ($rate) { ... }` の `use` は、無名関数に外の変数を持ち込む書き方です。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `$data = json_decode($body, true);` | JSON を配列に。`$data['title'] ?? ''` で取り出す |\n| `array_filter($a)`（条件なし） | 「空っぽ・0・\"0\"・null」を全部取り除く。⚠️ 0 も消える |\n| `in_array($x, $list)` | ⚠️ ゆるい比較。第 3 引数 `true` があるか |\n| `foreach ($items as &$item)` | `&` で **元の配列を書き換える**。ループの後に `unset($item)` が無いと、次のループで不思議なバグが起きる |\n| `compact('a', 'b')` / `extract($arr)` | 変数と配列の変換。`extract` は外からの配列に使うと、変数を上書きされて危険 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "PHP の `$prices = [\"りんご\" => 120];` は、Python で言うと何？",
+        "choices": [
+         "リスト `[120]`",
+         "辞書 `{\"りんご\": 120}`",
+         "タプル"
+        ],
+        "answer": 1,
+        "explain": "PHP の配列は、`=>` でキーを付けると辞書のように使えます。リストも辞書も、PHP では同じ「配列」です。"
+       },
+       {
+        "question": "`$total = 0; function add($n) { $total += $n; }` を呼んでも、外の `$total` が変わらない理由は？",
+        "choices": [
+         "PHP の関数の中からは外の変数が見えず、中の `$total` は別の変数だから",
+         "`+=` が使えないから",
+         "関数が呼ばれていないから"
+        ],
+        "answer": 0,
+        "explain": "PHP の関数は外の変数を自動では使いません。引数で受け取り、戻り値で返すのが基本です。"
+       },
+       {
+        "question": "`declare(strict_types=1);` があるファイルで、`int` の引数に `\"120\"` を渡すと？",
+        "choices": [
+         "120 に変換されて動く",
+         "TypeError になる",
+         "0 になる"
+        ],
+        "answer": 1,
+        "explain": "strict_types=1 では、数っぽい文字列も自動で変換されません。無い場合は \"120\" が 120 に変換されて動きます。"
+       }
+      ]
+     ],
+     "id": "02-arrays-functions"
+    },
+    {
+     "title": "クラス ― -> と :: と $this",
+     "level": 2,
+     "minutes": 16,
+     "concepts": [
+      "classes",
+      "types"
+     ],
+     "summary": "PHP のクラスの読み方。new と ->、$this、コンストラクタでのプロパティの宣言（PHP 8）、public・private・readonly、static と ::、継承と parent::、インターフェース。",
+     "body": "## このレッスンのゴール\n\n- `new`・`->`・`$this`・`::` を読める\n- `public function __construct(public readonly string $name, ...)` の短い書き方が分かる\n- `private`・`readonly`・`static`・`extends`・`implements` の意味が分かる\n\n## クラスの例\n\n```php\n<?php\ndeclare(strict_types=1);\n\ninterface HasPrice {\n    public function price(): int;\n}\n\nclass Product implements HasPrice {\n    public function __construct(\n        public readonly string $name,\n        private int $basePrice,\n    ) {}\n\n    public function price(): int {\n        return intdiv($this->basePrice * 110, 100);\n    }\n\n    public function discount(int $yen): void {\n        $this->basePrice -= $yen;\n    }\n\n    public static function free(string $name): self {\n        return new self($name, 0);\n    }\n}\n\n$apple = new Product(\"りんご\", 120);\necho $apple->name, \" \", $apple->price(), \"\\n\";   // りんご 132\n$apple->discount(20);\necho $apple->price(), \"\\n\";                      // 110\necho Product::free(\"試供品\")->price(), \"\\n\";      // 0\n```\n\nPython で書くと、こうです。\n\n```python\nclass Product:\n    def __init__(self, name: str, base_price: int):\n        self.name = name\n        self._base_price = base_price\n\n    def price(self) -> int:\n        return self._base_price * 110 // 100\n\n    def discount(self, yen: int) -> None:\n        self._base_price -= yen\n\n    @staticmethod\n    def free(name: str) -> \"Product\":\n        return Product(name, 0)\n\napple = Product(\"りんご\", 120)\n```\n\n| PHP | 意味 | Python で言うと |\n|---|---|---|\n| `new Product(...)` | 作る | `Product(...)` |\n| `$apple->name` / `$apple->price()` | **`->`** でプロパティ・メソッド | `apple.name` / `apple.price()` |\n| `$this` | 自分自身 | `self` |\n| `__construct(...)` | コンストラクタ | `__init__` |\n| `Product::free(...)` | **`::`** で static（インスタンスを作らずに呼ぶ）メソッド | `Product.free(...)` |\n| `self` | 自分のクラス | クラス名 |\n| `: void` | 何も返さない | `-> None` |\n\nPHP では `.` が文字列をつなぐ演算子（レッスン 1）なので、メソッドを呼ぶのは **`->`** です。\n\n## コンストラクタでのプロパティの宣言\n\n```php\npublic function __construct(\n    public readonly string $name,\n    private int $basePrice,\n) {}\n```\n\nPHP 8 からの短い書き方で、**引数に `public` や `private` を付けると、同じ名前のプロパティを作って、そこに入れてくれます**。昔の書き方だと、こうなります。\n\n```php\nprivate string $name;\nprivate int $basePrice;\npublic function __construct(string $name, int $basePrice) {\n    $this->name = $name;\n    $this->basePrice = $basePrice;\n}\n```\n\n## public・private・readonly\n\n```php\n$apple->name = \"みかん\";\n// Error: Cannot modify readonly property Product::$name\n\necho $apple->basePrice;\n// Error: Cannot access private property Product::$basePrice\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `public` | どこからでも使える |\n| `private` | **このクラスの中だけ**（外から読むとエラー） |\n| `protected` | このクラスと、継承したクラスの中だけ |\n| `readonly` | 最初に入れた後は **変えられない** |\n\nPython の `_name` は「さわらないでね」というお願いでしたが、PHP の `private` は **本当にエラーになります**。\n\n## 継承とインターフェース\n\n```php\nclass Set extends Product {\n    public function price(): int {\n        return parent::price() - 50;\n    }\n}\n\n$set = new Set(\"詰め合わせ\", 1000);\necho $set->price();                                 // 1050\necho $set instanceof HasPrice ? \"HasPrice\" : \"\";    // HasPrice\n```\n\n| 書き方 | 意味 | Python で言うと |\n|---|---|---|\n| `class Set extends Product` | Product を **継承** | `class Set(Product):` |\n| `parent::price()` | 親のメソッドを呼ぶ | `super().price()` |\n| `interface HasPrice { ... }` | 「このメソッドを持つ」という約束 | `typing.Protocol` / 抽象クラス |\n| `class Product implements HasPrice` | 約束を守ると宣言（Rust の `impl ... for`、Go と違い明示的） | |\n| `$x instanceof HasPrice` | その型か | `isinstance(x, HasPrice)` |\n\n## 並べ替え\n\n```php\n$items = [new Product(\"牛乳\", 200), $apple];\nusort($items, fn($a, $b) => $a->price() <=> $b->price());\nforeach ($items as $i) echo $i->name, \"=\", $i->price(), \" \";\n// りんご=110 牛乳=220\n```\n\n`<=>`（宇宙船演算子）は、左が小さければ -1、同じなら 0、大きければ 1 を返します。Python の `sorted(items, key=lambda i: i.price())` です。\n\n## 名前空間と use\n\nAI の PHP のコード（特に Laravel）は、ファイルの先頭がこうなっていることが多いです。\n\n```php\n<?php\n\nnamespace App\\Http\\Controllers;\n\nuse App\\Models\\Task;\nuse Illuminate\\Http\\Request;\n\nclass TaskController extends Controller\n{\n    ...\n}\n```\n\n| 書き方 | 意味 | Python で言うと |\n|---|---|---|\n| `namespace App\\Http\\Controllers;` | このクラスの「住所」 | パッケージ（フォルダ） |\n| `use App\\Models\\Task;` | 別の住所のクラスを、短い名前で使う | `from app.models import Task` |\n| `\\`（バックスラッシュ） | 住所の区切り | `.` |\n\nComposer（PHP のパッケージ管理。`composer.json` が `package.json` に当たる）が、この住所とファイルの場所を対応させて、自動で読み込んでくれます。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方 |\n|---|---|\n| `$this->taskService->create($data)` | 自分の持っている taskService の create を呼ぶ |\n| `Task::where('done', false)->get()` | static のメソッドから始まる、Laravel のデータベースの書き方（レッスン 5） |\n| `public function __construct(private TaskRepository $repo) {}` | 必要な部品を受け取る（依存性注入。FastAPI の Depends に近い） |\n| `self::` / `static::` | 自分のクラスの定数や static メソッド |\n| `?string $name` | string か null（Python の `str \\| None`） |\n| `$obj?->name` | obj が null なら null（JavaScript の `?.`） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "PHP で、オブジェクト `$apple` の `price` メソッドを呼ぶ書き方は？",
+        "choices": [
+         "`$apple.price()`",
+         "`$apple->price()`",
+         "`$apple::price()`"
+        ],
+        "answer": 1,
+        "explain": "PHP では `->` でメソッドやプロパティを使います。`.` は文字列をつなぐ演算子で、`::` は static メソッドやクラスの定数に使います。"
+       },
+       {
+        "question": "`public function __construct(private int $basePrice) {}` は何をしている？",
+        "choices": [
+         "basePrice という private のプロパティを作り、渡された値を入れている",
+         "basePrice を返す関数を作っている",
+         "basePrice を外から変えられるようにしている"
+        ],
+        "answer": 0,
+        "explain": "PHP 8 の書き方で、引数に public や private を付けると、プロパティの宣言と代入をまとめて行います。"
+       },
+       {
+        "question": "`private` のプロパティを、クラスの外から `$apple->basePrice` で読むと？",
+        "choices": [
+         "読める（private はお願いなだけ）",
+         "エラーになる",
+         "null が返る"
+        ],
+        "answer": 1,
+        "explain": "PHP の private は本当にアクセスできません。Python の `_` で始まる名前とは違います。"
+       }
+      ]
+     ],
+     "id": "03-classes"
+    },
+    {
+     "title": "フォームとデータベース ― $_POST・PDO・htmlspecialchars",
+     "level": 2,
+     "minutes": 22,
+     "concepts": [
+      "http_api",
+      "database",
+      "security",
+      "backend"
+     ],
+     "summary": "1 ファイルで動くメモ帳のアプリを読む。$_GET・$_POST、PDO の prepare と ?、htmlspecialchars でのエスケープ、POST の後のリダイレクト。同じアプリを危ない書き方にしたものに攻撃を送り、パスワードが漏れ、HTML が実行されるのを確かめる。",
+     "body": "## このレッスンのゴール\n\n- `$_GET`・`$_POST`・`$_SERVER['REQUEST_METHOD']` を読める\n- PDO の `prepare` と `?` で SQL インジェクションを防ぐ書き方が分かる\n- `htmlspecialchars` で XSS を防ぐ理由を、実際の結果で説明できる\n\n## 1 ファイルのメモ帳\n\nPHP は、**1 つのファイルが 1 つのページ** になる作りが基本です。メモを書いて一覧にするアプリです。\n\n```php\n<?php\ndeclare(strict_types=1);\n\n$pdo = new PDO('sqlite:' . __DIR__ . '/memo.db');\n$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);\n$pdo->exec('CREATE TABLE IF NOT EXISTS memos (id INTEGER PRIMARY KEY, body TEXT NOT NULL)');\n\n$error = '';\nif ($_SERVER['REQUEST_METHOD'] === 'POST') {\n    $body = trim($_POST['body'] ?? '');\n    if ($body === '' || mb_strlen($body) > 200) {\n        $error = 'メモは 1〜200 文字で入力してください';\n    } else {\n        $stmt = $pdo->prepare('INSERT INTO memos (body) VALUES (?)');\n        $stmt->execute([$body]);\n        header('Location: /');\n        exit;\n    }\n}\n\n$q = $_GET['q'] ?? '';\n$stmt = $pdo->prepare('SELECT id, body FROM memos WHERE body LIKE ? ORDER BY id DESC');\n$stmt->execute(['%' . $q . '%']);\n$memos = $stmt->fetchAll(PDO::FETCH_ASSOC);\n\nfunction h(string $s): string {\n    return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');\n}\n?>\n<!doctype html>\n<html lang=\"ja\">\n<head><meta charset=\"utf-8\"><title>メモ</title></head>\n<body>\n  <h1>メモ</h1>\n  <?php if ($error): ?>\n    <p class=\"error\"><?= h($error) ?></p>\n  <?php endif; ?>\n  <form method=\"post\">\n    <input name=\"body\">\n    <button type=\"submit\">追加</button>\n  </form>\n  <form method=\"get\"><input name=\"q\" value=\"<?= h($q) ?>\"><button>検索</button></form>\n  <ul>\n    <?php foreach ($memos as $m): ?>\n      <li>#<?= $m['id'] ?> <?= h($m['body']) ?></li>\n    <?php endforeach; ?>\n  </ul>\n</body>\n</html>\n```\n\nPHP には **開発用のサーバー** が入っているので、`php -S 127.0.0.1:8090` だけで動かせます。このレッスンの結果は、そうして起動して `curl` でリクエストを送ったものです。\n\n## 上半分：処理\n\n### リクエストの中身\n\n| 書き方 | 中身 | FastAPI で言うと |\n|---|---|---|\n| `$_SERVER['REQUEST_METHOD']` | `GET` / `POST` | `request.method` |\n| `$_POST['body']` | フォームの `name=\"body\"` の値（HTML/CSS コースのレッスン 2） | `body: str = Form()` |\n| `$_GET['q']` | URL の `?q=...` | `q: str = \"\"`（クエリ） |\n| `$_FILES` / `$_COOKIE` / `$_SESSION` | アップロードされたファイル・Cookie・セッション | |\n\n`$_POST` などは **スーパーグローバル** と呼ばれ、どこからでも読める特別な配列です。値は **すべて文字列**（か配列）で、利用者が自由に作れます（セキュリティのコースのレッスン 1）。\n\n### チェックして保存\n\n```php\n$body = trim($_POST['body'] ?? '');\nif ($body === '' || mb_strlen($body) > 200) {\n    $error = 'メモは 1〜200 文字で入力してください';\n}\n```\n\n`?? ''` で「無ければ空文字」、`trim` で前後の空白を消し、`mb_strlen`（文字数。レッスン 1）で長さを確かめています。`===` を使っているのもポイントです。\n\n```text\n$ curl -X POST -d 'body=' http://127.0.0.1:8090/\n...<p class=\"error\">メモは 1〜200 文字で入力してください</p>...\n```\n\n### PDO の prepare と ?\n\n```php\n$stmt = $pdo->prepare('INSERT INTO memos (body) VALUES (?)');\n$stmt->execute([$body]);\n```\n\n**PDO** は、PHP の標準のデータベースの道具です（SQLite・MySQL・PostgreSQL を同じ書き方で使える）。`prepare` で SQL の形を決め、`execute` で `?` に値をはめ込みます。Python の `conn.execute(\"... VALUES (?)\", (body,))` とまったく同じ考え方で、**SQL インジェクションを防ぎます**（セキュリティのコースのレッスン 3）。\n\n`:body` のように名前を付けて、`execute(['body' => $body])` と書くこともあります。\n\n### POST の後はリダイレクト\n\n```php\nheader('Location: /');\nexit;\n```\n\n```text\n$ curl -X POST -d 'body=牛乳を買う' http://127.0.0.1:8090/\n302 -> http://127.0.0.1:8090/\n```\n\n保存に成功したら、**302 で一覧のページに移動させています**（PRG パターン：Post → Redirect → Get）。こうしないと、ブラウザで再読み込みしたときに「フォームを再送信しますか？」と出て、同じメモが 2 回保存されてしまいます。\n`exit;` を忘れると、移動の指示を出した後も下の処理が続くので、必ずセットで書きます。\n\n## 下半分：HTML\n\n```php\n<?php foreach ($memos as $m): ?>\n  <li>#<?= $m['id'] ?> <?= h($m['body']) ?></li>\n<?php endforeach; ?>\n```\n\n`foreach (...):` と `endforeach;` は、HTML の中で使いやすい書き方です（`if ...:` と `endif;` も同じ）。`<?= ... ?>` は echo の短い書き方です。\n\n### htmlspecialchars\n\n```php\nfunction h(string $s): string {\n    return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');\n}\n```\n\n`<`・`>`・`&`・`\"`・`'` を、文字参照（`&lt;` など）に変えるエスケープです（セキュリティのコースのレッスン 4）。毎回書くと長いので、`h()` という短い名前の関数にするのが PHP の昔からの定番です。\n\nメモに HTML を書いて保存してみました。\n\n```text\n$ curl -X POST --data-urlencode 'body=<img src=x onerror=alert(1)>' http://127.0.0.1:8090/\n$ curl http://127.0.0.1:8090/\n<li>#2 &lt;img src=x onerror=alert(1)&gt;</li>\n<li>#1 牛乳を買う</li>\n```\n\n`<img ...>` が **文字として** 表示され、実行されません。\n\n## 危ない書き方と比べる\n\n同じアプリを、AI が書きがちな **危ない形** にしてみました（説明のため、ユーザーとパスワードの表も同じデータベースに置いています）。\n\n```php\n<?php\n$pdo = new PDO('sqlite:' . __DIR__ . '/memo.db');\n...\nif (isset($_POST['body'])) {\n    $pdo->exec(\"INSERT INTO memos (body) VALUES ('\" . $_POST['body'] . \"')\");   // ⚠️ 文字列をつなげて SQL\n}\n$q = $_GET['q'] ?? '';\n$rows = $pdo->query(\"SELECT id, body FROM memos WHERE body LIKE '%$q%'\")->fetchAll();   // ⚠️\nforeach ($rows as $m) { echo \"<li>#{$m['id']} {$m['body']}</li>\\n\"; }                 // ⚠️ エスケープ無し\n```\n\n### XSS\n\n```text\n<li>#1 牛乳を買う</li>\n<li>#2 <img src=x onerror=alert(1)></li>      ← HTML のまま出ている。ブラウザで開くと実行される\n```\n\n### SQL インジェクション\n\n検索の欄に `' UNION SELECT name, password FROM users --` を入れました。\n\n```text\n<li>#1 牛乳を買う</li>\n<li>#2 <img src=x onerror=alert(1)></li>\n<li>#admin s3cret</li>                          ← ユーザー名とパスワードが表示された\n```\n\n安全な方に同じ検索を送ると、**0 件** でした（「`' UNION ...` という文字を含むメモ」を探しただけなので）。\n\n| | 安全な書き方 | 危ない書き方 |\n|---|---|---|\n| SQL | `prepare('... ?')` ＋ `execute([$v])` | `\"... '\" . $v . \"'\"` / `\"... '%$q%'\"` |\n| 表示 | `htmlspecialchars` | そのまま `echo` |\n| 結果 | 攻撃は文字として扱われる | パスワードが漏れ、HTML が実行される |\n\nPHP は歴史が長いので、**ネット上の古いサンプルや、それを学んだ AI のコードに、危ない書き方がまだ多く残っています**。古い `mysql_query()`（PHP 7 で削除済み）を見かけたら、かなり古いコードです。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 判定 |\n|---|---|\n| `$pdo->query(\"... $var ...\")` / `\"...\" . $_GET[...] . \"...\"` を SQL に | ⚠️ SQL インジェクション。`prepare` ＋ `?` に |\n| `echo $_GET['name'];` / `<?= $row['body'] ?>` | ⚠️ XSS。`htmlspecialchars` を通す |\n| `header('Location: ...');` の後に `exit;` が無い | ⚠️ 下の処理が続く |\n| `$_POST['price']` をそのまま金額に | ⚠️ 書き換えられる（HTML/CSS コースの hidden の話） |\n| パスワードを `md5()` で保存 | ⚠️ `password_hash()` と `password_verify()` を使う（PHP の標準。中は bcrypt） |\n| `PDO::ERRMODE_EXCEPTION` | ✅ データベースのエラーを例外にする（無いと失敗に気づけない） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "PHP で、フォームの `<input name=\"title\">` の値を受け取るのは？（method=\"post\"）",
+        "choices": [
+         "`$_POST['title']`",
+         "`$_GET['title']`",
+         "`$title`"
+        ],
+        "answer": 0,
+        "explain": "POST で送られたフォームの値は `$_POST` に、URL の `?title=...` は `$_GET` に入ります。無いこともあるので `$_POST['title'] ?? ''` と書くのが定番です。"
+       },
+       {
+        "question": "`$pdo->prepare('SELECT * FROM memos WHERE id = ?')` の後、`execute([$id])` で値を渡す理由は？",
+        "choices": [
+         "速くするため",
+         "SQL の形と値を別々に渡し、値が SQL の命令として解釈されないようにするため",
+         "id を数に変換するため"
+        ],
+        "answer": 1,
+        "explain": "プレースホルダで渡すと、`' UNION ...` のような入力もただの文字として扱われます。実際に、危ない書き方ではパスワードが漏れました。"
+       },
+       {
+        "question": "保存に成功した後に `header('Location: /'); exit;` とする理由は？",
+        "choices": [
+         "保存を確定させるため",
+         "一覧のページに移動させ、再読み込みで同じ内容が 2 回送信されるのを防ぐため",
+         "エラーを隠すため"
+        ],
+        "answer": 1,
+        "explain": "POST の後にリダイレクトしておけば、再読み込みしても GET の一覧が読み直されるだけです（PRG パターン）。"
+       }
+      ]
+     ],
+     "id": "04-forms-database"
+    },
+    {
+     "title": "WordPress と Laravel のコードを読む",
+     "level": 3,
+     "minutes": 20,
+     "concepts": [
+      "reading",
+      "backend",
+      "security",
+      "ai_coding"
+     ],
+     "summary": "PHP で出会うことが多い 2 つの世界。WordPress のテーマ（ループ・テンプレートタグ・フック・esc_html）と、Laravel（ルーティング・コントローラー・Eloquent・Blade・バリデーション）。どこを見ればよいかと、セキュリティの確認ポイント。",
+     "body": "## このレッスンのゴール\n\n- WordPress のテーマのファイルを読み、「ループ」「テンプレートタグ」「フック」が分かる\n- Laravel のルート・コントローラー・モデル・ビューのつながりを説明できる\n- どちらのコードでも、エスケープ・SQL・権限の確認ポイントが分かる\n\nこのレッスンのコードは、WordPress と Laravel の書き方の説明のための抜粋です（WordPress 本体や Laravel のアプリをここでは動かしていません）。\n\n## WordPress\n\n**WordPress** は、ブログや会社のサイトを作るための仕組み（CMS）で、世界の Web サイトのとても大きな割合で使われています。管理画面で記事を書き、**テーマ**（見た目）と **プラグイン**（機能）を PHP で作ります。\n\n### テーマのファイル\n\n```text\nwp-content/themes/my-theme/\n├── style.css          テーマの名前などの情報 ＋ CSS\n├── functions.php      テーマの設定・機能の追加（フック）\n├── index.php          記事一覧（どれにも当てはまらないときの最後の砦）\n├── single.php         記事 1 つのページ\n├── page.php           固定ページ\n├── header.php         共通の頭の部分\n└── footer.php         共通の終わりの部分\n```\n\nURL によって、WordPress が **どのファイルを使うかを自動で選びます**（テンプレート階層）。記事のページなら `single.php`、無ければ `index.php`、のような順番です。\n\n### ループ\n\n```php\n<?php get_header(); ?>\n\n<main>\n  <?php if ( have_posts() ) : ?>\n    <?php while ( have_posts() ) : the_post(); ?>\n      <article>\n        <h2><a href=\"<?php the_permalink(); ?>\"><?php the_title(); ?></a></h2>\n        <p class=\"date\"><?php echo get_the_date(); ?></p>\n        <?php the_excerpt(); ?>\n      </article>\n    <?php endwhile; ?>\n  <?php else : ?>\n    <p>記事がありません。</p>\n  <?php endif; ?>\n</main>\n\n<?php get_footer(); ?>\n```\n\n| 部分 | 意味 |\n|---|---|\n| `get_header()` / `get_footer()` | header.php / footer.php を読み込む |\n| `have_posts()` | 表示する記事がまだあるか |\n| `the_post()` | 次の記事を「今の記事」にする |\n| `the_title()` / `the_permalink()` / `the_excerpt()` | 今の記事のタイトル・URL・抜粋を **表示する** |\n| `get_the_date()` | 今の記事の日付を **返す**（表示はしない） |\n\nこの `while ( have_posts() ) : the_post();` を **ループ** と呼びます。Python で言うと `for post in posts:` で、`the_post()` が「次の 1 件を取り出す」役です。\n\n⚠️ WordPress の関数には、**`the_` で始まるものは表示する（echo する）、`get_` で始まるものは値を返す** という決まりがあります。`echo the_title();` は二重になり、`get_the_title();` だけでは何も表示されません。\n\n### functions.php とフック\n\n```php\n<?php\n// テーマの機能を有効にする\nadd_action( 'after_setup_theme', function () {\n    add_theme_support( 'title-tag' );\n    add_theme_support( 'post-thumbnails' );\n} );\n\n// CSS と JavaScript を読み込む\nadd_action( 'wp_enqueue_scripts', function () {\n    wp_enqueue_style( 'my-theme', get_stylesheet_uri(), [], '1.0' );\n} );\n\n// 抜粋の長さを変える\nadd_filter( 'excerpt_length', fn( $length ) => 40 );\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `add_action( 'きっかけ', 関数 )` | 「このタイミングで、この関数も実行して」（**アクションフック**） |\n| `add_filter( 'きっかけ', 関数 )` | 「この値を出す前に、この関数で加工して」（**フィルターフック**）。関数は値を受け取って返す |\n\nWordPress の本体には「ここでフックを呼ぶ」場所がたくさん用意されていて、テーマやプラグインは **本体を書き換えずに、フックで動きを足したり変えたり** します。JavaScript の `addEventListener`（JavaScript コースのレッスン 6）と似た考え方です。\n\n### WordPress のエスケープ\n\n```php\n<h2><?php echo esc_html( $title ); ?></h2>\n<a href=\"<?php echo esc_url( $link ); ?>\">リンク</a>\n<input value=\"<?php echo esc_attr( $value ); ?>\">\n```\n\n| 関数 | 使う場所 |\n|---|---|\n| `esc_html()` | HTML の中の文字 |\n| `esc_attr()` | 属性の値（`value=\"...\"` など） |\n| `esc_url()` | URL（`javascript:` で始まる危ない URL も取り除く） |\n| `wp_kses_post()` | 記事の本文のように、一部の HTML を許したいとき（サニタイズ） |\n\nレッスン 4 の `htmlspecialchars` の、**場所ごとの WordPress 版** です。`the_title()` などのテンプレートタグは中で処理してくれますが、自分で `get_` した値や、`$_GET` などを表示するときは、必ずこれらを通します。\n\n### データベースと権限\n\n```php\nglobal $wpdb;\n$rows = $wpdb->get_results(\n    $wpdb->prepare( \"SELECT * FROM {$wpdb->prefix}orders WHERE user_id = %d\", $user_id )\n);\n\nif ( ! current_user_can( 'edit_posts' ) ) {\n    wp_die( '権限がありません' );\n}\ncheck_admin_referer( 'my_action' );   // フォームの CSRF トークン（nonce）を確かめる\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `$wpdb->prepare( \"... %d\", $v )` | WordPress 版のプレースホルダ（`%d` 数、`%s` 文字列） |\n| `current_user_can( '権限' )` | ログイン中の人に、その権限があるか（認可） |\n| `wp_nonce_field()` / `check_admin_referer()` | **nonce**（使い捨てのトークン）で CSRF を防ぐ（セキュリティのコースのレッスン 5） |\n\nWordPress のプラグインの脆弱性の多くは、**このどれかを忘れたもの** です。\n\n## Laravel\n\n**Laravel** は、PHP でいちばん人気の Web アプリのフレームワークです。Python の Django や、FastAPI ＋ SQLAlchemy に近い位置づけです。\n\n### つながり\n\n```text\nroutes/web.php            URL → どのコントローラーのどのメソッドか\napp/Http/Controllers/     リクエストを受けて、処理して、返す\napp/Models/               データベースのテーブル（Eloquent ORM）\nresources/views/          HTML のテンプレート（Blade）\ndatabase/migrations/      テーブルの変更履歴（マイグレーション）\n```\n\n### ルート\n\n```php\n// routes/web.php\nuse App\\Http\\Controllers\\TaskController;\n\nRoute::get('/tasks', [TaskController::class, 'index']);\nRoute::post('/tasks', [TaskController::class, 'store'])->middleware('auth');\n```\n\n「GET /tasks に来たら TaskController の index」。`->middleware('auth')` は **ログインしている人だけ**（FastAPI の `Depends(get_current_user)`）。\n\n### コントローラー\n\n```php\n// app/Http/Controllers/TaskController.php\nnamespace App\\Http\\Controllers;\n\nuse App\\Models\\Task;\nuse Illuminate\\Http\\Request;\n\nclass TaskController extends Controller\n{\n    public function index()\n    {\n        $tasks = Task::where('user_id', auth()->id())->orderBy('created_at', 'desc')->get();\n        return view('tasks.index', ['tasks' => $tasks]);\n    }\n\n    public function store(Request $request)\n    {\n        $validated = $request->validate([\n            'title' => 'required|string|max:200',\n        ]);\n        $request->user()->tasks()->create($validated);\n        return redirect('/tasks');\n    }\n}\n```\n\n| 部分 | 意味 | Python で言うと |\n|---|---|---|\n| `Task::where('user_id', auth()->id())` | ログイン中の人のタスクだけ（**認可**。IDOR を防ぐ） | `select(Task).where(Task.user_id == user.id)` |\n| `->orderBy(...)->get()` | 並べ替えて取得（Eloquent。中ではプレースホルダの SQL） | SQLAlchemy |\n| `$request->validate([...])` | **バリデーション**。失敗したら自動でフォームに戻り、エラーを表示 | Pydantic |\n| `'required\\|string\\|max:200'` | 必須・文字列・200 文字まで | `title: str = Field(max_length=200)` |\n| `->create($validated)` | **チェック済みの値だけ** で作る（マスアサインメント対策） | |\n| `return redirect('/tasks')` | レッスン 4 の PRG パターン | |\n\n### モデルとマスアサインメント\n\n```php\nclass Task extends Model\n{\n    protected $fillable = ['title'];   // create() で入れてよい項目\n}\n```\n\n`$fillable` は **「外から一括で入れてよい項目の許可リスト」** です。`Task::create($request->all())` と書いても、`user_id` や `is_admin` は入りません（セキュリティのコースのレッスン 5 のマスアサインメント対策が、フレームワークに組み込まれている）。⚠️ `protected $guarded = [];`（何でも入れてよい）と書かれていたら要注意です。\n\n### Blade のテンプレート\n\n```blade\n{{-- resources/views/tasks/index.blade.php --}}\n<ul>\n  @foreach ($tasks as $task)\n    <li>{{ $task->title }}</li>\n  @endforeach\n</ul>\n\n<form method=\"POST\" action=\"/tasks\">\n  @csrf\n  <input name=\"title\" value=\"{{ old('title') }}\">\n  @error('title') <p>{{ $message }}</p> @enderror\n  <button>追加</button>\n</form>\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `{{ $x }}` | **自動でエスケープして** 表示（`htmlspecialchars` を自動で） |\n| `{!! $x !!}` | ⚠️ エスケープ **しない**（React の `dangerouslySetInnerHTML` と同じ危険） |\n| `@foreach` / `@if` | 繰り返し・条件 |\n| `@csrf` | CSRF のトークンをフォームに入れる（無いと 419 エラー） |\n| `old('title')` | バリデーションで戻ってきたとき、入力した値を残す |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| WordPress で `echo $_GET['s'];` / `echo get_the_title();` をそのまま | ⚠️ `esc_html()` を通す |\n| `$wpdb->query( \"... $id ...\" )` | ⚠️ `$wpdb->prepare()` に |\n| WordPress の管理画面の処理に `current_user_can` や nonce の確認が無い | ⚠️ 権限・CSRF |\n| Laravel の `{!! ... !!}` | ⚠️ 中身が外から来るならエスケープかサニタイズ |\n| `Task::find($id)` だけで、持ち主を確かめていない | ⚠️ IDOR。`where('user_id', ...)` か Policy（Laravel の認可の仕組み） |\n| `$guarded = []` / `$request->all()` をそのまま `create` | ⚠️ マスアサインメント |\n| `DB::raw(\"... $var ...\")` / `whereRaw(\"... $var\")` | ⚠️ 生の SQL。`?` と配列で値を渡す |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "WordPress で `the_title()` と `get_the_title()` の違いは？",
+        "choices": [
+         "`the_title()` は表示し、`get_the_title()` は値を返す",
+         "同じもの",
+         "`get_the_title()` は管理画面でしか使えない"
+        ],
+        "answer": 0,
+        "explain": "WordPress では、the_ で始まる関数は表示、get_ で始まる関数は値を返す、という決まりがあります。"
+       },
+       {
+        "question": "WordPress の `add_filter( 'excerpt_length', fn( $length ) => 40 );` は何をしている？",
+        "choices": [
+         "抜粋を 40 個表示する",
+         "抜粋の長さを決める値を、本体を書き換えずに 40 に変える",
+         "40 文字以上の記事を消す"
+        ],
+        "answer": 1,
+        "explain": "フィルターフックは「値を出す前に加工する」仕組みです。本体を直接書き換えずに動きを変えられます。"
+       },
+       {
+        "question": "Laravel の Blade で `{{ $title }}` と `{!! $title !!}` の違いは？",
+        "choices": [
+         "同じ",
+         "`{{ }}` は自動でエスケープし、`{!! !!}` はエスケープしない（外からの値なら XSS の危険）",
+         "`{!! !!}` のほうが安全"
+        ],
+        "answer": 1,
+        "explain": "`{{ }}` は htmlspecialchars を自動で通します。`{!! !!}` は HTML をそのまま出すので、中身が信頼できるときだけ使います。"
+       }
+      ]
+     ],
+     "id": "05-wordpress-laravel"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "Java",
