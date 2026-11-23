@@ -6046,17 +6046,252 @@ window.SITE_DATA = {
    "icon": "🟣",
    "order": 95,
    "category": "language",
-   "status": "planned",
-   "description": "Android アプリ開発の標準言語。Java を簡潔にしたような書き方。",
-   "outline": [
-    "val と var",
-    "null 安全",
-    "data class",
-    "ラムダとコレクション操作",
-    "Jetpack Compose を読む"
-   ],
+   "description": "Android のアプリの標準の言語。Java と同じ JVM の上で動き、もっと短く安全に書ける。val と var、null 安全（? と ?: と !!）、data class と sealed class、ラムダとコレクション操作、最後に Jetpack Compose の画面のコードを読む。Kotlin 2.1 で実行して確かめたもの。",
+   "levels": {
+    "1": "入門：val と null 安全",
+    "2": "基礎：クラスとコレクション",
+    "3": "実践：Android の画面を読む"
+   },
    "id": "95-kotlin",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "val と var ― Kotlin の第一歩",
+     "level": 1,
+     "minutes": 15,
+     "concepts": [
+      "variables",
+      "types",
+      "conditionals",
+      "basics"
+     ],
+     "summary": "fun main、val（変えられない）と var（変えられる）、型を後ろに書く、\"$name\" の文字列、値を返す if と when、1..3 の範囲。Java と同じ JVM で動くが、ずっと短く書ける。== は中身、=== は同じものか。",
+     "body": "## このレッスンのゴール\n\n- `val` と `var` の違いを説明できる\n- `fun`・`\"$name\"`・`if` と `when` の式を読める\n- Kotlin と Java の関係（同じ JVM の上で動く）が分かる\n\n## Kotlin とは\n\n**Kotlin**（コトリン）は JetBrains という会社が作った言語で、**Android のアプリの標準の言語** です（Google が推奨）。Java と同じ **JVM**（Java コースのレッスン 1）の上で動き、**Java のライブラリをそのまま使えます**。そのうえで、Java の長くて危ないところ（null・getter と setter・長い型名）を、短く安全に書けるようにしています。\n\n## 最初のプログラム\n\n```kotlin\nfun greet(name: String): String = \"こんにちは、$name さん\"\n\nfun main() {\n    val price = 120\n    var count = 1\n    count += 2\n    println(greet(\"Ryo\"))\n    println(\"合計 ${price * count} 円\")\n    println(\"${7 / 2} ${7 / 2.0} ${7 % 2}\")\n}\n```\n\n```text\nこんにちは、Ryo さん\n合計 360 円\n3 3.5 1\n```\n\n（このコースの出力とエラーは、すべて Kotlin 2.1 でコンパイルし、Java 21 で実際に実行したものです）\n\n| Kotlin | 意味 | Java で言うと | Python で言うと |\n|---|---|---|---|\n| `fun main()` | 入口（クラスに入れなくてよい） | `public static void main(...)` | `if __name__ == ...` |\n| `fun greet(name: String): String` | 関数。**型は後ろ**（TypeScript・Rust・Go と同じ） | `static String greet(String name)` | `def greet(name: str) -> str:` |\n| `= \"...\"` | 1 行で書く関数 | | `return ...` |\n| `\"...$name...\"` / `\"${式}\"` | 埋め込み | `\"...\" + name` | `f\"...{name}...\"` |\n| `println(x)` | 表示 | `System.out.println(x)` | `print(x)` |\n| 文の終わりの `;` | **いらない** | 必要 | いらない |\n\nJava コースで見た `public static void main(String[] args)` と見比べると、Kotlin がどれだけ短いかが分かります。\n\n## val と var\n\n```kotlin\nval price = 120      // 変えられない\nvar count = 1        // 変えられる\ncount += 2\n```\n\n```kotlin\nval price = 120\nprice = 200\n```\n\n```text\nk1b.kt:3:5: error: 'val' cannot be reassigned.\n```\n\n| | `val`（value） | `var`（variable） |\n|---|---|---|\n| 入れ直し | **できない** | できる |\n| 似ているもの | Rust の `let`、JavaScript の `const`、Java の `final` | Rust の `let mut`、JavaScript の `let` |\n\n**基本は `val`、本当に変える必要があるときだけ `var`** が Kotlin の書き方です。Rust と同じく、「どこで値が変わるのか」をコードで分かるようにするためです。\n\n## 型\n\n```kotlin\nval rate: Double = 0.1          // 型を書くなら 名前: 型\nprintln(price * (1 + rate))     // 132.0\n\nval r: Int = 0.5\n// error: initializer type mismatch: expected 'kotlin.Int', actual 'kotlin.Double'.\n```\n\n| Kotlin | 中身 | Java で言うと |\n|---|---|---|\n| `Int` / `Long` | 整数 | `int` / `long` |\n| `Double` | 小数 | `double` |\n| `Boolean` | `true` / `false` | `boolean` |\n| `String` | 文字列 | `String` |\n| `List<String>` | 文字列のリスト | `List<String>` |\n\nKotlin の型は **全部大文字で始まります**。Java の `int` と `Integer` のような 2 種類の区別（Java コースのレッスン 2）が、書く側からは見えなくなっています（中ではうまく使い分けてくれる）。\n\n## == と ===\n\n```kotlin\nval a = \"りんご\"\nval b = String(\"りんご\".toCharArray())\nprintln(\"${a == b} ${a === b} ${a.length}\")   // true false 3\n```\n\n| 演算子 | 意味 | Java で言うと |\n|---|---|---|\n| `==` | **中身** が同じか | `equals` |\n| `===` | **同じオブジェクト** か | `==` |\n\nJava の「文字列を `==` で比べてはいけない」問題を、Kotlin は **`==` を中身の比較にする** ことで解決しました（C# と同じ考え方）。\n\n## if と when は値を返す\n\n```kotlin\nval label = if (price > 100) \"高い\" else \"安い\"\n\nval size = when (count) {\n    0 -> \"ゼロ\"\n    in 1..9 -> \"1 桁\"\n    else -> \"それ以上\"\n}\nprintln(\"$label $size\")   // 高い 1 桁\n```\n\n| Kotlin | Python で言うと |\n|---|---|\n| `val x = if (条件) a else b` | `x = a if 条件 else b` |\n| `when (x) { 0 -> ... else -> ... }` | `match x: case 0: ... case _: ...` |\n| `in 1..9` | `1 <= x <= 9` |\n\nKotlin には、`? :` の三項演算子がありません。**`if` 自体が値を返す** からです（Rust と同じ）。`when` は Java の `switch` をもっと強くしたもので、よく使われます。\n\n## 範囲と繰り返し\n\n```kotlin\nfor (i in 1..3) print(\"$i \")         // 1 2 3\nfor (i in 0 until 3) print(\"$i \")    // 0 1 2\n\nval fruits = listOf(\"りんご\", \"バナナ\")\nprintln(\"${fruits.size} ${fruits[0]} ${fruits}\")   // 2 りんご [りんご, バナナ]\n```\n\n| Kotlin | Python |\n|---|---|\n| `1..3` | `range(1, 4)`（**3 を含む**） |\n| `0 until 3` | `range(0, 3)`（3 を含まない） |\n| `listOf(...)` | `[...]`（ただし変えられない。レッスン 4） |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方 |\n|---|---|\n| `val` だらけで `var` が少ない | Kotlin らしい書き方 |\n| `fun foo(): Int { ... }` / `fun foo() = ...` | 関数（2 つ目は 1 行の形） |\n| `build.gradle.kts` | Android・Kotlin のプロジェクトの設定（Gradle を Kotlin で書いたもの） |\n| `MainActivity.kt` | Android のアプリの画面の入口 |\n| Java のファイル（`.java`）と Kotlin（`.kt`）が混ざっている | 同じプロジェクトで一緒に使える |\n| `@JvmStatic` / `@JvmField` | Java から使いやすくするための印 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Kotlin で `val price = 120` の後に `price = 200` と書くと？",
+        "choices": [
+         "price が 200 になる",
+         "コンパイルエラー（val は入れ直せない）",
+         "警告が出るが 200 になる"
+        ],
+        "answer": 1,
+        "explain": "val は変えられない変数です。変えたいなら var を使います。"
+       },
+       {
+        "question": "Kotlin の `a == b`（a と b は String）は、Java で言うと？",
+        "choices": [
+         "`a.equals(b)`（中身の比較）",
+         "`a == b`（同じオブジェクトか）",
+         "`a.compareTo(b)`"
+        ],
+        "answer": 0,
+        "explain": "Kotlin の == は中身を比べます。同じオブジェクトかどうかは === です。"
+       },
+       {
+        "question": "`for (i in 1..3)` で i に入る値は？",
+        "choices": [
+         "1, 2",
+         "1, 2, 3",
+         "0, 1, 2"
+        ],
+        "answer": 1,
+        "explain": "`..` は最後の数を含む範囲です。含めないなら `until` を使います。"
+       }
+      ]
+     ],
+     "id": "01-val-var"
+    },
+    {
+     "title": "null 安全 ― String と String? は別の型",
+     "level": 1,
+     "minutes": 16,
+     "concepts": [
+      "types",
+      "errors",
+      "conditionals"
+     ],
+     "summary": "Kotlin では null を入れられる型に ? を付ける。?. と ?: と !!、if で確かめると自動で null ではない型になるスマートキャスト、?.let { }、toIntOrNull。null を確かめずに使うとコンパイルエラーになる。",
+     "body": "## このレッスンのゴール\n\n- `String` と `String?` の違いを説明できる\n- `?.`・`?:`・`!!`・`?.let { }` を読める\n- スマートキャスト（`if (x != null)` の中では null ではない型になる）が分かる\n\n## null を入れられる型には ? を付ける\n\n```kotlin\nval s: String = null\n```\n\n```text\nk2b.kt:5:21: error: null cannot be a value of a non-null type 'kotlin.String'.\n```\n\nKotlin の `String` には、**null を入れられません**（コンパイルエラー）。null かもしれないなら、型に **`?`** を付けて `String?` にします。\n\n```kotlin\nfun findName(id: Int): String? = if (id == 1) \"Ryo\" else null\n```\n\n### 確かめずに使うとコンパイルエラー\n\n```kotlin\nval name = findName(2)\nprintln(name.length)\n```\n\n```text\nk2b.kt:4:17: error: only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'kotlin.String?'.\n```\n\n「null かもしれない `String?` には、`?.` か `!!.` でしか呼べません」。**null を確かめずに使うと、コンパイルできません**。\n\n| 言語 | null かもしれないものを、確かめずに使ったら |\n|---|---|\n| Java | 実行したときに NullPointerException |\n| C# | **警告**（実行はできてしまう。C# コースのレッスン 2） |\n| **Kotlin** | **コンパイルエラー** |\n| Rust | そもそも null が無い（Option） |\n| Python | 実行したときに AttributeError |\n\nJava でいちばん多い NullPointerException を、**Kotlin はコンパイルの時点でほぼ無くした** のが、Android で Kotlin が選ばれた大きな理由です。\n\n## 安全な使い方\n\n```kotlin\nval name: String? = findName(2)\nprintln(name?.length)        // null\nprintln(name ?: \"なし\")       // なし\nprintln(name?.length ?: 0)   // 0\n```\n\n| 書き方 | 意味 | 他の言語では |\n|---|---|---|\n| `x?.length` | x が null なら null、そうでなければ length | C#・JavaScript の `?.` |\n| `x ?: \"なし\"` | x が null なら右（**エルビス演算子**。横にすると髪型に見えるから） | C# の `??`、Python の `x or \"なし\"` |\n| `x!!` | 「**絶対に null ではない**」と言い切る。null なら例外 | C# の `!`、Rust の `unwrap()` |\n\n### !! は最後の手段\n\n```kotlin\ntry {\n    println(name!!.length)\n} catch (e: NullPointerException) {\n    println(\"NullPointerException: !! で null を無理に使った\")\n}\n```\n\n`!!` は、コンパイラのチェックを **自分の責任で外す** 書き方です。null なら、Java と同じ NullPointerException で止まります。AI のコードで `!!` がたくさんあったら、Kotlin の安全な仕組みを使わずに、Java のように書いているサインです。\n\n## スマートキャスト\n\n```kotlin\nval n2 = findName(1)\nif (n2 != null) {\n    println(\"スマートキャスト: ${n2.length}\")   // スマートキャスト: 3\n}\n```\n\n`if (n2 != null)` の中では、Kotlin が **「ここでは null ではない」と分かって、自動で `String` として扱ってくれます**（スマートキャスト）。`?.` も `!!` もいりません。TypeScript の「型の絞り込み」（TypeScript コースのレッスン 4）と同じ考え方です。\n\n## ?.let { }\n\n```kotlin\nfindName(1)?.let { println(\"let: ${it.uppercase()}\") }   // let: RYO\n```\n\n`?.let { ... }` は「**null でなければ、中の処理をする**」書き方で、Kotlin のコードでとてもよく見ます。`it` は、ブロックに渡された値（ここでは \"Ryo\"）の決まった名前です（レッスン 4）。Python で書くとこうです。\n\n```python\nname = find_name(1)\nif name is not None:\n    print(f\"let: {name.upper()}\")\n```\n\n## null を返す便利な関数\n\n```kotlin\nval n: Int? = \"12a\".toIntOrNull()\nprintln(\"toIntOrNull: $n\")              // toIntOrNull: null\n\nval list: List<String?> = listOf(\"a\", null, \"c\")\nprintln(list.filterNotNull())           // [a, c]\n```\n\n| 関数 | 失敗したとき |\n|---|---|\n| `\"12a\".toInt()` | 例外（NumberFormatException） |\n| `\"12a\".toIntOrNull()` | **null** |\n| `list.first()` | 例外 |\n| `list.firstOrNull()` | **null** |\n| `map.getValue(k)` | 例外 |\n| `map[k]` | **null** |\n\nKotlin の標準ライブラリには、**`〜OrNull` で null を返す版** がたくさんあります。例外を受け止める代わりに、`?:` で初期値を決める書き方が Kotlin らしい形です。\n\n```kotlin\nval age = input.toIntOrNull() ?: 0\n```\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `user!!.name` / `!!` がたくさん | ⚠️ null なら止まる。`?.`・`?:`・`?.let` にできないか |\n| `lateinit var adapter: Adapter` | 後で必ず入れる、という約束の var。入れる前に使うと例外 |\n| `val name = intent.getStringExtra(\"name\") ?: return` | null なら関数を抜ける（よくある書き出し） |\n| `user?.let { show(it) }` | null でなければ表示 |\n| `String?` を返す Java のメソッドを使っている | Java から来た値は、null かどうか Kotlin に分からない（`String!` と表示される）。⚠️ 確かめる |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Kotlin で `val s: String = null` と書くと？",
+        "choices": [
+         "s に null が入る",
+         "コンパイルエラー（String には null を入れられない）",
+         "実行したときにエラー"
+        ],
+        "answer": 1,
+        "explain": "null を入れたいなら `String?` にします。Kotlin は null を入れられる型を ? で区別します。"
+       },
+       {
+        "question": "`name ?: \"ゲスト\"` の意味は？",
+        "choices": [
+         "name が null なら \"ゲスト\"、そうでなければ name",
+         "name が \"ゲスト\" かどうか",
+         "name を必ず \"ゲスト\" にする"
+        ],
+        "answer": 0,
+        "explain": "`?:`（エルビス演算子）は「左が null なら右」です。"
+       },
+       {
+        "question": "`if (name != null) { println(name.length) }` で、`name?.length` と書かなくてよい理由は？",
+        "choices": [
+         "length は null でも使えるから",
+         "if の中では null ではないと分かっているので、Kotlin が自動で String として扱ってくれるから（スマートキャスト）",
+         "println が null を無視するから"
+        ],
+        "answer": 1,
+        "explain": "null を確かめた後の範囲では、型が自動で絞り込まれます。"
+       }
+      ]
+     ],
+     "id": "02-null-safety"
+    },
+    {
+     "title": "クラス・data class・sealed class",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "classes",
+      "types"
+     ],
+     "summary": "1 行で書けるコンストラクタ、プロパティのカスタム set と require、data class の copy と分解、クラスは初期設定で継承できない（open）、状態の一覧を表す sealed class と when、シングルトンの object。",
+     "body": "## このレッスンのゴール\n\n- Kotlin のクラス（コンストラクタの引数に `val` を書く形・プロパティ）を読める\n- `data class` が何を自動で用意してくれるか分かる\n- `open`・`sealed class`・`object` の意味が分かる\n\n## クラス\n\n```kotlin\nclass Product(val name: String, private var basePrice: Int) {\n    var stock: Int = 0\n        set(value) {\n            require(value >= 0) { \"在庫はマイナスにできません: $value\" }\n            field = value\n        }\n\n    val price: Int get() = basePrice * 110 / 100\n\n    fun discount(yen: Int) {\n        require(yen <= basePrice) { \"値引きが大きすぎます: $yen\" }\n        basePrice -= yen\n    }\n\n    override fun toString() = \"$name（$price 円）\"\n}\n```\n\n```kotlin\nval apple = Product(\"りんご\", 120)\napple.stock = 5\napple.discount(20)\nprintln(\"$apple 在庫 ${apple.stock}\")        // りんご（110 円） 在庫 5\n\napple.stock = -1\n// IllegalArgumentException: 在庫はマイナスにできません: -1\n```\n\n| 部分 | 意味 | 他の言語では |\n|---|---|---|\n| `class Product(val name: String, ...)` | **コンストラクタの引数に `val`** を書くと、そのままプロパティになる | PHP 8 の `public function __construct(public string $name)` |\n| `Product(\"りんご\", 120)` | 作る（`new` が要らない） | Java・C# の `new Product(...)` |\n| `var stock: Int = 0` | プロパティ（C# の `{ get; set; }` に当たる） | |\n| `set(value) { ...; field = value }` | 入れるときの処理を決める。`field` が本当の値の入れ物 | C# の `set { ... }` |\n| `val price: Int get() = ...` | 計算して返すプロパティ | C# の `=>`、Python の `@property` |\n| `require(条件) { \"メッセージ\" }` | 条件が偽なら IllegalArgumentException | Python の `if not 条件: raise ValueError(...)` |\n| `override fun toString()` | 表示の仕方 | `__str__` |\n\nJava コースのレッスン 3 で 20 行近く書いたクラスが、ずっと短くなっています。\n\n## data class\n\n```kotlin\ndata class Item(val name: String, val price: Int)\n\nval milk = Item(\"牛乳\", 200)\nval milk2 = milk.copy(price = 180)\nprintln(\"$milk $milk2 ${milk == Item(\"牛乳\", 200)}\")\n// Item(name=牛乳, price=200) Item(name=牛乳, price=180) true\n\nval (n, p) = milk\nprintln(\"分解: $n $p\")      // 分解: 牛乳 200\n```\n\n`data` を付けると、**表示（toString）・中身での比較（equals）・hashCode・copy・分解** を自動で作ってくれます。\n\n| 機能 | Kotlin | Java | C# | Python |\n|---|---|---|---|---|\n| データを入れる型 | `data class` | `record` | `record` | `@dataclass` |\n| 一部を変えたコピー | `.copy(price = 180)` | （自分で書く） | `with { Price = 180 }` | `dataclasses.replace(...)` |\n| 分解 | `val (n, p) = milk` | パターン | `var (n, p) = milk` | `n, p = astuple(milk)` |\n\nAndroid のアプリでは、API から受け取ったデータや、画面の状態を data class で表すのが定番です。\n\n## 継承：open を付けないとできない\n\n```kotlin\nclass A(val x: Int)\nclass B(x: Int) : A(x)\n```\n\n```text\nk3b.kt:2:19: error: this type is final, so it cannot be extended.\n```\n\nKotlin のクラスは、**初期設定で継承できません**（final）。継承させたいクラスとメソッドには、**`open`** を付けます。\n\n```kotlin\nopen class Animal(val name: String) { open fun sound() = \"...\" }\nclass Dog(name: String) : Animal(name) { override fun sound() = \"ワン\" }\n\nprintln(Dog(\"ポチ\").sound())   // ワン\n```\n\n| Kotlin | Java |\n|---|---|\n| `class Dog(...) : Animal(name)` | `class Dog extends Animal` |\n| `: Runnable`（インターフェース） | `implements Runnable` |\n| `open` を付けないと継承できない | 初期設定で継承できる（`final` を付けると禁止） |\n\n「何でも継承できると、親を変えたときに子が壊れやすい」という Java の経験から、**わざと逆にした** 決まりです。\n\n## sealed class：状態の一覧\n\n```kotlin\nsealed class Status {\n    data object Paid : Status()\n    data class Shipped(val tracking: String) : Status()\n    data class Cancelled(val reason: String) : Status()\n}\n\nfun describe(s: Status): String = when (s) {\n    is Status.Paid -> \"支払い済み\"\n    is Status.Shipped -> \"発送済み（${s.tracking}）\"\n    is Status.Cancelled -> \"キャンセル：${s.reason}\"\n}\n```\n\n```text\n支払い済み\n発送済み（AB123）\nキャンセル：在庫切れ\n```\n\n**sealed class** は「子どもの種類が、ここに書いたもので **全部**」という印です。Rust の enum（Rust コースのレッスン 3）と同じく、**状態ごとに違うデータを持てて**、`when` で書き忘れると **コンパイルエラー** になります。\n\n```kotlin\nsealed class S { object A : S(); object B : S() }\nfun f(s: S): String = when (s) { is S.A -> \"a\" }\n```\n\n```text\nerror: 'when' expression must be exhaustive. Add the 'B' branch or an 'else' branch.\n```\n\n`is Status.Shipped ->` の中で `s.tracking` が使えるのは、レッスン 2 の **スマートキャスト** で、s が Shipped として扱われているからです。\n\nAndroid の画面で「読み込み中 / 成功（データ付き）/ 失敗（エラー付き）」を表すのに、とてもよく使われます。\n\n```kotlin\nsealed interface UiState {\n    data object Loading : UiState\n    data class Success(val items: List<Item>) : UiState\n    data class Error(val message: String) : UiState\n}\n```\n\n## object：1 つだけのもの\n\n```kotlin\nobject Config { const val TAX = 10 }\nprintln(Config.TAX)    // 10\n```\n\n`object` は、**プログラムの中に 1 つだけ** あるもの（シングルトン）を作ります。`new` せずに、名前でそのまま使います。Java の `static` の代わりとしても使われます（`companion object { ... }` はクラスの中の static のようなもの）。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方 |\n|---|---|\n| `data class User(val id: Long, val name: String)` | データを入れる型 |\n| `state.copy(isLoading = false)` | 一部だけ変えた新しい状態を作る（画面の状態の更新の定番） |\n| `sealed interface Result<out T>` | 成功・失敗などの一覧（Rust の Result に近い） |\n| `companion object { fun newInstance() = ... }` | クラスに付いた static のような関数 |\n| `class UserRepository @Inject constructor(private val api: Api)` | 依存性注入（Hilt）。部品を外から受け取る |\n| `open` が無いクラスを継承しようとしている | コンパイルエラー |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Kotlin の `data class Item(val name: String, val price: Int)` が自動で用意しないものは？",
+        "choices": [
+         "中身で比べる equals",
+         "一部を変えた copy",
+         "price を後から変えるための setPrice"
+        ],
+        "answer": 2,
+        "explain": "data class の val の項目は変えられません。変えたいときは copy で新しいものを作ります。"
+       },
+       {
+        "question": "Kotlin で `class B : A()` が「this type is final」というエラーになった。直し方は？",
+        "choices": [
+         "A に `open` を付ける",
+         "B に `final` を付ける",
+         "A を data class にする"
+        ],
+        "answer": 0,
+        "explain": "Kotlin のクラスは初期設定で継承できません。継承させたいクラスには open を付けます。"
+       },
+       {
+        "question": "sealed class を `when` で分けるとき、場合を 1 つ書き忘れると？",
+        "choices": [
+         "その場合は何もしない",
+         "コンパイルエラーになる（else が無ければ）",
+         "実行時に例外"
+        ],
+        "answer": 1,
+        "explain": "sealed class は子どもの種類が決まっているので、Kotlin は全部の場合を書いたか確かめます。Rust の match と同じです。"
+       }
+      ]
+     ],
+     "id": "03-classes-data-class"
+    },
+    {
+     "title": "ラムダとコレクション操作 ― it と { }",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "collections",
+      "higher_order",
+      "functions"
+     ],
+     "summary": "filter・map・sumOf・groupBy・maxBy・sortedWith を it でつなぐ書き方。listOf は変えられず mutableListOf は変えられる、関数を受け取る関数 (Int) -> Int、最後の引数のラムダはかっこの外に出せる、let・also・with などのスコープ関数。",
+     "body": "## このレッスンのゴール\n\n- `products.filter { it.price < 200 }.map { it.name }` を読める\n- `listOf` と `mutableListOf` の違いが分かる\n- ラムダの `{ x -> ... }`・`it`・「かっこの外に出す」書き方と、`let`・`also`・`with` を読める\n\n## コレクション操作\n\nSQL コースと同じ 6 つの商品です。\n\n```kotlin\ndata class Product(val name: String, val category: String, val price: Int)\n\nval products = listOf(\n    Product(\"りんご\", \"果物\", 120), Product(\"バナナ\", \"果物\", 90),\n    Product(\"牛乳\", \"飲み物\", 200), Product(\"コーヒー豆\", \"飲み物\", 1200),\n    Product(\"食パン\", \"パン\", 250), Product(\"クロワッサン\", \"パン\", 180),\n)\n\nprintln(products.filter { it.price < 200 }.map { it.name })   // [りんご, バナナ, クロワッサン]\nprintln(products.sumOf { it.price })                          // 2040\nprintln(products.groupBy { it.category }.mapValues { (_, v) -> v.size })\n// {果物=2, 飲み物=2, パン=2}\nprintln(products.groupBy { it.category }.mapValues { (_, v) -> v.map { it.price }.average() })\n// {果物=105.0, 飲み物=700.0, パン=215.0}\nprintln(products.maxBy { it.price }.name)                     // コーヒー豆\n```\n\n| Kotlin | Python | Java（Stream） |\n|---|---|---|\n| `filter { it.price < 200 }` | `[p for p in ... if p.price < 200]` | `.filter(p -> p.price() < 200)` |\n| `map { it.name }` | `[p.name for p in ...]` | `.map(Product::name)` |\n| `sumOf { it.price }` | `sum(p.price for p in ...)` | `.mapToInt(...).sum()` |\n| `groupBy { it.category }` | `itertools.groupby` / defaultdict | `Collectors.groupingBy(...)` |\n| `maxBy { it.price }` | `max(..., key=lambda p: p.price)` | `.max(Comparator...)` |\n| `firstOrNull { ... }` | `next((... ), None)` | `.findFirst()` |\n| `any { }` / `all { }` / `count { }` | `any()` / `all()` / `sum(1 for ...)` | `anyMatch` など |\n| `take(3)` | `[:3]` | `.limit(3)` |\n| `joinToString(\"、\") { it.name }` | `\"、\".join(...)` | `Collectors.joining` |\n\nJava の Stream では `.stream()` と `.collect(...)` が必要でしたが、Kotlin は **リストにそのまま `filter` や `map` を呼べます**。SQL コースの `GROUP BY` と同じ数になっているのも確かめられます。\n\n```kotlin\nprintln(products.sortedWith(compareBy<Product> { it.category }.thenByDescending { it.price }).map { it.name })\n// [食パン, クロワッサン, りんご, バナナ, コーヒー豆, 牛乳]\nprintln(products.firstOrNull { it.price > 5000 }?.name ?: \"なし\")      // なし\nprintln(products.take(3).joinToString(\"、\") { it.name })              // りんご、バナナ、牛乳\n```\n\n`firstOrNull { ... }?.name ?: \"なし\"` は、レッスン 2 の null 安全と組み合わせた、Kotlin でよく見る形です。\n\n## ラムダの書き方\n\n```kotlin\nval withTax = { price: Int -> price * 110 / 100 }\nprintln(withTax(120))     // 132\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `{ price: Int -> price * 110 / 100 }` | 引数 price を受け取って、最後の式を返すラムダ |\n| `{ it.price < 200 }` | 引数が **1 つ** なら、名前を書かずに **`it`** で使える |\n| `{ (_, v) -> v.size }` | 分解して受け取る（`_` は使わない値） |\n\nPython の `lambda price: price * 110 // 100`、JavaScript の `price => ...`、Rust の `|price| ...`、Ruby の `{ |price| ... }` です。\n\n### 関数を受け取る関数\n\n```kotlin\nfun applyTwice(x: Int, f: (Int) -> Int) = f(f(x))\nprintln(applyTwice(100, withTax))    // 121\n```\n\n`(Int) -> Int` は「Int を受け取って Int を返す関数」という **型** です。100 → 110 → 121 と 2 回適用されました。\n\n### 最後のラムダはかっこの外へ\n\n```kotlin\nproducts.filter({ it.price < 200 })   // かっこの中\nproducts.filter() { it.price < 200 }  // 最後の引数のラムダは、かっこの外に出せる\nproducts.filter { it.price < 200 }    // 引数がラムダだけなら、かっこごと省略できる\n```\n\n3 つとも同じ意味です。この決まりのおかげで、レッスン 5 の Jetpack Compose の `Column { ... }` のように、**ラムダを「ブロック」のように書ける** のが Kotlin の特徴です（Ruby のブロックに近い見た目）。\n\n## listOf と mutableListOf\n\n```kotlin\nval list = listOf(1, 2)\nlist.add(2)\n// error: unresolved reference 'add'.\n\nval mlist = mutableListOf(1, 2)\nmlist.add(3)\nprintln(\"$list $mlist\")    // [1, 2] [1, 2, 3]\n```\n\n| 変えられない | 変えられる | Python |\n|---|---|---|\n| `listOf(...)` | `mutableListOf(...)` | `tuple` / `list` |\n| `mapOf(\"a\" to 1)` | `mutableMapOf(...)` | — / `dict` |\n| `setOf(...)` | `mutableSetOf(...)` | `frozenset` / `set` |\n\n`listOf` で作ったリストには **`add` というメソッド自体がありません**（コンパイルエラー）。Java の `List.of` は、実行したときに `UnsupportedOperationException` で止まりました（Java コースのレッスン 5）が、Kotlin は **コンパイルの時点で** 分かります。\n\n```kotlin\nval stock = mutableMapOf(\"りんご\" to 10)\nstock[\"バナナ\"] = 3\nstock[\"りんご\"] = stock.getOrDefault(\"りんご\", 0) + 5\nprintln(\"$stock ${stock[\"ぶどう\"]} ${stock.getValue(\"りんご\")}\")\n// {りんご=15, バナナ=3} null 15\n```\n\n`\"りんご\" to 10` は、キーと値の組（Pair）を作る書き方です。`map[key]` は無ければ **null**（レッスン 2 の表）。\n\n## スコープ関数\n\nKotlin のコードには、`let`・`also`・`apply`・`with`・`run` という、似た関数がたくさん出てきます。\n\n```kotlin\nval p = Product(\"みかん\", \"果物\", 80).also { println(\"作った: ${it.name}\") }\nprintln(p.let { \"${it.name} は ${it.price} 円\" })        // みかん は 80 円\nwith(StringBuilder()) { append(\"x\"); append(\"y\"); println(this) }   // xy\n```\n\n| 関数 | 中での呼び方 | 返すもの | よく使う場面 |\n|---|---|---|---|\n| `x.let { it ... }` | `it` | ブロックの最後の値 | `?.let { }`：null でなければ（レッスン 2） |\n| `x.also { it ... }` | `it` | **x そのもの** | ついでにログを出す・確かめる |\n| `x.apply { this ... }` | `this`（省略可） | **x そのもの** | 作ったものの設定をまとめて |\n| `with(x) { this ... }` | `this` | ブロックの最後の値 | x のメソッドを続けて呼ぶ |\n\n全部覚えなくても大丈夫です。**「`it` か `this` で x を使う、ひとまとまりの処理」** と読めれば十分です。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方 |\n|---|---|\n| `items.filter { it.isActive }.map { it.toUiModel() }` | 有効なものだけ、画面用の形に変換 |\n| `list.forEach { println(it) }` | 1 つずつ |\n| `users.associateBy { it.id }` | id をキーにした Map にする |\n| `button.setOnClickListener { viewModel.save() }` | クリックされたら（最後のラムダをかっこの外に） |\n| `Intent(this, Detail::class.java).apply { putExtra(\"id\", id) }` | 作って、設定をまとめて |\n| `.asSequence()` | 遅延実行にする（C# の LINQ と同じ。大きなデータで途中のリストを作らない） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`products.filter { it.price < 200 }` の `it` は何？",
+        "choices": [
+         "filter に渡されたラムダの、ただ 1 つの引数（ここでは各 Product）",
+         "products 全体",
+         "it という名前の変数を前もって作っておく必要がある"
+        ],
+        "answer": 0,
+        "explain": "引数が 1 つのラムダは、名前を書かずに it で使えます。"
+       },
+       {
+        "question": "`val list = listOf(1, 2); list.add(3)` はどうなる？",
+        "choices": [
+         "[1, 2, 3] になる",
+         "実行したときに例外",
+         "コンパイルエラー（listOf のリストには add が無い）"
+        ],
+        "answer": 2,
+        "explain": "変えられるリストが必要なら mutableListOf を使います。"
+       },
+       {
+        "question": "`button.setOnClickListener { save() }` で、かっこ `( )` が無いのはなぜ？",
+        "choices": [
+         "Kotlin では関数を呼ぶときかっこが要らないから",
+         "最後の引数がラムダのときはかっこの外に出せ、引数がそれだけならかっこを省略できるから",
+         "setOnClickListener は特別な関数だから"
+        ],
+        "answer": 1,
+        "explain": "Kotlin の決まりで、最後のラムダはかっこの外に書けます。Jetpack Compose の画面の書き方もこの決まりを使っています。"
+       }
+      ]
+     ],
+     "id": "04-lambdas-collections"
+    },
+    {
+     "title": "Jetpack Compose を読む ― Android の画面のコード",
+     "level": 3,
+     "minutes": 20,
+     "concepts": [
+      "dom_ui",
+      "async",
+      "reading",
+      "ai_coding"
+     ],
+     "summary": "Android の今の画面の作り方 Jetpack Compose。@Composable 関数、Column・Row・Text・Button、Modifier、remember と mutableStateOf（状態が変わると描き直す）、ViewModel と StateFlow、コルーチン（suspend・launch）。React と並べて読む。",
+     "body": "## このレッスンのゴール\n\n- `@Composable` 関数と、`Column`・`Row`・`Text`・`Button` のつながりを読める\n- `remember { mutableStateOf(...) }` が何をしていて、なぜ必要か説明できる\n- ViewModel・StateFlow・`suspend`・`launch` が出てくるコードの役割が分かる\n\nこのレッスンのコードは、Jetpack Compose の書き方の説明のための抜粋です（Android のアプリをここでは動かしていません）。\n\n## Jetpack Compose とは\n\n**Jetpack Compose** は、Android のアプリの画面を **Kotlin のコードだけで** 作る、今の標準の方法です（以前は XML というファイルで画面を書いていた）。考え方は **React**（TypeScript コースのレッスン 8）にとてもよく似ていて、「**状態から画面を作る関数**」を書きます。iPhone の SwiftUI（Swift コースのレッスン 5）もほぼ同じ考え方です。\n\n## 画面の部品は関数\n\n```kotlin\n@Composable\nfun Greeting(name: String) {\n    Text(text = \"こんにちは、$name さん\")\n}\n```\n\n| 部分 | 意味 | React で言うと |\n|---|---|---|\n| `@Composable` | 「画面の部品を作る関数」という印（アノテーション） | 関数コンポーネント |\n| `fun Greeting(name: String)` | 部品の名前（大文字で始める）と引数 | `function Greeting({ name })` |\n| `Text(text = \"...\")` | 文字を表示する部品 | `<p>...</p>` |\n\n**戻り値が無い** のが特徴です。`Text(...)` を呼ぶと、その場に文字が置かれます。\n\n## 並べる：Column と Row\n\n```kotlin\n@Composable\nfun ProductCard(product: Product, onAdd: () -> Unit) {\n    Row(\n        modifier = Modifier.fillMaxWidth().padding(16.dp),\n        horizontalArrangement = Arrangement.SpaceBetween,\n        verticalAlignment = Alignment.CenterVertically,\n    ) {\n        Column {\n            Text(product.name, style = MaterialTheme.typography.titleMedium)\n            Text(\"${product.price} 円\", color = Color.Gray)\n        }\n        Button(onClick = onAdd) {\n            Text(\"カートに入れる\")\n        }\n    }\n}\n```\n\n| Compose | 意味 | HTML/CSS コースでは |\n|---|---|---|\n| `Column { ... }` | 中身を **縦に** 並べる | `display: flex; flex-direction: column` |\n| `Row { ... }` | 中身を **横に** 並べる | `display: flex` |\n| `Arrangement.SpaceBetween` | 主軸の並び方（両端に寄せる） | `justify-content: space-between` |\n| `Alignment.CenterVertically` | 交差軸のそろえ（縦の中央） | `align-items: center` |\n| `Modifier.fillMaxWidth().padding(16.dp)` | 幅いっぱい、周りに 16dp の余白 | `width: 100%; padding: 16px` |\n| `Button(onClick = onAdd) { Text(...) }` | ボタン。押されたら onAdd を呼ぶ | `<button onClick={onAdd}>` |\n| `onAdd: () -> Unit` | 「引数無しで何も返さない関数」を受け取る（レッスン 4。`Unit` は void） | `onAdd: () => void` |\n\n`Column { ... }` の `{ }` は、レッスン 4 の **「最後のラムダはかっこの外に」** です。中に書いた部品が、縦に並びます。HTML/CSS コースのレッスン 5 で学んだ Flexbox の考え方が、そのまま当てはまります。\n\n`dp` は、画面の細かさが違うスマホでも **同じくらいの大きさに見える単位** です（CSS の rem に近い役割）。\n\n## 状態：remember と mutableStateOf\n\n```kotlin\n@Composable\nfun Counter() {\n    var count by remember { mutableStateOf(0) }\n\n    Column {\n        Text(\"$count 回押されました\")\n        Button(onClick = { count++ }) {\n            Text(\"押す\")\n        }\n    }\n}\n```\n\n| 部分 | 意味 | React で言うと |\n|---|---|---|\n| `mutableStateOf(0)` | **変わると画面が描き直される** 値（状態）。最初は 0 | `useState(0)` |\n| `remember { ... }` | 描き直されても、値を **覚えておく** | （useState が自動でやる） |\n| `var count by ...` | count を普通の変数のように読み書きできるようにする | `const [count, setCount] = ...` |\n| `count++` | 状態を変える → **Counter が自動で描き直される** | `setCount(count + 1)` |\n\nCompose では、状態が変わると、それを使っている `@Composable` 関数が **もう一度呼ばれて**、画面が作り直されます（**再コンポーズ**）。\n\n⚠️ `remember` を付けずに `var count by mutableStateOf(0)` と書くと、**描き直すたびに 0 に戻ってしまい**、ボタンを押しても数が増えません。ふつうの `var count = 0` だと、そもそも変わっても描き直されません。AI のコードで「押しても画面が変わらない」ときは、まずここを見ます。\n\n## ViewModel と StateFlow：画面の外に状態を置く\n\n大きなアプリでは、データの取得や保存は画面の部品の外（**ViewModel**）に置きます。\n\n```kotlin\nclass ProductViewModel(private val repo: ProductRepository) : ViewModel() {\n    private val _uiState = MutableStateFlow<UiState>(UiState.Loading)\n    val uiState: StateFlow<UiState> = _uiState.asStateFlow()\n\n    init { load() }\n\n    fun load() {\n        viewModelScope.launch {\n            _uiState.value = UiState.Loading\n            _uiState.value = try {\n                UiState.Success(repo.fetchProducts())\n            } catch (e: IOException) {\n                UiState.Error(\"読み込めませんでした\")\n            }\n        }\n    }\n}\n\n@Composable\nfun ProductScreen(viewModel: ProductViewModel) {\n    val state by viewModel.uiState.collectAsStateWithLifecycle()\n\n    when (val s = state) {\n        is UiState.Loading -> CircularProgressIndicator()\n        is UiState.Success -> LazyColumn {\n            items(s.items) { item -> ProductCard(item, onAdd = { }) }\n        }\n        is UiState.Error -> Text(s.message)\n    }\n}\n```\n\n| 部分 | 意味 |\n|---|---|\n| `class ... : ViewModel()` | 画面の状態とロジックを持つ部品。画面を回転させても消えない |\n| `MutableStateFlow` / `StateFlow` | **変わる値を、見ている人に知らせる** 入れ物。`_uiState` は中で変える用、`uiState` は外に見せる読むだけの用 |\n| `UiState.Loading / Success / Error` | レッスン 3 の **sealed interface** |\n| `viewModelScope.launch { ... }` | **コルーチン**（下）を起動する |\n| `repo.fetchProducts()` | ネットワークから取得（`suspend` 関数。下） |\n| `collectAsStateWithLifecycle()` | StateFlow の変化を、Compose の状態として受け取る |\n| `when (val s = state)` | 状態ごとに画面を出し分け。sealed なので書き忘れはコンパイルエラー |\n| `LazyColumn { items(...) { ... } }` | 見えている分だけ作る、長いリスト（React の仮想スクロールに近い） |\n\n**「状態（データ）が決まれば、画面が決まる」**。読み込み中・成功・失敗の 3 つを sealed で表し、`when` で全部書く、という形は、AI の Android のコードでいちばんよく見る形です。\n\n## コルーチン：Kotlin の非同期\n\n```kotlin\ninterface ProductRepository {\n    suspend fun fetchProducts(): List<Product>\n}\n```\n\n| 書き方 | 意味 | 他の言語では |\n|---|---|---|\n| `suspend fun` | 途中で **待てる**（中断できる）関数 | Python・C#・JavaScript の `async` |\n| `suspend` 関数を呼ぶ | 終わるまで待つ（`await` を書かない） | `await` |\n| `scope.launch { ... }` | コルーチンを起動する（終わりを待たずに次へ） | Go の `go`、C# の `Task.Run` |\n| `async { ... }.await()` | 結果を後で受け取る起動 | `Task` / Promise |\n| `Dispatchers.IO` | ファイル・ネットワーク用のスレッドで動かす | |\n\nKotlin の **コルーチン** は、C# の async/await（C# コースのレッスン 4）や Python の asyncio と同じ考え方ですが、**`suspend` 関数を呼ぶときに `await` を書かない** のが特徴です。`viewModelScope` は、画面が閉じられたら中のコルーチンを **自動で取り消して** くれます（C# の CancellationToken の役目）。\n\n⚠️ Android では、**画面の担当のスレッドでネットワークや重い処理をすると、アプリが固まります**（数秒続くと「アプリが応答しません」のダイアログ）。だから、通信は必ずコルーチンで、`Dispatchers.IO` などで行います。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `var x by mutableStateOf(...)` に `remember` が無い | ⚠️ 描き直すたびに初期値に戻る |\n| `@Composable` 関数の中で、直接ネットワークを呼んでいる | ⚠️ 描き直しのたびに呼ばれる。ViewModel か `LaunchedEffect` に |\n| `GlobalScope.launch` | ⚠️ 画面が閉じても止まらない。`viewModelScope` / `lifecycleScope` に |\n| `runBlocking { }` を画面の処理で | ⚠️ 終わるまで画面が固まる |\n| `when (state) { ... else -> {} }` | sealed なら else は不要。新しい状態の書き忘れに気づけなくなる |\n| `Modifier.clickable { }` | 何にでもクリックを付けられる。押せることが分かる見た目か、読み上げに対応しているか |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Compose の `Column { Text(\"A\"); Text(\"B\") }` はどう表示される？",
+        "choices": [
+         "A と B が縦に並ぶ",
+         "A と B が横に並ぶ",
+         "B だけが表示される"
+        ],
+        "answer": 0,
+        "explain": "Column は縦、Row は横に並べます。CSS の Flexbox の flex-direction: column と row に当たります。"
+       },
+       {
+        "question": "`var count by remember { mutableStateOf(0) }` の `remember` が無いと、何が起きる？",
+        "choices": [
+         "何も変わらない",
+         "描き直されるたびに 0 に戻り、ボタンを押しても数が増えないように見える",
+         "コンパイルエラーになる"
+        ],
+        "answer": 1,
+        "explain": "状態が変わると関数がもう一度呼ばれます。remember が無いと、そのたびに mutableStateOf(0) が新しく作られます。"
+       },
+       {
+        "question": "ViewModel で `viewModelScope.launch { ... }` を使う理由として正しいのは？",
+        "choices": [
+         "画面を速く描くため",
+         "ネットワークなどの待ち時間のある処理を、画面を固めずに行い、画面が閉じたら自動で取り消すため",
+         "処理を必ず 1 回だけにするため"
+        ],
+        "answer": 1,
+        "explain": "viewModelScope は ViewModel と一緒に終わるコルーチンの範囲です。画面のスレッドを止めずに非同期の処理ができます。"
+       }
+      ]
+     ],
+     "id": "05-jetpack-compose"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "Swift",

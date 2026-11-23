@@ -3,13 +3,10 @@
  "icon": "🟣",
  "order": 95,
  "category": "language",
- "status": "planned",
- "description": "Android アプリ開発の標準言語。Java を簡潔にしたような書き方。",
- "outline": [
-  "val と var",
-  "null 安全",
-  "data class",
-  "ラムダとコレクション操作",
-  "Jetpack Compose を読む"
- ]
+ "description": "Android のアプリの標準の言語。Java と同じ JVM の上で動き、もっと短く安全に書ける。val と var、null 安全（? と ?: と !!）、data class と sealed class、ラムダとコレクション操作、最後に Jetpack Compose の画面のコードを読む。Kotlin 2.1 で実行して確かめたもの。",
+ "levels": {
+  "1": "入門：val と null 安全",
+  "2": "基礎：クラスとコレクション",
+  "3": "実践：Android の画面を読む"
+ }
 }
