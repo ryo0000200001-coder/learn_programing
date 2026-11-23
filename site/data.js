@@ -5790,20 +5790,256 @@ window.SITE_DATA = {
   },
   {
    "title": "C#",
-   "icon": "🟪",
+   "icon": "🎯",
    "order": 94,
    "category": "language",
-   "status": "planned",
-   "description": "Unity のゲーム開発や Windows アプリで使われる言語。",
-   "outline": [
-    "クラスと名前空間",
-    "プロパティ",
-    "LINQ",
-    "async/await",
-    "Unity のスクリプトを読む"
-   ],
+   "description": "Microsoft の言語。Windows のアプリ、Web（ASP.NET Core）、ゲーム（Unity）で使われる。クラスと名前空間、プロパティと record、null 許容の型、LINQ、async/await、最後に Unity のスクリプトを読む。.NET 8 で実行して確かめたもの。",
+   "levels": {
+    "1": "入門：形と型",
+    "2": "基礎：LINQ と非同期",
+    "3": "実践：Unity を読む"
+   },
    "id": "94-csharp",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "クラスと名前空間 ― C# のプログラムの形",
+     "level": 1,
+     "minutes": 15,
+     "concepts": [
+      "basics",
+      "classes",
+      "modules",
+      "tooling"
+     ],
+     "summary": "namespace・using・class・static void Main、$\"...\" の文字列、dotnet new と dotnet run、.csproj。Java とそっくりだが違うところ（文字列の == は中身で比べる、decimal 型、メソッド名は大文字）。",
+     "body": "## このレッスンのゴール\n\n- `namespace`・`using`・`class`・`Main` の役割を説明できる\n- `dotnet new console` と `dotnet run` で動かす流れが分かる\n- Java との違い（`==` の意味、`decimal`、名前の付け方）が分かる\n\n## C# とは\n\n**C#**（シーシャープ）は Microsoft が作った言語で、Windows のアプリ、Web のサーバー（**ASP.NET Core**）、そして **Unity**（スマホや PC のゲームを作る道具。レッスン 5）で使われます。**.NET**（ドットネット）という実行の仕組みの上で動き、今は Windows・Mac・Linux のどれでも動きます。\n\n見た目は **Java にとてもよく似ています**（Java コースを読んでいれば、すぐ読めます）。そのうえで、プロパティ・LINQ・async/await など、後から多くの言語が真似した便利な機能を早くから取り入れてきました。\n\n## 最初のプログラム\n\n```csharp\nusing Shop.Models;\n\nnamespace Shop\n{\n    public static class Program\n    {\n        static string Greet(string name) => $\"こんにちは、{name} さん\";\n\n        public static void Main(string[] args)\n        {\n            Console.WriteLine(Greet(\"Ryo\"));\n            int price = 120;\n            var count = 3;\n            Console.WriteLine($\"合計 {price * count} 円\");\n            Console.WriteLine($\"{7 / 2} {7 / 2.0} {7 % 2}\");\n        }\n    }\n}\n```\n\n```text\nこんにちは、Ryo さん\n合計 360 円\n3 3.5 1\n```\n\n（このコースの出力とエラーは、すべて .NET 8 で実際にビルド・実行したものです）\n\n| C# | 意味 | Java で言うと | Python で言うと |\n|---|---|---|---|\n| `using Shop.Models;` | 別の名前空間のクラスを使う | `import ...` | `from shop.models import ...` |\n| `namespace Shop { ... }` | このクラスの住所 | `package shop;` | パッケージ |\n| `public static void Main(string[] args)` | 入口 | `public static void main(String[] args)` | `if __name__ == ...` |\n| `Console.WriteLine(x)` | 表示 | `System.out.println(x)` | `print(x)` |\n| `$\"合計 {x} 円\"` | 埋め込み（**`$` を付ける**） | `\"合計 \" + x + \" 円\"` | `f\"合計 {x} 円\"` |\n| `=> 式` | 1 行で書くメソッド（式形式） | | `lambda` / `return 式` |\n| `var count = 3` | 型を推論 | `var` | — |\n\n### 名前の付け方が違う\n\nC# では、**メソッドもプロパティも大文字で始めます**（`Greet`・`WriteLine`・`Length`）。Java の `greet`・`println`・`length()` と見比べると、すぐ C# と分かります。\n\n### 短い書き方：トップレベルステートメント\n\n```csharp\nConsole.WriteLine(\"Hello, World!\");\n```\n\n`dotnet new console` で作った最初のファイルは、この 1 行だけです。C# 9 から、**namespace も class も Main も省略できる** ようになりました（コンパイラが裏で Main を作る）。小さなプログラムや例は、この形でよく書かれます。\n\n## 動かす\n\n```bash\ndotnet new console -n Shop -o shop    # プロジェクトを作る\ncd shop\ndotnet run                            # ビルドして実行\ndotnet build                          # ビルドだけ\ndotnet add package Newtonsoft.Json    # ライブラリ（NuGet パッケージ）を追加\ndotnet test                           # テスト\n```\n\n```xml\n<!-- Shop.csproj -->\n<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <OutputType>Exe</OutputType>\n    <TargetFramework>net8.0</TargetFramework>\n    <ImplicitUsings>enable</ImplicitUsings>\n    <Nullable>enable</Nullable>\n  </PropertyGroup>\n</Project>\n```\n\n`.csproj` がプロジェクトの設定（Python の `pyproject.toml`、Java の `pom.xml`）です。`Nullable` が `enable` なのは、レッスン 2 の **null の確認を強くする** 設定です。`ImplicitUsings` は、よく使う `using System;` などを書かなくてよくする設定です。\n\n## Java と違うところ\n\n### 文字列の == は中身で比べる\n\n```csharp\nstring a = \"りんご\", b = new string(\"りんご\".ToCharArray());\nConsole.WriteLine($\"{a == b} {a.Length}\");     // True 3\n```\n\n**別々に作った文字列でも、`==` で True になりました**。Java では `==` は場所を比べるので false でしたね（Java コースのレッスン 2）。C# の string は、`==` で **中身を比べる** ように作られています。\n\n`Length` が 3 なのは、C# の文字列が **文字の数**（正確には UTF-16 という形式の単位）で数えるからです（C や PHP の `strlen` の 9 とは違う）。\n\n### お金には decimal\n\n```csharp\ndecimal yen = 0.1m + 0.2m;\nConsole.WriteLine($\"double: {0.1 + 0.2}  decimal: {yen}\");\n// double: 0.30000000000000004  decimal: 0.3\n```\n\nコンピュータの基礎コースの「0.1 + 0.2 問題」です。C# には、10 進数で正確に計算する **`decimal`** 型が最初から入っています（数の後ろに `m` を付ける）。Python の `Decimal` に当たり、**お金の計算は decimal** が C# の定番です。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方 |\n|---|---|\n| `namespace MyApp.Services;`（`;` で終わる） | ファイル全体がこの名前空間（C# 10 からの短い書き方） |\n| `Program.cs` に `var builder = WebApplication.CreateBuilder(args);` | ASP.NET Core の Web アプリの入口 |\n| `public class Foo : MonoBehaviour` | Unity のスクリプト（レッスン 5） |\n| `*.sln` | 複数のプロジェクトをまとめるファイル（Visual Studio が使う） |\n| `bin/` と `obj/` | ビルドでできるファイル。Git には入れない |\n| `NuGet` / `PackageReference` | C# のライブラリの仕組み（pip・npm に当たる） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "C# の `$\"合計 {total} 円\"` は Python で言うと？",
+        "choices": [
+         "`f\"合計 {total} 円\"`",
+         "`\"合計 {total} 円\"`",
+         "`\"合計 \" + total + \" 円\"`（エラーになる）"
+        ],
+        "answer": 0,
+        "explain": "`$` を付けた文字列の中で、`{}` に変数や式を埋め込めます。"
+       },
+       {
+        "question": "C# で `string a = ...; string b = ...;`（中身は同じ、別々に作った）の `a == b` は？",
+        "choices": [
+         "True（C# の string の == は中身で比べる）",
+         "False（場所を比べる）",
+         "コンパイルエラー"
+        ],
+        "answer": 0,
+        "explain": "Java と違い、C# の string は == で中身を比べます。実際に別々に作った文字列で True になりました。"
+       },
+       {
+        "question": "C# でお金を計算するのに向いている型は？",
+        "choices": [
+         "double",
+         "float",
+         "decimal"
+        ],
+        "answer": 2,
+        "explain": "double では 0.1 + 0.2 が 0.30000000000000004 になりましたが、decimal では 0.3 になりました。"
+       }
+      ]
+     ],
+     "id": "01-classes-namespaces"
+    },
+    {
+     "title": "プロパティ・record・null 許容",
+     "level": 1,
+     "minutes": 18,
+     "concepts": [
+      "classes",
+      "types",
+      "errors"
+     ],
+     "summary": "{ get; set; } のプロパティ、読むだけのプロパティと => の計算プロパティ、オブジェクト初期化子、record と with、string? の null 許容の型と警告、?. と ?? と !、例外。",
+     "body": "## このレッスンのゴール\n\n- `public int Stock { get; set; }` のプロパティと、`=>` の計算プロパティを読める\n- `record` と `with` の意味が分かる\n- `string?`・`?.`・`??`・`!` と、null の警告（CS8602 など）が読める\n\n## クラスとプロパティ\n\n```csharp\npublic class Product\n{\n    private int _basePrice;\n\n    public Product(string name, int basePrice)\n    {\n        Name = name;\n        _basePrice = basePrice;\n    }\n\n    public string Name { get; }                      // 読むだけ\n    public int Stock { get; set; }                   // 読み書きできる\n    public int Price => _basePrice * 110 / 100;      // 計算して返す\n\n    public void Discount(int yen)\n    {\n        if (yen > _basePrice) throw new ArgumentException($\"値引きが大きすぎます: {yen}\", nameof(yen));\n        _basePrice -= yen;\n    }\n\n    public override string ToString() => $\"{Name}（{Price} 円）\";\n}\n```\n\n```csharp\nvar apple = new Product(\"りんご\", 120) { Stock = 5 };\nConsole.WriteLine($\"{apple.Name} {apple.Price} {apple.Stock}\");   // りんご 132 5\napple.Stock += 1;\napple.Discount(20);\nConsole.WriteLine(apple);                                         // りんご（110 円）\n```\n\n| 書き方 | 意味 | Python で言うと |\n|---|---|---|\n| `private int _basePrice;` | **フィールド**（中だけのデータ。`_` で始める習慣） | `self._base_price` |\n| `public string Name { get; }` | **読むだけのプロパティ**（コンストラクタでだけ入れられる） | `@property` |\n| `public int Stock { get; set; }` | **読み書きできるプロパティ** | 普通の属性 |\n| `public int Price => ...;` | **計算プロパティ**：読むたびに計算 | `@property def price(self): return ...` |\n| `new Product(...) { Stock = 5 }` | **オブジェクト初期化子**：作ると同時にプロパティを入れる | |\n| `public override string ToString()` | 表示の仕方 | `__str__` |\n\nJava では、private のフィールドと `getName()`・`setName()` を書いていました（Java コースのレッスン 3）。C# の **プロパティ** は、それを `{ get; set; }` だけで書けるようにしたものです。使う側は `apple.Stock += 1` と、**普通の変数のように** 読み書きできます（中では get と set のメソッドが呼ばれている）。\n\n### 読むだけのプロパティに書くと\n\n```csharp\nvar p = new P(\"x\");\np.Name = \"y\";\n```\n\n```text\nProgram.cs(5,1): error CS0200: Property or indexer 'P.Name' cannot be assigned to -- it is read only\n```\n\n`{ get; }` だけのプロパティは、**コンパイルエラー** で書き換えを防ぎます。C# のエラーは `CS0200` のように番号が付いていて、番号で検索するとくわしい説明が見つかります。\n\n## record：データを入れる型\n\n```csharp\npublic record Item(string Name, int Price);\n\nvar milk = new Item(\"牛乳\", 200);\nvar milk2 = milk with { Price = 180 };\nConsole.WriteLine($\"{milk} {milk2} {milk == new Item(\"牛乳\", 200)}\");\n// Item { Name = 牛乳, Price = 200 } Item { Name = 牛乳, Price = 180 } True\n```\n\n| 機能 | |\n|---|---|\n| `record Item(string Name, int Price)` | 1 行で、コンストラクタ・プロパティ・表示・比較を自動で作る（Java の record と同じ） |\n| `==` | **中身で比べる**（別々に作っても True） |\n| `milk with { Price = 180 }` | 一部だけ変えた **コピー** を作る（元の milk は変わらない） |\n\nPython の `dataclasses.replace(milk, price=180)` が `with` に当たります。API で受け渡すデータ（DTO）によく使われます。\n\n## null 許容の型\n\n```csharp\nstring? maybe = null;\nConsole.WriteLine($\"[{maybe?.Length}] [{maybe ?? \"なし\"}] [{maybe?.Length ?? 0}]\");\n// [] [なし] [0]\n```\n\n| 書き方 | 意味 | 他の言語では |\n|---|---|---|\n| `string?` | null **かもしれない** string | Python の `str \\| None`、Kotlin の `String?` |\n| `string` | null **ではない** string（`Nullable` が enable のとき） | |\n| `x?.Length` | x が null なら null、そうでなければ Length | JavaScript・PHP・Ruby の `?.` / `&.` |\n| `x ?? \"なし\"` | x が null なら右 | JavaScript・PHP の `??` |\n| `x!` | 「**null ではないと保証します**」とコンパイラに伝える | Kotlin の `!!`、Rust の `unwrap` に近い |\n\n### コンパイラが null を警告する\n\n```csharp\nstring? FindName(int id) => id == 1 ? \"Ryo\" : null;\nstring name = FindName(2);\nConsole.WriteLine(name.Length);\n```\n\n```text\nProgram.cs(2,15): warning CS8600: Converting null literal or possible null value to non-nullable type.\nProgram.cs(3,19): warning CS8602: Dereference of a possibly null reference.\n```\n\n| 警告 | 意味 |\n|---|---|\n| CS8600 | null かもしれない値を、null ではない型（`string`）に入れている |\n| CS8602 | null かもしれないものの中身を使っている（`.Length`） |\n\n`.csproj` の `<Nullable>enable</Nullable>` があると、コンパイラが **null で落ちそうな場所を警告** してくれます。Rust の Option や Kotlin の `?` ほど厳しくはなく、**警告なので実行はできてしまいます**（C 言語コースの「警告を無視しない」と同じ注意が必要）。\n\n### ! で黙らせると\n\n```csharp\ntry { Console.WriteLine(maybe!.Length); }\ncatch (NullReferenceException e) { Console.WriteLine($\"{e.GetType().Name}: {e.Message}\"); }\n// NullReferenceException: Object reference not set to an instance of an object.\n```\n\n`maybe!` と書くと警告は消えますが、**本当に null なら NullReferenceException** で止まります（Java の NullPointerException）。AI のコードで `!` がたくさんあったら、「警告を消すためだけに付けていないか」を確かめます。\n\n## 例外\n\n```csharp\ntry { apple.Discount(9999); }\ncatch (ArgumentException e) { Console.WriteLine($\"ArgumentException: {e.Message}\"); }\nfinally { Console.WriteLine(\"finally\"); }\n// ArgumentException: 値引きが大きすぎます: 9999 (Parameter 'yen')\n// finally\n```\n\nJava とほぼ同じ `try / catch / finally` です。⚠️ ただし、C# には Java の **検査例外が無い** ので、`throws` を書く必要はありません（Python と同じ）。`nameof(yen)` は、変数名を文字列にする書き方で、メッセージに `(Parameter 'yen')` と出ています。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `public string Name { get; set; } = \"\";` | 初期値付きのプロパティ |\n| `public required string Email { get; init; }` | 作るときに必ず入れる（required）、作った後は変えられない（init） |\n| `public record UserDto(string Name, string Email);` | API で受け渡すデータの形 |\n| `user!.Name` / `= null!;` | ⚠️ null の警告を黙らせている。本当に null にならない？ |\n| `if (user is null) return NotFound();` | ✅ null の確認（`is null` は C# でよく使う書き方） |\n| `catch (Exception) { }` | ⚠️ 例外を握りつぶしている |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "C# の `public int Stock { get; set; }` は何？",
+        "choices": [
+         "読み書きできるプロパティ（使う側は普通の変数のように扱える）",
+         "読むだけのフィールド",
+         "Stock というメソッド"
+        ],
+        "answer": 0,
+        "explain": "プロパティは、Java の getter と setter を短く書いたものです。`apple.Stock += 1` のように使えます。"
+       },
+       {
+        "question": "`var b = a with { Price = 180 };`（a は record）の結果は？",
+        "choices": [
+         "a の Price が 180 に変わる",
+         "Price だけ 180 にした a のコピーが b に入り、a は変わらない",
+         "エラーになる"
+        ],
+        "answer": 1,
+        "explain": "with は一部を変えたコピーを作ります。元の record は変わりません。"
+       },
+       {
+        "question": "`string name = FindName(2);` に CS8600 の警告が出た。意味は？",
+        "choices": [
+         "FindName が存在しない",
+         "null かもしれない値を、null ではない型 string に入れようとしている",
+         "文字列が長すぎる"
+        ],
+        "answer": 1,
+        "explain": "FindName は `string?`（null かもしれない）を返します。`string? name = ...` にして null の場合を扱うのが正しい直し方です。"
+       }
+      ]
+     ],
+     "id": "02-properties-null"
+    },
+    {
+     "title": "LINQ ― データの問い合わせを C# の中で",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "collections",
+      "higher_order",
+      "database"
+     ],
+     "summary": "Where・Select・OrderBy・GroupBy・First・Any をつなげる LINQ。SQL によく似た from ... where ... select の書き方、FirstOrDefault と ?.、そして「数えるまで何もしない」遅延実行を実際に確かめる。Dictionary の TryGetValue。",
+     "body": "## このレッスンのゴール\n\n- `.Where(...).Select(...).ToList()` の LINQ を、左から順に説明できる\n- `GroupBy`・`OrderBy`・`ThenBy`・`First`・`Any` を読める\n- LINQ の遅延実行（`ToList()` や `Count()` まで動かない）が分かる\n\n## LINQ とは\n\n**LINQ**（リンク。Language Integrated Query）は、**リストなどのデータに、SQL のような問い合わせを C# の中で書ける** 仕組みです。2007 年に C# に入り、Java の Stream・Kotlin のコレクション操作などに大きな影響を与えました。\n\nSQL コースと同じ 6 つの商品で試します。\n\n```csharp\nvar products = new List<Product>\n{\n    new(\"りんご\", \"果物\", 120), new(\"バナナ\", \"果物\", 90),\n    new(\"牛乳\", \"飲み物\", 200), new(\"コーヒー豆\", \"飲み物\", 1200),\n    new(\"食パン\", \"パン\", 250), new(\"クロワッサン\", \"パン\", 180),\n};\n\nrecord Product(string Name, string Category, int Price);\n```\n\n## 絞って、変換して、集める\n\n```csharp\nvar cheap = products.Where(p => p.Price < 200).Select(p => p.Name).ToList();\nConsole.WriteLine(string.Join(\", \", cheap));   // りんご, バナナ, クロワッサン\nConsole.WriteLine(products.Sum(p => p.Price)); // 2040\n```\n\n| LINQ | 意味 | SQL | Python |\n|---|---|---|---|\n| `Where(p => 条件)` | 絞り込む | `WHERE` | `if 条件` |\n| `Select(p => 式)` | 変換する | `SELECT 式` | `式 for p in ...` |\n| `ToList()` | List に集める | （結果を取る） | `[...]` |\n| `Sum(p => p.Price)` | 合計 | `SUM(price)` | `sum(...)` |\n| `p => p.Price < 200` | ラムダ式 | | `lambda p: p.price < 200` |\n\nLINQ の名前は、**SQL と同じ言葉** が多いのが特徴です（Java は `filter`・`map`、LINQ は `Where`・`Select`）。\n\n## グループ・並べ替え・1 件\n\n```csharp\nforeach (var g in products.GroupBy(p => p.Category).OrderBy(g => g.Key))\n    Console.WriteLine($\"{g.Key}: {g.Count()} 個 平均 {g.Average(p => p.Price)}\");\n// パン: 2 個 平均 215\n// 果物: 2 個 平均 105\n// 飲み物: 2 個 平均 700\n```\n\nSQL コースのレッスン 3 の `GROUP BY category` と、同じ数になっています。`g.Key` がグループの値（カテゴリ）、`g` 自体がそのグループの商品の集まりです。\n\n```csharp\nvar top = products.OrderByDescending(p => p.Price).First();\nConsole.WriteLine(top.Name);     // コーヒー豆\n\nvar sorted = products.OrderBy(p => p.Category).ThenByDescending(p => p.Price).Select(p => p.Name);\n// 食パン クロワッサン りんご バナナ コーヒー豆 牛乳\n```\n\n| LINQ | SQL |\n|---|---|\n| `OrderBy(p => p.Category)` | `ORDER BY category` |\n| `.ThenByDescending(p => p.Price)` | `, price DESC` |\n| `First()` | `LIMIT 1`（無ければ例外） |\n| `FirstOrDefault(...)` | `LIMIT 1`（無ければ null） |\n| `Take(3)` / `Skip(3)` | `LIMIT 3` / `OFFSET 3` |\n| `Any(...)` / `All(...)` | `EXISTS` / すべて |\n| `Count()` | `COUNT(*)` |\n\n```csharp\nConsole.WriteLine(products.FirstOrDefault(p => p.Price > 5000)?.Name ?? \"なし\");   // なし\nConsole.WriteLine(products.Any(p => p.Category == \"肉\") + \" \" + products.All(p => p.Price > 0));   // False True\n```\n\n`FirstOrDefault` は、見つからなければ **null** を返すので、レッスン 2 の `?.` と `??` を組み合わせて使います。\n\n## SQL のような書き方（クエリ構文）\n\n```csharp\nvar q = from p in products\n        where p.Category == \"パン\"\n        orderby p.Price\n        select new { p.Name, WithTax = p.Price * 110 / 100 };\n\nforeach (var x in q) Console.WriteLine($\"{x.Name} {x.WithTax}\");\n// クロワッサン 198\n// 食パン 275\n```\n\n`from ... where ... orderby ... select` と、**SQL に近い順番** で書く書き方もあります。中身は上の `Where(...).OrderBy(...).Select(...)` と同じです。`new { p.Name, WithTax = ... }` は、名前の無い型（匿名型）を その場で作っています。\n\n## 遅延実行：数えるまで何もしない\n\n```csharp\nvar lazy = products.Where(p => { Console.Write($\"[{p.Name}を確認]\"); return p.Price > 1000; });\nConsole.WriteLine(\"まだ何も確認していない\");\nConsole.WriteLine(lazy.Count());\n```\n\n```text\nまだ何も確認していない\n[りんごを確認][バナナを確認][牛乳を確認][コーヒー豆を確認][食パンを確認][クロワッサンを確認]1\n```\n\n`Where(...)` を書いた時点では、**まだ 1 つも確認していません**。`Count()` を呼んで、初めて実行されました。これを **遅延実行** と呼びます（Rust のイテレータ、Java の Stream、Python のジェネレーター式も同じ）。\n\n⚠️ そのため、**同じ `lazy` を 2 回使うと、2 回とも最初から実行されます**。データベースへの問い合わせ（下の EF Core）だと、2 回 SQL が走ります。何度も使うなら `ToList()` で一度だけ集めておきます。\n\n## Dictionary\n\n```csharp\nvar stock = new Dictionary<string, int> { [\"りんご\"] = 10 };\nstock[\"バナナ\"] = 3;\nConsole.WriteLine(stock.TryGetValue(\"ぶどう\", out var n) ? n : -1);   // -1\nstock[\"ぶどう\"];   // KeyNotFoundException\n```\n\n| 書き方 | 無いキーのとき | Python |\n|---|---|---|\n| `d[\"k\"]` | **KeyNotFoundException** | `d[\"k\"]`（KeyError） |\n| `d.TryGetValue(\"k\", out var v)` | false を返す（v は 0） | `d.get(\"k\")` |\n| `d.GetValueOrDefault(\"k\", 0)` | 0 | `d.get(\"k\", 0)` |\n| `d.ContainsKey(\"k\")` | false | `\"k\" in d` |\n\n`out var n` は、「**結果を n に書いて返して**」という書き方です（C 言語コースの「番地を渡して結果を書いてもらう」と同じ考え方）。\n\n## データベースでも LINQ\n\nC# の ORM の **Entity Framework Core**（EF Core）では、**同じ LINQ が SQL に変換されます**。\n\n```csharp\nvar tasks = await db.Tasks\n    .Where(t => t.UserId == userId && !t.Done)\n    .OrderByDescending(t => t.CreatedAt)\n    .Take(20)\n    .ToListAsync();\n// → SELECT ... FROM Tasks WHERE UserId = @p0 AND Done = 0 ORDER BY CreatedAt DESC LIMIT 20\n```\n\n値は `@p0` のようなパラメータで渡されるので、SQL インジェクションの心配はありません。⚠️ `.Include(t => t.User)` を忘れてループの中で `t.User.Name` を使うと、N+1（データベース設計のコースのレッスン 6）になります。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `.Where(...).Select(...).ToList()` | 絞って変換して List に |\n| `.First()` | ⚠️ 無ければ例外。無いことがあるなら `FirstOrDefault` |\n| `.Count() > 0` | `.Any()` のほうが速い（1 つ見つかれば終わる） |\n| 同じ LINQ の変数を何度も `foreach` | 毎回実行される。`ToList()` しておく |\n| `.Include(x => x.Items)` | EF Core で関係するデータもまとめて読む（N+1 を防ぐ） |\n| `FromSqlRaw($\"... {input} ...\")` | ⚠️ SQL インジェクション。`FromSqlInterpolated` かパラメータに |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`products.Where(p => p.Price < 200).Select(p => p.Name).ToList()` に当たる SQL は？",
+        "choices": [
+         "`SELECT name FROM products WHERE price < 200`",
+         "`SELECT * FROM products ORDER BY price`",
+         "`SELECT COUNT(*) FROM products WHERE price < 200`"
+        ],
+        "answer": 0,
+        "explain": "Where が WHERE、Select が SELECT の列に当たります。LINQ は SQL と同じ言葉を多く使います。"
+       },
+       {
+        "question": "`var q = products.Where(p => ...);` と書いた時点で、条件の確認は行われている？",
+        "choices": [
+         "はい、すべての商品で確認済み",
+         "いいえ、Count() や ToList() などで結果が必要になったときに初めて実行される",
+         "最初の 1 つだけ確認されている"
+        ],
+        "answer": 1,
+        "explain": "LINQ は遅延実行です。実際に、Count() を呼ぶまで 1 つも確認されませんでした。"
+       },
+       {
+        "question": "見つからないかもしれないときに使うのは？",
+        "choices": [
+         "`First()`",
+         "`FirstOrDefault()`",
+         "`Single()`"
+        ],
+        "answer": 1,
+        "explain": "First は見つからないと例外です。FirstOrDefault は null を返すので、`?.` や `??` と組み合わせます。"
+       }
+      ]
+     ],
+     "id": "03-linq"
+    },
+    {
+     "title": "async/await ― 待ち時間を有効に使う",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "async",
+      "performance",
+      "errors"
+     ],
+     "summary": "async Task と await、順番に await すると遅く Task.WhenAll で同時にすると速いことを測って確かめる。await を書かずに呼ぶとすぐ次の行に進む、例外は await で受け止める、CancellationToken での取り消し、Task.Run と共有の変数のデータ競合。",
+     "body": "## このレッスンのゴール\n\n- `async Task<T>` と `await` の意味を説明できる\n- 順番の `await` と `Task.WhenAll` の違いを、時間で説明できる\n- 取り消し（`CancellationToken`）と、`.Result` やデータ競合の危険が分かる\n\n## async と await\n\n```csharp\nstatic async Task<string> FetchAsync(int id)\n{\n    await Task.Delay(500);         // 0.5 秒かかる通信の代わり\n    return $\"結果{id}\";\n}\n```\n\n| 部分 | 意味 | Python で言うと |\n|---|---|---|\n| `async` | 中で await を使うメソッド | `async def` |\n| `Task<string>` | 「**後で string が手に入る**」約束（Promise） | コルーチン |\n| `Task` | 「後で終わる」約束（値は無し） | |\n| `await x` | x が終わるまで待つ（その間、他の仕事ができる） | `await x` |\n| `Async` で終わる名前 | 非同期のメソッドの習慣 | |\n\nC# は **async/await を最初に広めた言語** で、JavaScript（JavaScript コースのレッスン 7）・Python（Python コースのレッスン 13）・Rust などが同じ書き方を取り入れました。だから、どの言語でもほぼ同じに読めます。\n\n## 順番に待つと遅い、同時に待つと速い\n\n```csharp\nvar sw = Stopwatch.StartNew();\nfor (int i = 1; i <= 3; i++) await FetchAsync(i);\nConsole.WriteLine($\"順番に await: {sw.Elapsed.TotalSeconds:F1} 秒\");\n// 順番に await: 1.5 秒\n\nsw.Restart();\nvar tasks = Enumerable.Range(1, 3).Select(FetchAsync).ToList();\nstring[] results = await Task.WhenAll(tasks);\nConsole.WriteLine($\"WhenAll: {sw.Elapsed.TotalSeconds:F1} 秒 → {string.Join(\", \", results)}\");\n// WhenAll: 0.5 秒 → 結果1, 結果2, 結果3\n```\n\n（実際に測った時間です）\n\n| 書き方 | 動き | 時間 |\n|---|---|---|\n| `for (...) await FetchAsync(i);` | 1 つ終わるのを待ってから次を始める | 0.5 × 3 ＝ 1.5 秒 |\n| 先に 3 つ始めて `await Task.WhenAll(tasks)` | 3 つ同時に待つ | 0.5 秒 |\n\n| C# | JavaScript | Python | Go |\n|---|---|---|---|\n| `Task.WhenAll(...)` | `Promise.all(...)` | `asyncio.gather(...)` | WaitGroup（Go コースのレッスン 5） |\n\n**お互いに関係ない待ち（別々の API の呼び出し）は、WhenAll でまとめる** と速くなります。AI のコードで、ループの中で 1 つずつ `await` しているところは、まとめられないか考える価値があります。\n\n### await を書かずに呼ぶと\n\n```csharp\nsw.Restart();\nvar t = FetchAsync(9);\nConsole.WriteLine($\"await する前: {sw.Elapsed.TotalSeconds:F1} 秒（もう次の行に来ている）\");\nConsole.WriteLine(await t);\n// await する前: 0.0 秒（もう次の行に来ている）\n// 結果9\n```\n\n`FetchAsync(9)` を呼んだだけでは **待たずに、すぐ次の行へ** 進みます（Go の `go` に近い）。結果が必要になったところで `await t` します。⚠️ `await` を書き忘れると、**終わる前に先へ進んでしまう** バグになります（コンパイラが CS4014 という警告を出してくれます）。\n\n## 例外は await で受け止める\n\n```csharp\nstatic async Task<int> FailAsync()\n{\n    await Task.Delay(100);\n    throw new InvalidOperationException(\"通信に失敗しました\");\n}\n\ntry { await FailAsync(); }\ncatch (InvalidOperationException e) { Console.WriteLine($\"catch できた: {e.Message}\"); }\n// catch できた: 通信に失敗しました\n```\n\n非同期のメソッドの中で起きた例外は、**`await` したところで** 投げ直されるので、普通の `try / catch` で受け止められます。\n\n## 取り消しと時間切れ\n\n```csharp\nusing var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));\ntry { await Task.Delay(1000, cts.Token); }\ncatch (TaskCanceledException) { Console.WriteLine(\"200 ミリ秒で取り消された\"); }\n// 200 ミリ秒で取り消された\n```\n\n`CancellationToken` は、「**もうやめて**」を伝える仕組みです。Web のリクエストを利用者が途中でやめたとき、関係する処理（データベース・別の API）も止められます。Go の `context.Context`（Go コースのレッスン 5）と同じ役目です。AI の ASP.NET Core のコードで、メソッドの最後の引数に `CancellationToken ct` があるのはこのためです。\n\n`HttpClient` の `Timeout` も、同じく時間切れの設定です。\n\n## ⚠️ 共有の変数とデータ競合\n\n```csharp\nint counter = 0;\nawait Task.WhenAll(Enumerable.Range(0, 1000).Select(_ => Task.Run(() => counter++)));\nConsole.WriteLine($\"ロックなし: {counter}\");      // ロックなし: 999\n\ncounter = 0;\nawait Task.WhenAll(Enumerable.Range(0, 1000).Select(_ => Task.Run(() => Interlocked.Increment(ref counter))));\nConsole.WriteLine($\"Interlocked: {counter}\");     // Interlocked: 1000\n```\n\n`Task.Run` は、処理を **別のスレッドで** 動かします。1000 個が同時に `counter++` したので、Go や Python のスレッドと同じ **データ競合** が起き、1000 にならないことがありました。`Interlocked.Increment`（足し算を割り込まれずに 1 回で行う）や `lock (obj) { ... }` で防ぎます。\n\n| | `await FetchAsync()` | `Task.Run(() => ...)` |\n|---|---|---|\n| 使う場面 | **待ち時間** の多い仕事（通信・ファイル・データベース） | **計算が重い** 仕事を別のスレッドへ |\n| スレッド | 待っている間はスレッドを占有しない | 別のスレッドで動く |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `public async Task<IActionResult> Get(int id, CancellationToken ct)` | ASP.NET Core の非同期の窓口。ct を下の処理に渡しているか |\n| ループの中で `await` | まとめて `WhenAll` にできないか（順番が大事なら OK） |\n| `.Result` / `.Wait()` | ⚠️ 非同期の結果を **止まって** 待つ。デッドロック（お互いを待って止まる）の原因になる。`await` に |\n| `async void` | ⚠️ 例外を受け止められない。イベントハンドラー以外は `async Task` に |\n| 呼び出しに `await` が無い（CS4014 の警告） | ⚠️ 終わる前に先へ進む |\n| `Task.Run` の中で共有の変数を書き換える | ⚠️ データ競合。`lock` / `Interlocked` / `ConcurrentDictionary` |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "0.5 秒かかる `FetchAsync` を 3 回、`for` の中で 1 つずつ `await` すると、合計の時間は？",
+        "choices": [
+         "約 0.5 秒",
+         "約 1.5 秒",
+         "約 0 秒"
+        ],
+        "answer": 1,
+        "explain": "1 つ終わるのを待ってから次を始めるので、0.5 × 3 です。Task.WhenAll でまとめると約 0.5 秒でした。"
+       },
+       {
+        "question": "`var t = FetchAsync(9);`（await 無し）の直後の行は、いつ実行される？",
+        "choices": [
+         "FetchAsync の終わりを待たずに、すぐ",
+         "FetchAsync が終わってから",
+         "実行されない"
+        ],
+        "answer": 0,
+        "explain": "await しなければ待ちません。結果が必要なところで `await t` します。"
+       },
+       {
+        "question": "非同期の結果を `.Result` で待つ書き方が嫌われる理由は？",
+        "choices": [
+         "結果が null になるから",
+         "スレッドを止めて待つので、デッドロックやアプリの固まりの原因になるから",
+         "例外が起きないから"
+        ],
+        "answer": 1,
+        "explain": "非同期の処理は await で待つのが基本です。.Result や .Wait() は、特に画面のあるアプリや古い ASP.NET で固まる原因になります。"
+       }
+      ]
+     ],
+     "id": "04-async-await"
+    },
+    {
+     "title": "Unity のスクリプトを読む ― MonoBehaviour と Update",
+     "level": 3,
+     "minutes": 18,
+     "concepts": [
+      "classes",
+      "reading",
+      "performance",
+      "ai_coding"
+     ],
+     "summary": "Unity のゲームの部品を動かす C# のスクリプト。MonoBehaviour、Start と Update（毎フレーム）、Time.deltaTime、[SerializeField] でインスペクターに出す、GetComponent、OnTriggerEnter、Coroutine。AI のゲームのコードで見るべきところ。",
+     "body": "## このレッスンのゴール\n\n- `MonoBehaviour`・`Start`・`Update` が、いつ呼ばれるか説明できる\n- `Time.deltaTime`・`[SerializeField]`・`GetComponent` の意味が分かる\n- Unity のスクリプトの、よくある間違い（Update の中の重い処理など）に気づける\n\nこのレッスンのコードは、Unity の書き方の説明のための抜粋です（Unity のエディターをここでは動かしていません）。\n\n## Unity とは\n\n**Unity** は、スマホ・PC・ゲーム機のゲームや、3D・VR のアプリを作る道具（ゲームエンジン）です。画面の中の物体（**ゲームオブジェクト**：キャラクター・敵・アイテム）に、**C# のスクリプトを部品（コンポーネント）として付けて** 動かします。\n\n```text\nゲームオブジェクト「Player」\n ├─ Transform（位置・回転・大きさ）    ← どのオブジェクトにも必ずある\n ├─ Rigidbody（重力・ぶつかったときの動き）\n ├─ Collider（当たり判定の形）\n └─ PlayerController（自分で書いた C# のスクリプト）\n```\n\n## 基本のスクリプト\n\n```csharp\nusing UnityEngine;\n\npublic class PlayerController : MonoBehaviour\n{\n    [SerializeField] private float speed = 5f;\n    [SerializeField] private int maxHp = 3;\n\n    private int hp;\n    private Rigidbody rb;\n\n    void Start()\n    {\n        hp = maxHp;\n        rb = GetComponent<Rigidbody>();\n    }\n\n    void Update()\n    {\n        float x = Input.GetAxis(\"Horizontal\");\n        float z = Input.GetAxis(\"Vertical\");\n        transform.Translate(new Vector3(x, 0, z) * speed * Time.deltaTime);\n    }\n\n    void OnTriggerEnter(Collider other)\n    {\n        if (other.CompareTag(\"Enemy\"))\n        {\n            hp--;\n            Debug.Log($\"ダメージ！ 残り {hp}\");\n            if (hp <= 0) Destroy(gameObject);\n        }\n    }\n}\n```\n\n| 部分 | 意味 |\n|---|---|\n| `: MonoBehaviour` | Unity のスクリプトの親クラス（継承。Java の `extends`）。これを継承すると、ゲームオブジェクトに付けられる |\n| `Start()` | 最初の 1 回だけ呼ばれる（準備） |\n| `Update()` | **毎フレーム**（1 秒に 60 回など）呼ばれる |\n| `OnTriggerEnter(Collider other)` | 何かと **ぶつかったとき** に呼ばれる |\n| `transform` | このオブジェクトの位置・向き（Transform コンポーネント） |\n| `gameObject` | このスクリプトが付いているオブジェクト自身 |\n| `Debug.Log(...)` | Unity のコンソールに表示（`Console.WriteLine` の代わり） |\n\n**自分で `Start` や `Update` を呼んでいない** のがポイントです。Unity が、決まったタイミングで **名前を見て自動で呼びます**。WordPress のフック（PHP コースのレッスン 5）や、JavaScript のイベント（`addEventListener`）と同じ「呼んでもらう」仕組みです。\n\n## Update と Time.deltaTime\n\n```csharp\ntransform.Translate(new Vector3(x, 0, z) * speed * Time.deltaTime);\n```\n\nUpdate は毎フレーム呼ばれますが、**1 秒に何回呼ばれるかは、パソコンの速さで変わります**（速い PC は 144 回、遅いスマホは 30 回）。毎回 `speed` だけ動かすと、**速い PC ほどキャラクターが速く動いて** しまいます。\n\n`Time.deltaTime` は「**前のフレームから何秒たったか**」（1/60 秒なら約 0.0167）です。これを掛けると、「**1 秒あたり speed だけ動く**」ことになり、どの PC でも同じ速さになります。\n\n⚠️ AI のゲームのコードで、Update の中の動き・タイマーに `Time.deltaTime` が掛かっていなかったら、要注意です。\n\n## [SerializeField]：インスペクターに出す\n\n```csharp\n[SerializeField] private float speed = 5f;\n```\n\n`[...]` は C# の **属性**（Java のアノテーション、Python のデコレーターに近い印）です。`[SerializeField]` を付けると、private のままで、**Unity のエディターの画面（インスペクター）に表示され、そこで値を変えられる** ようになります。プログラムを書き直さずに、「速さを 5 から 7 にしたら遊びやすいか」を試せます。\n\n⚠️ インスペクターで値を変えると、**コードに書いた初期値（`= 5f`）より、画面で入れた値が優先されます**。「コードを直したのに速さが変わらない」ときは、インスペクターの値を確かめます。\n\n## GetComponent：他の部品を取り出す\n\n```csharp\nrb = GetComponent<Rigidbody>();\n```\n\n同じゲームオブジェクトに付いている **別のコンポーネント** を取り出します。`<Rigidbody>` はジェネリクス（どの型の部品か）です。\n\n⚠️ `GetComponent` は少し重い処理なので、**Update の中で毎フレーム呼ばず、Start で一度だけ取り出して変数に入れておく** のが定番です（上のコードはその形）。付いていなければ null が返り、使うと NullReferenceException（レッスン 2）になります。\n\n## コルーチン：時間をかけた処理\n\n```csharp\nIEnumerator Blink()\n{\n    for (int i = 0; i < 3; i++)\n    {\n        GetComponent<Renderer>().enabled = false;\n        yield return new WaitForSeconds(0.1f);\n        GetComponent<Renderer>().enabled = true;\n        yield return new WaitForSeconds(0.1f);\n    }\n}\n\n// 呼ぶとき\nStartCoroutine(Blink());\n```\n\n「0.1 秒消えて、0.1 秒表示して、を 3 回」のような **時間のかかる演出** を、**コルーチン** で書きます。`yield return new WaitForSeconds(0.1f)` は「ここで 0.1 秒待って、次のフレーム以降に続きから再開」という意味です。\n\nPython のジェネレーター（`yield`）を使って時間を止めているようなもので、レッスン 4 の async/await に近い考え方です。今の Unity では、`async` を使う書き方（Awaitable）もできます。\n\n## Unity でよく見る型\n\n| 型 | 意味 |\n|---|---|\n| `Vector3` | 3D の位置・向き・速さ（x, y, z）。`Vector3.up` は上向き |\n| `Quaternion` | 回転 |\n| `Transform` | 位置・回転・大きさ・親子関係 |\n| `GameObject` | 画面の中の物体 |\n| `Rigidbody` | 物理（重力・力） |\n| `Collider` / `Collision` | 当たり判定／ぶつかった情報 |\n| `float`（`5f`） | 小数。Unity は double ではなく float を使う（`f` を付ける） |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| Update の中で `GetComponent` / `GameObject.Find` / `FindObjectOfType` | ⚠️ 毎フレームは重い。Start で取っておく |\n| Update の中の移動に `Time.deltaTime` が無い | ⚠️ PC の速さで動きが変わる |\n| 物理の動き（Rigidbody）を Update で | 物理は `FixedUpdate`（決まった間隔で呼ばれる）で書くのが基本 |\n| `public float speed;` | インスペクターに出すために public にしている。`[SerializeField] private` のほうが安全 |\n| Update の中で `new` や文字列の連結をたくさん | ゴミ（GC の仕事）が増えて、ゲームがときどきカクつく |\n| `Destroy(gameObject)` の後もそのオブジェクトを使う | 次のフレームで消える。使い続けると `MissingReferenceException` |\n| `CompareTag(\"Enemy\")` | ✅ タグの比較の推奨の書き方（`tag == \"Enemy\"` より速い） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Unity の `Update()` はいつ呼ばれる？",
+        "choices": [
+         "スクリプトが付けられたときに 1 回",
+         "毎フレーム（1 秒に何十回も）",
+         "ぶつかったとき"
+        ],
+        "answer": 1,
+        "explain": "Update は毎フレーム呼ばれます。最初の 1 回は Start、ぶつかったときは OnTriggerEnter などです。"
+       },
+       {
+        "question": "移動の計算に `Time.deltaTime` を掛ける理由は？",
+        "choices": [
+         "フレームの数はパソコンの速さで変わるので、1 秒あたりの動きをそろえるため",
+         "動きを遅くするため",
+         "時刻を表示するため"
+        ],
+        "answer": 0,
+        "explain": "deltaTime は前のフレームからの秒数です。掛けると「1 秒あたり speed だけ動く」になり、どの PC でも同じ速さになります。"
+       },
+       {
+        "question": "`[SerializeField] private float speed = 5f;` の `[SerializeField]` の役割は？",
+        "choices": [
+         "speed を定数にする",
+         "private のまま、Unity のインスペクターに表示して値を変えられるようにする",
+         "speed をファイルに保存する"
+        ],
+        "answer": 1,
+        "explain": "属性（[...]）で Unity に「エディターに出して」と伝えています。画面で変えた値は、コードの初期値より優先されます。"
+       }
+      ]
+     ],
+     "id": "05-unity"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "Kotlin",
