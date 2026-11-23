@@ -3068,17 +3068,341 @@ window.SITE_DATA = {
    "title": "HTML / CSS",
    "icon": "🎨",
    "order": 40,
-   "status": "planned",
-   "description": "Web ページの骨組みと見た目。",
-   "outline": [
-    "タグと要素",
-    "クラスと ID",
-    "セレクタ",
-    "Flexbox と Grid",
-    "レスポンシブ"
-   ],
+   "description": "Web ページの骨組み（HTML）と見た目（CSS）。タグ・フォーム・セレクタとカスケード・ボックスモデル・Flexbox と Grid・レスポンシブ、AI がよく使う Tailwind CSS の読み方まで。値はすべて実際のブラウザで確かめたもの。",
+   "levels": {
+    "1": "入門：骨組みと見た目",
+    "2": "基礎：レイアウト",
+    "3": "実践：AI のコードを読む"
+   },
    "id": "40-html-css",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "HTML のタグと要素 ― ページの骨組み",
+     "level": 1,
+     "minutes": 15,
+     "concepts": [
+      "dom_ui",
+      "basics",
+      "reading"
+     ],
+     "summary": "HTML はタグで「これは見出し」「これは段落」と意味を付ける言語。ページの基本の形、よく使うタグ、属性、入れ子、意味のあるタグ（セマンティック）の読み方。",
+     "body": "## このレッスンのゴール\n\n- HTML の基本の形（`<!doctype html>`・`head`・`body`）を読める\n- タグ・要素・属性という言葉を使い分けられる\n- よく使うタグが何を表すか分かり、`div` だらけのコードとの違いが説明できる\n\n## HTML は「意味の札」を付ける言語\n\nHTML は、文章のあちこちに **タグ** という札を付けて、「ここは見出し」「ここは段落」「ここはリンク」と **意味（役割）** を伝える言語です。プログラミング言語のように計算はしません。\n\n```html\n<h1>買い物メモ</h1>\n<p>今日買うものです。</p>\n```\n\n| 用語 | 例 | 意味 |\n|---|---|---|\n| **開始タグ** | `<p>` | ここから |\n| **終了タグ** | `</p>` | ここまで（`/` が付く） |\n| **要素** | `<p>今日買うものです。</p>` | 開始タグから終了タグまでのひとまとまり |\n| **中身** | `今日買うものです。` | 要素の中の文字や、別の要素 |\n\nPython で言うと、HTML は **入れ子になった辞書やリスト** のようなものです。「ページ」の中に「本文」があり、その中に「見出し」と「段落」がある、という **木の形** になっています。JavaScript コースの「DOM とイベント」で、ブラウザがこの木を DOM として扱うことを学びました。\n\n## ページの基本の形\n\n```html\n<!doctype html>\n<html lang=\"ja\">\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <title>買い物メモ</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n  </head>\n  <body>\n    <h1>買い物メモ</h1>\n    <p>今日買うものです。</p>\n    <script src=\"app.js\"></script>\n  </body>\n</html>\n```\n\n| 部分 | 意味 |\n|---|---|\n| `<!doctype html>` | 「今の HTML の書き方です」という宣言。いつも 1 行目 |\n| `<html lang=\"ja\">` | 全体を包む。`lang=\"ja\"` は日本語のページという意味（読み上げや翻訳に使われる） |\n| `<head>` | **画面に出ない情報**：文字コード・タイトル・CSS の読み込み |\n| `<meta charset=\"utf-8\">` | 文字コードは UTF-8（コンピュータの基礎コースの「文字コード」） |\n| `<meta name=\"viewport\" ...>` | スマホで正しい幅で表示する（レッスン 6） |\n| `<title>` | ブラウザのタブに出る名前 |\n| `<link rel=\"stylesheet\">` | CSS のファイルを読み込む |\n| `<body>` | **画面に出る中身** |\n| `<script src=\"...\">` | JavaScript を読み込む。`body` の最後に置くと、HTML を全部読んでから動く |\n\nこのサイトの `site/index.html` も、ほぼこの形です。開いて見比べてみましょう。\n\n## よく使うタグ\n\n### 文章の構造\n\n| タグ | 意味 |\n|---|---|\n| `<h1>`〜`<h6>` | 見出し。`h1` がいちばん大きい（ページに 1 つが目安） |\n| `<p>` | 段落 |\n| `<ul>` / `<ol>` + `<li>` | 箇条書き（`ul` は点、`ol` は番号） |\n| `<a href=\"URL\">` | リンク |\n| `<img src=\"画像\" alt=\"説明\">` | 画像（終了タグが無い） |\n| `<strong>` / `<em>` | 強調 |\n| `<br>` | 改行（終了タグが無い） |\n| `<table>` `<tr>` `<th>` `<td>` | 表（行・見出しのマス・普通のマス） |\n\n```html\n<ul>\n  <li>りんご</li>\n  <li>牛乳</li>\n</ul>\n```\n\n`<img>` や `<br>`、`<meta>` のように、**中身を持たないタグ** は終了タグを書きません（`<br />` と書くこともあります）。\n\n### 意味のある入れ物（セマンティックタグ）\n\n| タグ | 意味 |\n|---|---|\n| `<header>` | ページや区切りの頭（ロゴ・メニュー） |\n| `<nav>` | メニュー（ナビゲーション） |\n| `<main>` | ページの主な中身（1 つだけ） |\n| `<section>` / `<article>` | 内容のまとまり／それだけで完結する記事 |\n| `<footer>` | ページや区切りの終わり（著作権表示など） |\n| `<div>` | **意味の無い** 入れ物。見た目を整えるためだけに使う |\n| `<span>` | 文の途中の、意味の無い入れ物 |\n\n```html\n<!-- ⚠️ 全部 div -->\n<div class=\"header\"><div class=\"nav\">...</div></div>\n<div class=\"main\">...</div>\n\n<!-- ✅ 意味のあるタグ -->\n<header><nav>...</nav></header>\n<main>...</main>\n```\n\n見た目は同じにできますが、意味のあるタグを使うと、**画面の読み上げソフト**（目の不自由な人が使う）や **検索エンジン** が、ページの作りを正しく理解できます。\n\n## 属性：タグに付ける追加の情報\n\n```html\n<a href=\"https://example.com\" target=\"_blank\" rel=\"noopener\">サイトへ</a>\n<img src=\"cat.jpg\" alt=\"窓辺で寝ている猫\" width=\"300\">\n<p id=\"intro\" class=\"note important\">はじめに</p>\n```\n\n`名前=\"値\"` の形で、開始タグの中に書きます。Python の関数のキーワード引数（`f(href=\"...\")`）に似ています。\n\n| 属性 | 意味 |\n|---|---|\n| `href` | リンク先 |\n| `target=\"_blank\"` | 新しいタブで開く |\n| `src` | 画像やスクリプトのファイルの場所 |\n| `alt` | 画像の説明。画像が出ないときや読み上げに使われる |\n| `id` | ページの中で 1 つだけの名前（レッスン 3） |\n| `class` | グループの名前。スペース区切りで複数付けられる（レッスン 3） |\n| `data-...` | 自由に付けてよい属性。JavaScript から読む（このサイトのクイズの `data-quiz` など） |\n\n## コメントと空白\n\n```html\n<!-- これはコメント。画面には出ない -->\n<p>改行や\n   スペースを   たくさん入れても</p>\n```\n\nHTML では、**改行や連続したスペースは 1 つの空白** として表示されます。改行したいときは段落を分けるか `<br>` を使います。\n\n⚠️ コメントは画面に出ませんが、**「ページのソースを表示」で誰でも見られます**。メモのつもりで秘密を書かないようにしましょう。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `<html>` に `lang` が無い／`<meta charset>` が無い | ⚠️ 読み上げや文字化けで困ることがある |\n| `<img src=\"...\">` に `alt` が無い | ⚠️ 画像の説明が無い。飾りだけの画像なら `alt=\"\"` |\n| 全部 `<div>` で、クリックできる場所も `<div onclick=...>` | ⚠️ キーボードで操作できない。ボタンは `<button>`（レッスン 2） |\n| `<h1>` の次がいきなり `<h4>` | 見出しは順番に（大きさは CSS で変える） |\n| `target=\"_blank\"` | 今のブラウザでは `rel=\"noopener\"` 相当が自動で付くが、古いコードでは付けておくのが定番 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`<p class=\"note\">今日買うもの</p>` のうち、「属性」はどれ？",
+        "choices": [
+         "`<p>`",
+         "`class=\"note\"`",
+         "`今日買うもの`"
+        ],
+        "answer": 1,
+        "explain": "属性は開始タグの中に `名前=\"値\"` で書く追加の情報です。`<p>...</p>` 全体が要素、`今日買うもの` は中身です。"
+       },
+       {
+        "question": "`<head>` の中に書くものとして正しいのは？",
+        "choices": [
+         "文字コードの指定やタイトル、CSS の読み込みなど、画面に直接出ない情報",
+         "ページの本文",
+         "画像やボタン"
+        ],
+        "answer": 0,
+        "explain": "画面に出る中身は `<body>` に、ページについての情報は `<head>` に書きます。"
+       },
+       {
+        "question": "`<div class=\"nav\">` の代わりに `<nav>` を使う利点は？",
+        "choices": [
+         "表示が速くなる",
+         "CSS が不要になる",
+         "読み上げソフトや検索エンジンに「ここはメニュー」という意味が伝わる"
+        ],
+        "answer": 2,
+        "explain": "見た目は同じにできますが、意味のあるタグはページの作りを機械に伝えられます。"
+       }
+      ]
+     ],
+     "id": "01-tags-elements"
+    },
+    {
+     "title": "フォームとボタン ― 入力を受け取る",
+     "level": 1,
+     "minutes": 15,
+     "concepts": [
+      "dom_ui",
+      "http_api",
+      "security"
+     ],
+     "summary": "form・input・label・button の読み方。name 属性がサーバーに届く名前になること、button の初期値は「送信」であること、ブラウザのチェックだけでは守れないこと。",
+     "body": "## このレッスンのゴール\n\n- フォームの部品（`form`・`input`・`label`・`button`）を読み、送信したときに何が届くか説明できる\n- `name` 属性と `id` 属性の違いが分かる\n- `<button>` が初期設定で「送信ボタン」になる落とし穴と、`required` などのチェックの限界が分かる\n\n## フォームの基本\n\n```html\n<form action=\"/signup\" method=\"post\">\n  <label for=\"email\">メールアドレス</label>\n  <input id=\"email\" name=\"email\" type=\"email\" required>\n\n  <label for=\"age\">年齢</label>\n  <input id=\"age\" name=\"age\" type=\"number\" min=\"0\" max=\"120\">\n\n  <label>\n    <input name=\"news\" type=\"checkbox\" value=\"yes\"> お知らせを受け取る\n  </label>\n\n  <button type=\"submit\">登録</button>\n</form>\n```\n\n| 部分 | 意味 |\n|---|---|\n| `<form action=\"/signup\" method=\"post\">` | 送信ボタンを押すと、`/signup` に POST で送る（バックエンドコースの「HTTP」） |\n| `name=\"email\"` | **サーバーに届くときの名前**。`email=ryo@example.com` の形で送られる |\n| `id=\"email\"` | ページの中での名前。`<label for=\"email\">` と結び付けるのに使う |\n| `type=\"email\"` | 入力の種類。スマホではメール用のキーボードが出る |\n| `required` | 空のままでは送信させない |\n| `min` / `max` | 数値の範囲 |\n\n送信すると、サーバーにはこんな内容が届きます（バックエンドコースの「HTTP」のボディ）。\n\n```text\nemail=ryo%40example.com&age=30&news=yes\n```\n\n`@` が `%40` になっているのは、URL の中で特別な意味を持つ記号を、別の書き方にしているためです。チェックを外したチェックボックスは、**何も送られません**。\n\nFastAPI で受け取るなら、`name` と同じ名前の引数で受け取ります。\n\n```python\n@app.post(\"/signup\")\ndef signup(email: str = Form(), age: int | None = Form(None), news: str | None = Form(None)):\n    ...\n```\n\n⚠️ `name` を付け忘れると、その入力は **送信されません**。画面には出ているのにサーバーに届かない、というよくある原因です。\n\n## input の種類\n\n| `type` | 見た目・動き |\n|---|---|\n| `text` | 1 行の文字（初期値） |\n| `email` / `url` / `tel` | 形のチェック・スマホのキーボードが変わる |\n| `password` | 入力が `●●●` で隠れる |\n| `number` | 数値。上下の矢印 |\n| `date` / `time` | カレンダーなどで選べる |\n| `checkbox` | 複数選べる四角 |\n| `radio` | 1 つだけ選べる丸（同じ `name` のものから 1 つ） |\n| `file` | ファイルを選ぶ（`<form enctype=\"multipart/form-data\">` が必要） |\n| `hidden` | 画面に出ないが送信される値 |\n\n複数行の文字は `<textarea>`、選択肢は `<select>` と `<option>` を使います。\n\n## label：何の入力欄かを結び付ける\n\n```html\n<label for=\"email\">メールアドレス</label>\n<input id=\"email\" ...>\n```\n\n`for` と `id` が同じだと、**文字をクリックしても入力欄が選ばれ**、読み上げソフトが「メールアドレス、入力欄」と読んでくれます。入力欄の中に薄く出る `placeholder=\"例: ryo@example.com\"` は、入力を始めると消えるので、**ラベルの代わりにはなりません**。\n\n## button の落とし穴\n\n```html\n<form>\n  <input name=\"q\">\n  <button>検索</button>             <!-- type を書かないと submit（送信）になる -->\n  <button type=\"button\">クリア</button>   <!-- 送信しない、ただのボタン -->\n</form>\n```\n\n**フォームの中の `<button>` は、`type` を書かないと送信ボタン** になります。「クリア」のつもりのボタンを押したらページが再読み込みされた、というのはよくあるバグです。\n\nJavaScript で送信を自分で処理するときは、こう書きます。\n\n```javascript\nform.addEventListener(\"submit\", (event) => {\n  event.preventDefault();          // ブラウザの普通の送信（ページの移動）を止める\n  const data = new FormData(form); // name ごとの値を取り出す\n  fetch(\"/api/signup\", { method: \"POST\", body: data });\n});\n```\n\nReact などの AI のコードで `e.preventDefault()` をよく見るのは、このためです。\n\n### クリックできるものは button か a に\n\n```html\n<div onclick=\"save()\">保存</div>              <!-- ⚠️ -->\n<button type=\"button\" onclick=\"save()\">保存</button>  <!-- ✅ -->\n```\n\n`<div>` は、マウスではクリックできても、**キーボード（Tab キーと Enter）では操作できません**。「押すと何かが起きる」ものは `<button>`、「別のページへ移る」ものは `<a href>` にします。\n\n## ブラウザのチェックは「親切」であって「守り」ではない\n\n`required`・`type=\"email\"`・`min`・`maxlength` は、利用者がうっかり間違えるのを防ぐ **親切** です。\nでも、ブラウザの開発者ツールで HTML を書き換えたり、フォームを使わずに直接リクエストを送ったりすれば、**簡単に飛ばせます**（セキュリティのコースのレッスン 1）。\n\n```text\nブラウザのチェック（required・type）  → 使いやすさのため\nサーバーのチェック（バリデーション）   → 守るため。必ず必要\n```\n\n`type=\"hidden\"` の値も、利用者が自由に書き換えられます。`<input type=\"hidden\" name=\"price\" value=\"1980\">` のように、**値段などをフォームから受け取ってはいけません**。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `<input>` に `name` が無い | ⚠️ 普通のフォーム送信では届かない（JavaScript で値を集めているなら別） |\n| `<input>` に `<label>` が無く、`placeholder` だけ | ⚠️ 入力を始めると何の欄か分からなくなる |\n| フォームの中の `<button>` に `type` が無い | クリアなどのボタンなら `type=\"button\"` が必要 |\n| `<div onclick>` / `<span onclick>` | ⚠️ キーボードで押せない。`<button>` に |\n| `type=\"hidden\" name=\"price\"` / `name=\"is_admin\"` | ⚠️ 書き換えられる。サーバー側で決める |\n| `method=\"get\"` でパスワードを送る | ⚠️ URL に入って履歴やログに残る。`post` に |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`<input id=\"mail\" name=\"email\">` を送信したとき、サーバーに届く名前は？",
+        "choices": [
+         "`mail`",
+         "`email`",
+         "`input`"
+        ],
+        "answer": 1,
+        "explain": "サーバーに届くのは `name` の値です。`id` はページの中で label と結び付けたり、CSS や JavaScript から探したりするための名前です。"
+       },
+       {
+        "question": "フォームの中に `<button>リセット</button>` と書いたら、押すたびにページが再読み込みされた。原因は？",
+        "choices": [
+         "type を書かない button は送信ボタンになるから",
+         "button はフォームの中に書けないから",
+         "リセットという文字が特別な意味を持つから"
+        ],
+        "answer": 0,
+        "explain": "送信しないボタンには `type=\"button\"` を書きます。"
+       },
+       {
+        "question": "`<input type=\"number\" min=\"1\" max=\"10\" required>` があるので、サーバーでの数値チェックは不要？",
+        "choices": [
+         "不要。ブラウザが 1〜10 以外を送らせない",
+         "必要。ブラウザのチェックは開発者ツールや直接のリクエストで飛ばせる",
+         "required があるときだけ不要"
+        ],
+        "answer": 1,
+        "explain": "ブラウザのチェックは使いやすさのためのものです。守るためのチェックはサーバーで行います。"
+       }
+      ]
+     ],
+     "id": "02-forms"
+    },
+    {
+     "title": "CSS の基本 ― クラス・ID とボックスモデル",
+     "level": 1,
+     "minutes": 16,
+     "concepts": [
+      "dom_ui",
+      "reading"
+     ],
+     "summary": "CSS の書き方（セレクタ・プロパティ・値）、class と id の使い分け、すべての要素が「箱」であるボックスモデル。width: 200px が 250px になる理由と box-sizing。",
+     "body": "## このレッスンのゴール\n\n- CSS の 1 つのルールを「セレクタ・プロパティ・値」に分けて読める\n- `class` と `id` の違いと、どちらを使うべきかが分かる\n- ボックスモデル（中身・padding・border・margin）を説明でき、`box-sizing: border-box` の意味が分かる\n\n## CSS の形\n\n```css\n.note {\n  color: blue;\n  font-size: 18px;\n}\n```\n\n| 部分 | 意味 |\n|---|---|\n| `.note` | **セレクタ**：どの要素に（class が note の要素に） |\n| `color` | **プロパティ**：何を（文字の色を） |\n| `blue` | **値**：どうする（青に） |\n| `{ ... }` | 1 つのルールのまとまり。`;` で区切って複数書ける |\n\nPython で言うと、`{\"color\": \"blue\", \"font-size\": \"18px\"}` という辞書を、セレクタに合う要素全部に当てはめるイメージです。\n\n### CSS を書く 3 つの場所\n\n| 場所 | 例 | 使いどころ |\n|---|---|---|\n| 別のファイル | `<link rel=\"stylesheet\" href=\"style.css\">` | **ふつうはこれ**。このサイトも `site/style.css` |\n| `<style>` タグ | `<head>` の中に `<style> ... </style>` | 1 ページだけの小さな例 |\n| `style` 属性 | `<p style=\"color: red\">` | その要素だけ。増えると直すのが大変 |\n\n## class と id\n\n```html\n<p class=\"note\">メモ 1</p>\n<p class=\"note important\">メモ 2</p>\n<p id=\"intro\">はじめに</p>\n```\n\n```css\n.note { color: blue; }         /* . で class */\n.important { font-weight: bold; }\n#intro { font-size: 20px; }     /* # で id */\n```\n\n| | class | id |\n|---|---|---|\n| CSS での書き方 | `.note` | `#intro` |\n| ページの中に | **何個あってもよい** | **1 つだけ** |\n| 1 つの要素に | スペース区切りで複数付けられる（`note important`） | 1 つ |\n| 主な使い道 | **見た目**（CSS） | ページ内リンク（`href=\"#intro\"`）、JavaScript で 1 つを探す（`getElementById`） |\n\n**見た目には class を使う** のが基本です。id は強すぎる（次のレッスン）ので、CSS ではあまり使いません。\n\n## よく使うプロパティ\n\n| プロパティ | 例 | 意味 |\n|---|---|---|\n| `color` | `#333`、`rgb(51, 51, 51)` | 文字の色（コンピュータの基礎コースの 16 進数） |\n| `background` | `#f5f5f5` | 背景 |\n| `font-size` | `16px`、`1.2rem` | 文字の大きさ（単位はレッスン 6） |\n| `font-weight` | `bold`、`700` | 文字の太さ |\n| `text-align` | `center` | 文字の左右のそろえ |\n| `width` / `height` | `200px`、`50%` | 幅・高さ |\n| `display` | `block`、`inline`、`flex`、`grid`、`none` | 並び方（`none` は非表示） |\n\n### block と inline\n\n| | block | inline |\n|---|---|---|\n| 例 | `div`・`p`・`h1`・`ul`・`section` | `span`・`a`・`strong`・`img` |\n| 並び方 | **縦に積まれる**（横幅いっぱいを使う） | **文の中で横に流れる** |\n| width・height | 効く | 効かない（`img` は例外） |\n\n## ボックスモデル：すべての要素は箱\n\nどの要素も、内側から **中身 → padding（内側の余白）→ border（枠線）→ margin（外側の余白）** の 4 層の箱になっています。\n\n```text\n┌───────────── margin（外側の余白。隣の箱との距離）────────────┐\n│  ┏━━━━━━━━━━━ border（枠線）━━━━━━━━━━━━┓                    │\n│  ┃  ┌──────── padding（内側の余白）──┐   ┃                    │\n│  ┃  │         中身（width）          │   ┃                    │\n│  ┃  └───────────────────────────────┘   ┃                    │\n│  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛                    │\n└──────────────────────────────────────────────────────────────┘\n```\n\n```css\n.box1 {\n  width: 200px;\n  padding: 20px;\n  border: 5px solid;\n  margin: 10px;\n}\n```\n\nブラウザで実際の幅を測ると、**250px** になりました。\n\n```text\n200（中身）＋ 20 × 2（左右の padding）＋ 5 × 2（左右の border）＝ 250px\n```\n\n`width` は **中身の幅だけ** を指していて、padding と border は外に足されるからです（margin は箱の外の余白なので、幅には入りません）。\n\n### box-sizing: border-box\n\n```css\n.box2 {\n  width: 200px;\n  padding: 20px;\n  border: 5px solid;\n  box-sizing: border-box;   /* width に padding と border も含める */\n}\n```\n\nこちらは測ると **200px** でした。`border-box` にすると、`width: 200px` が「枠線まで含めて 200px」の意味になり、padding を変えても全体の幅が変わりません。\n直感に合うので、多くのサイトが最初にこう書いています（Tailwind CSS なども最初からこの設定です）。\n\n```css\n*, *::before, *::after { box-sizing: border-box; }\n```\n\n### 余白の書き方\n\n```css\npadding: 10px;               /* 上下左右すべて 10px */\npadding: 10px 20px;          /* 上下 10px、左右 20px */\npadding: 10px 20px 5px 0;    /* 上 右 下 左（時計回り） */\nmargin: 0 auto;              /* 上下 0、左右は自動 → 幅のある block 要素を横の中央に */\npadding-top: 10px;           /* 1 方向だけ */\n```\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `* { margin: 0; padding: 0; box-sizing: border-box; }` | ブラウザの初期の余白を消し、幅の計算を分かりやすくする「リセット」。よくある書き出し |\n| `#header { ... }` が CSS にたくさん | ⚠️ id は強すぎて上書きしにくい。class に |\n| `style=\"...\"` があちこちに | ⚠️ 直すときに探しにくい。class にまとめる |\n| `display: none` | 非表示。画面からも読み上げからも消える |\n| `width: 100%` ＋ `padding` で、はみ出して横スクロールが出る | `box-sizing: border-box` が無いと、100% ＋ padding になる |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`.note { color: blue; }` の `.note` は何？",
+        "choices": [
+         "class が note の要素を選ぶセレクタ",
+         "id が note の要素を選ぶセレクタ",
+         "note というタグ"
+        ],
+        "answer": 0,
+        "explain": "`.` は class、`#` は id です。セレクタは「どの要素に当てはめるか」を決めます。"
+       },
+       {
+        "question": "`width: 200px; padding: 20px; border: 5px solid;`（box-sizing の指定なし）の要素の、見た目の幅は？",
+        "choices": [
+         "200px",
+         "220px",
+         "250px"
+        ],
+        "answer": 2,
+        "explain": "初期設定では width は中身だけの幅なので、左右の padding（40px）と border（10px）が足されて 250px になります。"
+       },
+       {
+        "question": "ページの中に何個あってもよく、見た目を付けるのに向いているのは？",
+        "choices": [
+         "id",
+         "class",
+         "name"
+        ],
+        "answer": 1,
+        "explain": "id はページに 1 つだけの名前です。見た目には、いくつでも使い回せる class を使います。"
+       }
+      ]
+     ],
+     "id": "03-css-basics"
+    },
+    {
+     "title": "セレクタとカスケード ― どの指定が勝つのか",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "dom_ui",
+      "reading"
+     ],
+     "summary": "子孫・子・疑似クラスなどのセレクタと、同じ要素に複数のルールが当たったときの勝ち負け（詳細度・後勝ち・!important・インライン）、継承。「CSS が効かない」の原因を順番に探せるようになる。",
+     "body": "## このレッスンのゴール\n\n- よく使うセレクタ（子孫・子・複数・疑似クラス）を読める\n- 同じ要素に複数のルールが当たったとき、どれが勝つかを「詳細度」で説明できる\n- 「CSS が効かない」ときに、疑う順番が分かる\n\n## よく使うセレクタ\n\n| セレクタ | 例 | 選ぶもの |\n|---|---|---|\n| タグ | `p` | すべての `<p>` |\n| class | `.note` | class に note を含む要素 |\n| id | `#intro` | id が intro の要素 |\n| 組み合わせ（スペース無し） | `p.note` | `<p>` で、かつ class が note |\n| **子孫**（スペース） | `.card p` | `.card` の **中のどこか** にある `<p>` |\n| **子**（`>`） | `.menu > li` | `.menu` の **すぐ下** の `<li>`（孫は含まない） |\n| 複数（`,`） | `h1, h2` | `h1` と `h2` の両方 |\n| 属性 | `input[type=\"email\"]` | type が email の input |\n| すべて | `*` | すべての要素 |\n\n### 疑似クラス：状態で選ぶ\n\n| セレクタ | 選ぶもの |\n|---|---|\n| `a:hover` | マウスが乗っているリンク |\n| `button:focus-visible` | キーボードで選ばれているボタン |\n| `input:disabled` | 使えない状態の入力欄 |\n| `li:first-child` / `li:last-child` | 最初／最後の `<li>` |\n| `li:nth-child(2n)` | 偶数番目の `<li>`（表のしま模様など） |\n| `p:not(.note)` | class が note **ではない** `<p>` |\n\n`::before` / `::after`（コロン 2 つ）は **疑似要素** と呼び、要素の前後に飾りを足します（`content: \"★\"` など）。\n\nJavaScript の `document.querySelector(\".card p\")` も、**同じセレクタの書き方** です。CSS のセレクタが読めれば、JavaScript で要素を探すコードも読めます。\n\n## カスケード：ルールがぶつかったら\n\n1 つの要素に、色を指定するルールが何個も当たることがあります。\n\n```css\np        { color: black; }\n.note    { color: blue; }\np.note   { color: purple; }\n#first   { color: red; }\n.card p  { color: green; }\n```\n\n```html\n<p id=\"a\">a</p>\n<p class=\"note\" id=\"b\">b</p>\n<p class=\"note\" id=\"first\">c</p>\n<div class=\"card\"><p class=\"note\" id=\"d\">d</p></div>\n```\n\nブラウザで実際の色を調べた結果です。\n\n| 要素 | 当たるルール | 結果 |\n|---|---|---|\n| a | `p` だけ | 黒 |\n| b | `p`・`.note`・`p.note` | **紫**（`p.note`） |\n| c | `p`・`.note`・`p.note`・`#first` | **赤**（`#first`） |\n| d | `p`・`.note`・`p.note`・`.card p` | **紫**（`p.note`。`.card p` と同点で、後に書かれた方） |\n\nこの勝ち負けを決める仕組みを **カスケード** と呼びます。\n\n### 詳細度：セレクタの強さ\n\nセレクタの強さ（**詳細度**）は、次の 3 つの数を数えて、**左の桁から** 比べます。\n\n| 数えるもの | 例 |\n|---|---|\n| ① id の数 | `#first` |\n| ② class・属性・疑似クラスの数 | `.note`、`[type=\"email\"]`、`:hover` |\n| ③ タグ・疑似要素の数 | `p`、`::before` |\n\n| セレクタ | 詳細度（①, ②, ③） |\n|---|---|\n| `p` | 0, 0, 1 |\n| `.note` | 0, 1, 0 |\n| `p.note` | 0, 1, 1 |\n| `.card p` | 0, 1, 1 |\n| `#first` | 1, 0, 0 |\n\n- `.note`（0,1,0）は `p`（0,0,1）より強い：② の桁で勝つ\n- `#first`（1,0,0）は、class をいくつ重ねても勝てない：① の桁で勝つ\n- `p.note` と `.card p` は同点（0,1,1）→ **後に書いた方が勝つ**（上の例では `.card p` が先、`p.note` が後なので紫）\n\n### もっと強いもの\n\n```html\n<p class=\"note imp\" style=\"color: pink\">e</p>\n```\n\n```css\n.imp { color: orange !important; }\n```\n\n結果は **オレンジ** でした。\n\n| 強さ（弱い → 強い） | |\n|---|---|\n| ふつうのルール（詳細度 → 後勝ち） | |\n| `style=\"...\"`（インラインスタイル） | どのセレクタより強い |\n| `!important` | インラインスタイルよりも強い |\n\n⚠️ `!important` は「とにかく勝たせる」ための非常手段です。使うと、あとでそれを上書きするためにまた `!important` が必要になり、**どんどん直しにくく** なります。AI が「効かないので `!important` を付けました」と言ってきたら、本当の原因（詳細度か順番）を探しましょう。\n\n## 継承：親から引き継ぐもの\n\n```css\n.parent { color: teal; font-size: 20px; border: 1px solid; }\n```\n\n```html\n<div class=\"parent\">\n  <span>子の span</span>\n  <a href=\"#\">リンク</a>\n</div>\n```\n\nブラウザで調べると、`span` は **teal（青緑）** になりましたが、`border` は付きませんでした。`a` はブラウザの初期のリンクの色（青）のままでした。\n\n| 引き継がれる（継承する） | 引き継がれない |\n|---|---|\n| `color`・`font-size`・`font-family`・`line-height`・`text-align` など、**文字に関するもの** | `border`・`margin`・`padding`・`width`・`background` など、**箱に関するもの** |\n\nリンクの色が変わらなかったのは、ブラウザが `a` に最初から色を指定しているからです（継承より、要素に直接当たるルールが優先）。リンクの色を変えたいときは `a { color: inherit; }` や `.parent a { ... }` と書きます。\n\n## 「CSS が効かない」ときの探し方\n\nブラウザで右クリック →「検証」（開発者ツール）を開き、要素を選ぶと、**当たっているルールと、負けて線で消されたルール** が一覧で見えます。\n\n| 順番 | 疑うこと |\n|---|---|\n| ① | セレクタが合っているか（class 名の打ち間違い、`.` の付け忘れ） |\n| ② | CSS のファイルが読み込まれているか（`<link>` のパス） |\n| ③ | もっと強いルール（詳細度・後勝ち・インライン・`!important`）に負けていないか |\n| ④ | そのプロパティが効く要素か（inline 要素の `width` など。レッスン 3） |\n| ⑤ | 書き方の間違い（`;` 忘れで、次の行まで無効になっている） |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `!important` がたくさん | ⚠️ 詳細度の争いが起きている。class を整理する |\n| `#main .content div ul li a span` のような長いセレクタ | ⚠️ 強すぎて上書きしにくく、HTML を少し変えると効かなくなる |\n| `.btn-primary:hover` | ✅ class ＋ 状態。よくある形 |\n| `:focus { outline: none; }` | ⚠️ キーボードで操作している人が、今どこを選んでいるか分からなくなる。消すなら代わりの見た目を |\n| React の `className=\"note\"` | HTML の `class` と同じ（JavaScript では `class` が予約語なので `className`） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`.card p` が選ぶのは？",
+        "choices": [
+         "class が card の `<p>`",
+         "class が card の要素の中のどこかにある `<p>`",
+         "class が card の要素のすぐ下の `<p>` だけ"
+        ],
+        "answer": 1,
+        "explain": "スペースは「子孫」で、中のどこにあっても選びます。すぐ下だけなら `.card > p` です。"
+       },
+       {
+        "question": "`.note { color: blue; }` と `#first { color: red; }` が両方当たる要素の色は？（`#first` が先に書かれていても）",
+        "choices": [
+         "赤。id のセレクタは class より詳細度が高い",
+         "青。後に書かれた方が勝つ",
+         "紫。2 つの色が混ざる"
+        ],
+        "answer": 0,
+        "explain": "後勝ちは詳細度が同じときだけです。id（1,0,0）は class（0,1,0）より常に強いです。"
+       },
+       {
+        "question": "親に `color` と `border` を指定したとき、子に引き継がれるのは？",
+        "choices": [
+         "両方",
+         "`color` だけ",
+         "`border` だけ"
+        ],
+        "answer": 1,
+        "explain": "文字に関するもの（color・font-size など）は継承されますが、箱に関するもの（border・margin など）は継承されません。"
+       }
+      ]
+     ],
+     "id": "04-selectors-cascade"
+    },
+    {
+     "title": "Flexbox と Grid ― 並べ方のレイアウト",
+     "level": 2,
+     "minutes": 20,
+     "concepts": [
+      "dom_ui",
+      "collections"
+     ],
+     "summary": "1 列に並べる Flexbox と、縦横のマス目に並べる Grid。flex: 1・justify-content・align-items・gap・fr・repeat(auto-fill, minmax()) を、ブラウザで測った幅で読む。",
+     "body": "## このレッスンのゴール\n\n- Flexbox の「主軸と交差軸」を説明し、`justify-content`・`align-items`・`flex: 1` を読める\n- Grid の `grid-template-columns`・`fr`・`gap` を読める\n- Flexbox と Grid のどちらを使う場面かを判断できる\n\n## Flexbox：1 列に並べる\n\n```css\n.row {\n  display: flex;      /* 子どもを横に並べる */\n  gap: 10px;          /* 子どものあいだの隙間 */\n  width: 600px;\n}\n.grow { flex: 1; }    /* 残りの幅を全部もらう */\n```\n\n```html\n<div class=\"row\">\n  <div style=\"width: 100px\">1</div>\n  <div class=\"grow\">2</div>\n  <div style=\"width: 100px\">3</div>\n</div>\n```\n\nブラウザで測った幅は、**100px・380px・100px** でした。\n\n```text\n600（全体）− 100 − 100（固定の 2 つ）− 10 × 2（隙間 2 か所）＝ 380px ← flex: 1 の要素がもらった\n```\n\n`display: flex` を付けるのは **親** で、並べられるのは **すぐ下の子ども** です。\n\n### 主軸と交差軸\n\n| | 意味 | 初期値 | そろえるプロパティ |\n|---|---|---|---|\n| **主軸** | 並ぶ方向 | 横（左 → 右） | `justify-content` |\n| **交差軸** | 主軸と直角の方向 | 縦 | `align-items` |\n\n`flex-direction: column` にすると、主軸が縦になり、`justify-content` が縦方向、`align-items` が横方向のそろえになります（ここで混乱しやすい）。\n\n| `justify-content` | 並び方 |\n|---|---|\n| `flex-start`（初期値） | 先頭に詰める |\n| `center` | 中央に集める |\n| `flex-end` | 末尾に詰める |\n| `space-between` | 両端に寄せて、残りを均等に間に |\n\n| `align-items` | 交差軸のそろえ |\n|---|---|\n| `stretch`（初期値） | 高さいっぱいに伸ばす |\n| `center` | 中央 |\n| `flex-start` / `flex-end` | 上／下 |\n\n### 定番：上下左右の中央\n\n```css\n.center {\n  display: flex;\n  justify-content: center;   /* 横の中央 */\n  align-items: center;       /* 縦の中央 */\n  height: 100px;\n}\n```\n\n幅 300px・高さ 100px の箱で測ると、中の文字の **左右の余白が同じ（134px ずつ）、上下も同じ（40px ずつ）** で、ちょうど真ん中になっていました。昔の CSS では難しかった「縦の中央」が、2 行で書けます。\n\n### よく使うその他の指定\n\n| プロパティ | 意味 |\n|---|---|\n| `flex-wrap: wrap` | 入りきらないと次の行へ折り返す |\n| `flex: 1` | 残りの場所を分け合う（`flex: 2` の要素は 2 倍もらう） |\n| `flex-shrink: 0` | 縮ませない（アイコンなどがつぶれないように） |\n| `gap` | 子どものあいだの隙間（margin を個別に付けるより簡単） |\n\n## Grid：縦横のマス目に並べる\n\n```css\n.grid {\n  display: grid;\n  grid-template-columns: 1fr 2fr 1fr;   /* 3 列。真ん中だけ 2 倍 */\n  gap: 10px;\n  width: 420px;\n}\n```\n\n測った幅は **100px・200px・100px** でした。\n\n```text\n420 − 10 × 2（隙間）＝ 400px を、1 : 2 : 1 に分ける → 100・200・100\n```\n\n`fr` は「残りの場所の **取り分**（fraction）」という単位です。\n\n| 書き方 | 意味 |\n|---|---|\n| `grid-template-columns: 200px 1fr` | 左は 200px 固定、右は残り全部（サイドバーと本文） |\n| `repeat(3, 1fr)` | `1fr 1fr 1fr` と同じ |\n| `grid-template-rows` | 行の高さ |\n| `grid-column: span 2` | 子どもの側で「2 列分使う」 |\n\n### 定番：画面の幅に合わせて列の数が変わるカード\n\n```css\n.cards {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));\n  gap: 10px;\n}\n```\n\n| 部分 | 意味 |\n|---|---|\n| `minmax(150px, 1fr)` | 1 列は **最低 150px**、余ったら均等に広げる |\n| `repeat(auto-fill, ...)` | 入るだけの数の列を作る |\n\nカード 5 枚で試すと、**画面の幅 800px では 1 行に 4 枚、375px（スマホ）では 2 枚** になりました。メディアクエリ（次のレッスン）を書かなくても、列の数が自動で変わります。\n\nこのサイトの `site/style.css` にも、まったく同じ形があります。コースやレッスンのカードの一覧です。\n\n```css\n.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }\n```\n\n## どちらを使う？\n\n| | Flexbox | Grid |\n|---|---|---|\n| 得意 | **1 方向**（横 1 列・縦 1 列）に並べる | **縦と横の両方** をそろえる |\n| 例 | ナビゲーションのメニュー、ボタンを横に並べる、中央寄せ、カードの中身 | ページ全体の枠組み、カードの一覧、表のようなレイアウト |\n| 決め方 | 中身の大きさに合わせて並べたい | 先にマス目を決めて、そこにはめたい |\n\n迷ったら、**1 列なら Flexbox、マス目なら Grid**。1 つのページの中で両方を組み合わせるのが普通です（ページの枠は Grid、ヘッダーの中は Flexbox など）。\n\n## 他の言語・フレームワークでは\n\nPython で画面を作る道具や、スマホアプリの画面の作り方にも、同じ考え方が出てきます。\n\n| | 横に並べる | 縦に並べる |\n|---|---|---|\n| CSS | `display: flex` | `flex-direction: column` |\n| Tailwind CSS（レッスン 7） | `flex` | `flex flex-col` |\n| SwiftUI（iPhone） | `HStack` | `VStack` |\n| Jetpack Compose（Android） | `Row` | `Column` |\n| Flutter | `Row` | `Column` |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方 |\n|---|---|\n| `display: flex; justify-content: space-between; align-items: center;` | ヘッダーの定番。左にロゴ、右にメニュー、縦は中央 |\n| `display: flex; flex-direction: column; gap: 1rem;` | 縦に並べて隙間をそろえる（フォームなど） |\n| `grid-template-columns: repeat(auto-fill, minmax(250px, 1fr))` | 幅に合わせて列の数が変わるカード一覧 |\n| `min-height: 100vh; display: flex; flex-direction: column;` ＋ `main { flex: 1 }` | 中身が少なくてもフッターを画面の下に置く |\n| `float: left` / `clearfix` | 古いレイアウトの方法。今は Flexbox か Grid |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "幅 600px の `display: flex; gap: 10px;` の中に、100px・`flex: 1`・100px の 3 つがある。`flex: 1` の要素の幅は？",
+        "choices": [
+         "400px",
+         "380px",
+         "200px"
+        ],
+        "answer": 1,
+        "explain": "600 から固定の 200 と、隙間 2 か所の 20 を引いた 380px が残り、flex: 1 の要素がそれをもらいます（ブラウザで測った値）。"
+       },
+       {
+        "question": "Flexbox で、横に並んだ子どもを **縦方向に** 中央にそろえるのは？（flex-direction は初期値）",
+        "choices": [
+         "`justify-content: center`",
+         "`align-items: center`",
+         "`text-align: center`"
+        ],
+        "answer": 1,
+        "explain": "初期値では主軸が横なので、justify-content は横、align-items は縦（交差軸）のそろえです。"
+       },
+       {
+        "question": "`grid-template-columns: 1fr 2fr 1fr; gap: 10px; width: 420px;` の真ん中の列の幅は？",
+        "choices": [
+         "210px",
+         "200px",
+         "140px"
+        ],
+        "answer": 1,
+        "explain": "隙間 20px を引いた 400px を 1:2:1 に分けるので、真ん中は 200px です。"
+       }
+      ]
+     ],
+     "id": "05-flexbox-grid"
+    },
+    {
+     "title": "レスポンシブ ― スマホでも PC でも見やすく",
+     "level": 2,
+     "minutes": 16,
+     "concepts": [
+      "dom_ui"
+     ],
+     "summary": "viewport の meta タグ、メディアクエリ、モバイルファースト、px・%・rem・em・vw の使い分け。画像のはみ出しと横スクロールの直し方。",
+     "body": "## このレッスンのゴール\n\n- `<meta name=\"viewport\">` が何のためにあるか説明できる\n- メディアクエリ（`@media`）を読み、どの画面幅で何が変わるか分かる\n- 単位（px・%・rem・em・vw）を使い分けられる\n\n**レスポンシブ** とは、1 つの HTML と CSS で、スマホ・タブレット・PC のどの画面幅でも見やすく表示することです。\n\n## まず viewport の meta タグ\n\n```html\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n```\n\nこれが無いと、スマホのブラウザは「PC 用のページだろう」と考えて、**幅 980px くらいの画面として表示し、全体を縮小** します。文字が豆粒のように小さくなります。\nこの 1 行で「画面の幅 ＝ スマホの本当の幅（375px など）で表示して」と伝えます。レッスン 1 の基本の形に入っていたのはこのためです。\n\n## メディアクエリ：画面の幅で CSS を変える\n\n```css\n.resp { color: black; }\n\n@media (min-width: 768px) {     /* 画面の幅が 768px 以上のときだけ */\n  .resp { color: red; }\n}\n```\n\nブラウザの幅を変えて確かめると、**幅 800px では赤、375px では黒** になりました。\n\n| 書き方 | 意味 |\n|---|---|\n| `@media (min-width: 768px)` | 768px **以上** のとき |\n| `@media (max-width: 767px)` | 767px **以下** のとき |\n| `@media (prefers-color-scheme: dark)` | 利用者がダークモードにしているとき |\n| `@media print` | 印刷するとき |\n\nPython で言うと、`if screen_width >= 768:` の中にだけ書いた CSS、というイメージです。\n\n### モバイルファースト\n\n```css\n/* まずスマホ用（何も条件を付けない） */\n.layout { display: block; }\n\n/* 広い画面のときだけ、横に並べる */\n@media (min-width: 768px) {\n  .layout { display: grid; grid-template-columns: 240px 1fr; }\n}\n```\n\n**スマホ用を先に書き、`min-width` で広い画面の分を足していく** 書き方を、モバイルファーストと呼びます。スマホの CSS が単純になるので、今はこちらが主流です。\n\n| よく使う区切り（目安） | |\n|---|---|\n| 〜 639px | スマホ |\n| 640px 〜 | 大きめのスマホ・小さいタブレット |\n| 768px 〜 | タブレット |\n| 1024px 〜 | ノート PC |\n| 1280px 〜 | 大きな画面 |\n\n（Tailwind CSS の `sm:`・`md:`・`lg:`・`xl:` がこの区切りです。レッスン 7）\n\n## 単位の使い分け\n\n| 単位 | 意味 | 使いどころ |\n|---|---|---|\n| `px` | 画面の点（ピクセル）の数 | 枠線の太さなど、変わってほしくないもの |\n| `%` | 親の大きさに対する割合 | 幅（`width: 50%`） |\n| `rem` | **ページの基準の文字の大きさ**（ふつう 16px）の何倍か | **文字の大きさ・余白**（おすすめ） |\n| `em` | **親の文字の大きさ** の何倍か | ボタンの中の余白など、文字に合わせたいもの |\n| `vw` / `vh` | 画面の幅／高さの 1% | 画面いっぱいの背景（`min-height: 100vh`） |\n\n親の文字の大きさを 20px にして、子に `1.5em` と `1.5rem` を付けて測りました。\n\n```text\nfont-size: 1.5em  → 30px（親の 20px × 1.5）\nfont-size: 1.5rem → 24px（基準の 16px × 1.5。親は関係ない）\n```\n\n`em` は **入れ子になるほど掛け算で大きくなる** ので、意図しない大きさになりがちです。文字の大きさには `rem` を使うのが無難です。\nまた、`rem` で書いておくと、利用者がブラウザの設定で文字を大きくしたときに、ページ全体が一緒に大きくなります。\n\n## よくある崩れと直し方\n\n| 症状 | よくある原因 | 直し方 |\n|---|---|---|\n| スマホで横スクロールが出る | 幅を `px` で固定した要素がある（`width: 800px`） | `max-width: 100%`、または `%` や Grid に |\n| 画像がはみ出す | 画像が元の大きさで表示されている | `img { max-width: 100%; height: auto; }` |\n| 長い URL が折り返されずにはみ出す | 単語の途中で改行できない | `overflow-wrap: anywhere;` |\n| `width: 100%` ＋ padding ではみ出す | box-sizing（レッスン 3） | `box-sizing: border-box` |\n| スマホで文字が小さすぎる | viewport の meta タグが無い | レッスンの最初の 1 行を入れる |\n| ボタンが小さくて押しにくい | 押せる範囲が狭い | 高さ 44px 前後を目安に、padding を大きく |\n\n## 確かめ方\n\nブラウザの開発者ツール（F12）の左上の **スマホとタブレットの形のボタン** を押すと、iPhone などの幅で表示できます。AI に作ってもらったページは、**PC の幅だけでなく、スマホの幅でも必ず見てみましょう**。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `@media (max-width: 768px) { ... }` | 768px **以下**（スマホ・タブレット）向けの上書き。PC 用が先に書かれている（デスクトップファースト） |\n| `@media (min-width: 768px)` | 768px 以上向け。モバイルファースト |\n| `width: 1200px` | ⚠️ スマホではみ出す。`max-width: 1200px; margin: 0 auto;` なら OK（広い画面では 1200px で中央寄せ、狭い画面では画面いっぱい） |\n| `font-size: 14px` が全部 px | 利用者の文字の大きさの設定が効かない。`rem` だと親切 |\n| `height: 100vh` | スマホではアドレスバーの分だけはみ出すことがある。`100dvh`（動的な高さ）を使うコードも増えている |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">` が無いと、スマホでどうなる？",
+        "choices": [
+         "表示されない",
+         "PC 用の広い画面として表示され、全体が縮小されて文字がとても小さくなる",
+         "自動でスマホ用のデザインになる"
+        ],
+        "answer": 1,
+        "explain": "スマホのブラウザは、指示が無いと PC 用のページとして広い幅で表示します。この 1 行で本当の画面幅で表示させます。"
+       },
+       {
+        "question": "`@media (min-width: 768px) { .menu { display: flex; } }` の意味は？",
+        "choices": [
+         "画面の幅が 768px 以上のときだけ、.menu を横並びにする",
+         "画面の幅が 768px 以下のときだけ、横並びにする",
+         "768 個のメニューを並べる"
+        ],
+        "answer": 0,
+        "explain": "min-width は「この幅以上」です。スマホ用を先に書き、広い画面の分を足すモバイルファーストの書き方です。"
+       },
+       {
+        "question": "親の文字の大きさが 20px のとき、子の `font-size: 1.5rem` は何 px？（ページの基準は 16px）",
+        "choices": [
+         "30px",
+         "24px",
+         "20px"
+        ],
+        "answer": 1,
+        "explain": "rem はページの基準（16px）の何倍か、なので親は関係なく 24px です。em なら親の 20px × 1.5 = 30px になります。"
+       }
+      ]
+     ],
+     "id": "06-responsive"
+    },
+    {
+     "title": "Tailwind CSS を読む ― class だらけの HTML の正体",
+     "level": 3,
+     "minutes": 18,
+     "concepts": [
+      "dom_ui",
+      "reading",
+      "ai_coding",
+      "tooling"
+     ],
+     "summary": "AI が書く画面のコードによく出てくる Tailwind CSS。`px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 md:px-6` を、実際に生成された CSS と見比べて 1 つずつ読む。数字の意味、hover:・md:・dark: の前置き、よくある組み合わせ。",
+     "body": "## このレッスンのゴール\n\n- Tailwind CSS の class 名が、どんな CSS になるのかを読める\n- 数字（`p-4`・`gap-6`）の大きさと、`hover:`・`md:`・`dark:` の意味が分かる\n- AI の画面のコードを見て、レイアウト（Flexbox・Grid・レスポンシブ）を説明できる\n\n## AI の画面のコードは、だいたいこうなっている\n\nReact などで AI に画面を作ってもらうと、こんなコードがよく出てきます。\n\n```html\n<button class=\"px-4 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 md:px-6 disabled:opacity-50\">\n  保存\n</button>\n```\n\nCSS のファイルはほとんど無く、**class にたくさんの短い名前が並んでいる** のが特徴です。これが **Tailwind CSS** です。\n1 つの class が 1 つの小さな CSS に対応していて、それを組み合わせて見た目を作ります（「ユーティリティファースト」と呼びます）。React では `class` の代わりに `className=\"...\"` と書きます。\n\n## 実際に生成された CSS と見比べる\n\nTailwind は、HTML に出てくる class 名を探して、**使われているものだけの CSS を自動で作ります**。上のボタンの HTML から、実際に Tailwind（v4.3）で CSS を生成してみました。\n\n| class | 生成された CSS | 読み方 |\n|---|---|---|\n| `px-4` | `padding-inline: calc(var(--spacing) * 4);` | 左右（x）の padding を 4 単位 |\n| `py-2` | `padding-block: calc(var(--spacing) * 2);` | 上下（y）の padding を 2 単位 |\n| `rounded-lg` | `border-radius: var(--radius-lg);` | 角を丸く（lg ＝ 大きめ） |\n| `bg-blue-600` | `background-color: var(--color-blue-600);` | 背景を青の 600 番 |\n| `text-white` | `color: var(--color-white);` | 文字を白 |\n| `font-bold` | `font-weight: var(--font-weight-bold);` | 太字 |\n\n`var(--spacing)` は CSS の **変数** で、生成された CSS の中で `--spacing: 0.25rem;` と決められていました。\n\n### 数字の読み方\n\n```text\n1 単位 = 0.25rem = 4px（ページの基準の文字が 16px のとき）\n```\n\n| class | 大きさ |\n|---|---|\n| `p-1` | 4px |\n| `p-2` | 8px |\n| `p-4` | 16px |\n| `p-6` | 24px |\n| `p-8` | 32px |\n\n**数字 × 4px** と覚えれば、だいたい読めます。`gap-4`・`mt-2`・`w-64` なども同じです（`w-64` は 256px）。\n\n| 前の文字 | 意味 | 例 |\n|---|---|---|\n| `p` / `m` | padding / margin（レッスン 3） | `p-4`、`m-2` |\n| `x` / `y` | 左右 / 上下 | `px-4`、`my-8` |\n| `t` `r` `b` `l` | 上・右・下・左 | `mt-2`（上の margin）、`pl-4`（左の padding） |\n| `w` / `h` | 幅 / 高さ | `w-full`（100%）、`h-screen`（画面の高さ） |\n\n### 色の読み方\n\n`bg-blue-600` の `600` は **色の濃さ** です。`50`（とても薄い）から `950`（とても濃い）まであり、500 前後がふつうの濃さです。\n\n```text\nbg-blue-600     → 背景を少し濃い青に\nhover:bg-blue-700 → マウスを乗せたら、もう一段濃い青に\ntext-gray-500   → 文字を中くらいの灰色に（補足の文など）\n```\n\n## 前置き（バリアント）：条件付きの指定\n\n`hover:` や `md:` のように、`:` の前に付くものは「**この条件のときだけ**」という意味です。生成された CSS を見ると、よく分かります。\n\n```css\n@media (hover: hover) {\n  .hover\\:bg-blue-700:hover {             /* マウスが乗ったとき */\n    background-color: var(--color-blue-700);\n  }\n}\n.disabled\\:opacity-50:disabled {          /* ボタンが使えない状態のとき */\n  opacity: 50%;\n}\n@media (width >= 48rem) {                 /* 画面の幅が 768px 以上のとき */\n  .md\\:px-6 {\n    padding-inline: calc(var(--spacing) * 6);\n  }\n}\n@media (prefers-color-scheme: dark) {     /* ダークモードのとき */\n  .dark\\:text-gray-400 { color: var(--color-gray-400); }\n}\n```\n\n| 前置き | 条件 | 対応する CSS |\n|---|---|---|\n| `hover:` | マウスが乗ったとき | `:hover`（レッスン 4 の疑似クラス） |\n| `focus:` / `focus-visible:` | 選ばれているとき | `:focus` / `:focus-visible` |\n| `disabled:` | 使えない状態のとき | `:disabled` |\n| `sm:` `md:` `lg:` `xl:` | 画面の幅が 640・768・1024・1280px **以上** のとき | `@media (min-width: ...)`（レッスン 6） |\n| `dark:` | ダークモードのとき | `@media (prefers-color-scheme: dark)`（設定で切り替え方式にもできる） |\n\n⚠️ `md:` は「md **以上**」です。**前置きの無い class がスマホ用、`md:` が広い画面用** という、モバイルファースト（レッスン 6）の読み方をします。\n\n```html\n<div class=\"grid grid-cols-1 md:grid-cols-3 gap-6\">\n```\n\n「ふだん（スマホ）は 1 列、768px 以上なら 3 列、隙間は 24px」と読みます。`md:grid-cols-3` は、生成された CSS では `grid-template-columns: repeat(3, minmax(0, 1fr));` でした（レッスン 5 の `repeat(3, 1fr)` とほぼ同じ）。\n\n## よくある組み合わせ\n\n| class の並び | 読み方 |\n|---|---|\n| `flex items-center justify-between` | 横に並べて、縦は中央、両端に寄せる（ヘッダーの定番） |\n| `flex flex-col gap-4` | 縦に並べて、隙間 16px |\n| `grid grid-cols-1 md:grid-cols-3 gap-6` | スマホ 1 列 → 広い画面で 3 列 |\n| `max-w-3xl mx-auto p-4` | 最大の幅 48rem（768px）で中央寄せ、周りに 16px の余白 |\n| `w-full` | 幅 100% |\n| `hidden md:block` | スマホでは非表示、広い画面で表示 |\n| `text-sm text-gray-500` | 小さめの灰色の文字（補足・日付など） |\n| `rounded-lg shadow-md border` | 角丸・影・枠線（カード） |\n| `fixed inset-0 bg-black/50` | 画面全体を覆う半透明の黒（モーダルの背景）。`/50` は透明度 50% |\n\n## よいところと注意点\n\n| よいところ | 注意点 |\n|---|---|\n| CSS のファイルと HTML を行き来しなくてよい | class が長くなり、HTML が読みにくい |\n| 名前を考えなくてよい（`.card-header-title` など） | 同じ組み合わせをコピーすると、直すとき全部直す必要がある（React なら部品にまとめる） |\n| 使った分だけの小さな CSS になる | class 名を文字列でつなげて作ると、Tailwind が見つけられない（下） |\n| 余白や色の値がそろう（4px 単位など） | Tailwind の書き方を知らないと読めない |\n\n### ⚠️ class 名を組み立てると効かない\n\n```javascript\n// ⚠️ Tailwind は「bg-red-600」という文字をソースから探せない\nconst cls = `bg-${color}-600`;\n\n// ✅ 完全な名前を書いておく\nconst cls = color === \"red\" ? \"bg-red-600\" : \"bg-blue-600\";\n```\n\nTailwind は、**ソースコードに完全な形で書かれた class 名** を探して CSS を作ります。文字列をつなげて作った名前は見つけられないので、その CSS が生成されず、見た目が付きません。AI のコードで「色が付かない」ときの定番の原因です。\n\n## Python で言うと\n\nTailwind そのものは Python と関係ありませんが、Python で Web アプリを作るときも、テンプレート（Jinja2・Django）の HTML に同じように Tailwind の class を書きます。\n\n```html\n<!-- Jinja2 のテンプレート -->\n{% for item in items %}\n  <li class=\"flex justify-between py-2 border-b\">\n    <span>{{ item.name }}</span><span class=\"text-gray-500\">{{ item.price }} 円</span>\n  </li>\n{% endfor %}\n```\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `className=\"...\"` に 10 個以上の class | 前置きの無いもの（スマホ）→ `md:`（広い画面）→ `hover:` などの状態、と分けて読む |\n| `` `text-${size}` `` のような組み立て | ⚠️ 生成されない。完全な名前に |\n| `focus:outline-none` だけ | ⚠️ キーボードで選んだ場所が見えなくなる。`focus-visible:ring-2` などの代わりがあるか |\n| `!p-4`（先頭に `!`） | `!important` 付き（レッスン 4）。v4 では末尾に `p-4!` と書く |\n| `tailwind.config.js` | Tailwind v3 までの設定ファイル。v4 は CSS の中（`@theme`）で設定する |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Tailwind の `px-4` が表すのは？（基準の文字の大きさは 16px）",
+        "choices": [
+         "左右の padding を 16px",
+         "上下の padding を 4px",
+         "幅を 4px"
+        ],
+        "answer": 0,
+        "explain": "x は左右、数字は × 4px なので 16px です。生成された CSS も `padding-inline: calc(var(--spacing) * 4)`（--spacing は 0.25rem）でした。"
+       },
+       {
+        "question": "`<div class=\"grid grid-cols-1 md:grid-cols-3\">` の、画面の幅 375px（スマホ）での見た目は？",
+        "choices": [
+         "3 列",
+         "1 列",
+         "何も表示されない"
+        ],
+        "answer": 1,
+        "explain": "前置きの無い class がスマホを含むすべての幅、`md:` は 768px 以上のときだけです。375px では 1 列になります。"
+       },
+       {
+        "question": "React で `` className={`bg-${color}-500`} `` と書いたら、色が付かなかった。理由は？",
+        "choices": [
+         "React では Tailwind が使えないから",
+         "Tailwind はソースに完全な形で書かれた class 名だけを探して CSS を作るので、組み立てた名前の CSS が生成されないから",
+         "`bg-` は背景ではないから"
+        ],
+        "answer": 1,
+        "explain": "`bg-red-500` のように、完全な名前がソースのどこかに書かれている必要があります。条件で完全な名前を選ぶように書き換えます。"
+       }
+      ]
+     ],
+     "id": "07-tailwind"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "SQL",

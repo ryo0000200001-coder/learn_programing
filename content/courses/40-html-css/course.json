@@ -1,3 +1,11 @@
-{"title": "HTML / CSS", "icon": "🎨", "order": 40, "status": "planned",
- "description": "Web ページの骨組みと見た目。",
- "outline": ["タグと要素", "クラスと ID", "セレクタ", "Flexbox と Grid", "レスポンシブ"]}
+{
+ "title": "HTML / CSS",
+ "icon": "🎨",
+ "order": 40,
+ "description": "Web ページの骨組み（HTML）と見た目（CSS）。タグ・フォーム・セレクタとカスケード・ボックスモデル・Flexbox と Grid・レスポンシブ、AI がよく使う Tailwind CSS の読み方まで。値はすべて実際のブラウザで確かめたもの。",
+ "levels": {
+  "1": "入門：骨組みと見た目",
+  "2": "基礎：レイアウト",
+  "3": "実践：AI のコードを読む"
+ }
+}
