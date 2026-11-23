@@ -3,13 +3,10 @@
  "icon": "⚙️",
  "order": 93,
  "category": "language",
- "status": "planned",
- "description": "C を拡張した言語。ゲーム（Unreal Engine）や高速な処理で使われる。",
- "outline": [
-  "C との違い",
-  "クラスと参照",
-  "STL（vector・map）",
-  "スマートポインタ",
-  "テンプレート"
- ]
+ "description": "C を拡張した言語。ゲーム（Unreal Engine）や高速な処理で使われる。C との違い（std::string・参照・auto）、クラスとデストラクタ（RAII）、STL（vector・map・algorithm）、スマートポインタ、テンプレートとラムダ。C 言語コースのメモリの問題を、C++ がどう解決するかを実際に確かめる。g++ 13（C++20）で実行したもの。",
+ "levels": {
+  "1": "入門：C との違い",
+  "2": "基礎：クラスと STL",
+  "3": "実践：メモリと汎用化"
+ }
 }

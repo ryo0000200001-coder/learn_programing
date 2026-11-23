@@ -5542,17 +5542,251 @@ window.SITE_DATA = {
    "icon": "⚙️",
    "order": 93,
    "category": "language",
-   "status": "planned",
-   "description": "C を拡張した言語。ゲーム（Unreal Engine）や高速な処理で使われる。",
-   "outline": [
-    "C との違い",
-    "クラスと参照",
-    "STL（vector・map）",
-    "スマートポインタ",
-    "テンプレート"
-   ],
+   "description": "C を拡張した言語。ゲーム（Unreal Engine）や高速な処理で使われる。C との違い（std::string・参照・auto）、クラスとデストラクタ（RAII）、STL（vector・map・algorithm）、スマートポインタ、テンプレートとラムダ。C 言語コースのメモリの問題を、C++ がどう解決するかを実際に確かめる。g++ 13（C++20）で実行したもの。",
+   "levels": {
+    "1": "入門：C との違い",
+    "2": "基礎：クラスと STL",
+    "3": "実践：メモリと汎用化"
+   },
    "id": "93-cpp",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "C との違い ― std::string・参照・auto",
+     "level": 1,
+     "minutes": 16,
+     "concepts": [
+      "basics",
+      "strings",
+      "variables",
+      "memory"
+     ],
+     "summary": "C++ は C のほぼすべてを含み、その上に便利な道具を足した言語。std::cout と <<、std::string（== で比べられる・自動で伸びる）、名前空間 std::、参照 &（ポインタより安全な「別名」）、const &、auto。",
+     "body": "## このレッスンのゴール\n\n- C++ の `std::cout <<`・`std::string`・`std::` の意味が分かる\n- 参照（`int&`・`const std::string&`）が何で、ポインタとどう違うか説明できる\n- `auto` での型の推論を読める\n\nC 言語コースを先に読んでおくと、「なぜこうなっているか」がよく分かります。\n\n## C++ とは\n\n**C++** は、C 言語に **クラス**（レッスン 2）や **便利な部品の集まり**（STL。レッスン 3）などを足した言語です。C の速さはそのままに、大きなプログラムを書きやすくしたもので、**ゲーム**（Unreal Engine、多くのゲーム機のソフト）、ブラウザ（Chrome の中身）、画像・動画の処理、金融の高速な取引などで使われています。\n\nC++ は C の **ほぼすべてを含んでいる** ので、C の書き方（`printf`・`malloc`・ポインタ）もそのまま使えます。でも、今の C++ では、**C の危ない書き方をなるべく使わない** のが良い書き方とされています。\n\n## 最初のプログラム\n\n```cpp\n#include <iostream>\n#include <string>\n\nvoid add_tax(int& price) { price = price * 110 / 100; }\n\nint main() {\n    std::string name = \"Ryo\";\n    std::string greet = \"こんにちは、\" + name + \" さん\";\n    std::cout << greet << std::endl;\n\n    int price = 120;\n    add_tax(price);\n    std::cout << \"参照で渡す: \" << price << \"\\n\";\n}\n```\n\n```text\nこんにちは、Ryo さん\n参照で渡す: 132\n```\n\n（このコースの出力とエラーは、すべて g++ 13 で `-std=c++20` を付けてコンパイルし、実際に実行したものです）\n\n| C++ | 意味 | C では |\n|---|---|---|\n| `#include <iostream>` | 入出力（拡張子の `.h` が無い） | `#include <stdio.h>` |\n| `std::cout << x << \"\\n\"` | 表示。`<<` で順に流し込む | `printf(\"%d\\n\", x)` |\n| `std::endl` | 改行（＋すぐに書き出す） | `\\n` |\n| `std::string` | **文字列の型** | char の配列 |\n| `std::` | **名前空間** std（標準ライブラリ）の中のもの | — |\n\n`std::cout << greet` は、「greet を cout（画面）に流し込む」と読みます。`printf` と違って **書式（`%d`・`%s`）を書かない** ので、レッスン 1 の C で見た「書式と型が合わずに落ちる」問題が起きません。\n\n### 名前空間 std::\n\n`std::string` の `std::` は、「標準ライブラリ（standard）の string」という意味です。Python の `import datetime` して `datetime.date` と書くのに似ています。`using namespace std;` と書くと `std::` を省略できますが、名前がぶつかる原因になるので、大きなプログラムでは避けられます。\n\n## std::string：安全な文字列\n\n```cpp\nstd::string a = \"りんご\", b = \"りんご\";\nstd::cout << std::boolalpha << (a == b) << \" \" << a.length() << \"\\n\";   // true 9\n\nstd::string s = \"abc\";\ns += \"def\";\nstd::cout << s << \" \" << s.substr(1, 3) << \" \" << s.find(\"d\") << \"\\n\";  // abcdef bcd 3\n```\n\n| 操作 | C++ の std::string | C の char 配列 | Python |\n|---|---|---|---|\n| つなぐ | `a + b`、`s += \"x\"` | `strcat`（大きさに注意） | `a + b` |\n| 比べる | **`a == b`**（中身で比べる） | `strcmp(a, b) == 0` | `a == b` |\n| 長さ | `s.length()`（バイト数） | `strlen(s)` | `len(s.encode())` |\n| 一部 | `s.substr(1, 3)` | 自分でコピー | `s[1:4]` |\n| 伸びる | **自動で** 大きくなる | 決まった大きさ（はみ出すと危険） | 自動 |\n\n**`==` で中身を比べられ、自動で伸びる** ので、C 言語コースのレッスン 4 の「`==` で比べてはいけない」「バッファオーバーフロー」が起きにくくなっています。`length()` が 9 なのは、C と同じくバイト数だからです（日本語は 3 バイト）。\n\n## 参照：別名\n\n```cpp\nvoid add_tax(int& price) { price = price * 110 / 100; }\n\nint price = 120;\nadd_tax(price);        // & を付けずに渡す\n// price は 132 になった\n```\n\n`int& price` の `&` は、**参照**（reference）という意味です。関数の price は、呼んだ側の price の **別名** になり、書き換えると元が変わります。\n\nC 言語コースのレッスン 3 では、同じことをポインタで書きました。\n\n```c\nvoid add_tax(int *price) { *price = *price * 110 / 100; }   // C：番地を受け取り、* で中身\nadd_tax(&price);                                             // & で番地を渡す\n```\n\n| | ポインタ（C） | 参照（C++） |\n|---|---|---|\n| 書き方 | `int *p` / `*p = ...` / `f(&x)` | `int& r` / `r = ...` / `f(x)` |\n| NULL になれる | なれる（落ちる原因） | **なれない**（必ず何かを指す） |\n| 指す先を変える | 変えられる | 変えられない（最初に決めたら一生その別名） |\n\n```cpp\nint& r = price;\nr = 0;\n// price は 0 になった（r は price の別名）\n```\n\n参照は **「NULL にならない、付け替えられないポインタ」** のようなもので、ポインタより安全です。今の C++ では、**関数の引数で「元を変えたい」ときは参照** を使うのが普通です。\n\n### const & ：コピーせずに、見るだけで借りる\n\n```cpp\nvoid show(const std::string& s) {\n    std::cout << s << \"（\" << s.size() << \" バイト）\\n\";\n}\nshow(a);   // りんご（9 バイト）\n```\n\n`const std::string&` は、「**コピーせずに借りるが、書き換えない**（const）」という意味です。std::string を普通に（`std::string s`）受け取ると、長い文字列も毎回 **コピー** されて遅くなります。\n\n**Rust の `&str` や `&T`（借りて見るだけ）とほぼ同じ考え方** で、AI の C++ のコードの関数の引数は、たいていこの形になっています。\n\n| 引数の書き方 | 意味 | Rust で言うと |\n|---|---|---|\n| `std::string s` | コピーを受け取る | `s: String`（ムーブ） |\n| `const std::string& s` | 借りて見るだけ | `s: &str` |\n| `std::string& s` | 借りて書き換える | `s: &mut String` |\n\n## auto：型の推論\n\n```cpp\nauto total = price * 3;       // int だと推論される\nauto it = stock.find(\"りんご\");   // 長い型名を書かなくてよい（レッスン 3）\n```\n\n`auto` は、右の値から型を決めてもらう書き方です（Java の `var`、Go の `:=`、Rust の `let`）。C++ の型名はとても長くなることがあるので、よく使われます。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方 |\n|---|---|\n| `#include <vector>` / `<map>` / `<memory>` | STL の部品（レッスン 3・4） |\n| `void f(const Foo& x)` | x をコピーせずに借りて見るだけ |\n| `void f(Foo& out)` | out を書き換える |\n| `std::string_view` | 文字列を借りて見るだけの、さらに軽い型（Rust の `&str` に近い） |\n| `char*` / `malloc` / `strcpy` が C++ のコードにある | C の書き方。C++ では `std::string` や `std::vector` を使うほうが安全 |\n| `.cpp` と `.h`（`.hpp`） | 中身と、宣言の一覧（ヘッダー）。C と同じ分け方 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "C++ の `std::string a = \"x\", b = \"x\";` で `a == b` は？",
+        "choices": [
+         "true（std::string は中身で比べる）",
+         "false（番地を比べる）",
+         "コンパイルエラー"
+        ],
+        "answer": 0,
+        "explain": "C の char 配列と違い、std::string の == は中身を比べます。"
+       },
+       {
+        "question": "`void f(int& n) { n = 0; }` を `f(x)` で呼ぶと、x は？",
+        "choices": [
+         "変わらない（コピーなので）",
+         "0 になる（n は x の別名なので）",
+         "エラーになる"
+        ],
+        "answer": 1,
+        "explain": "`int&` は参照で、関数の n は呼んだ側の x の別名です。書き換えると元が変わります。"
+       },
+       {
+        "question": "関数の引数を `const std::string& s` にする主な理由は？",
+        "choices": [
+         "文字列を書き換えたいから",
+         "コピーせずに借りて、しかも書き換えないことを保証したいから",
+         "s を NULL にできるようにしたいから"
+        ],
+        "answer": 1,
+        "explain": "const の参照は「借りて見るだけ」です。長い文字列のコピーを避けられます。Rust の `&str` に当たります。"
+       }
+      ]
+     ],
+     "id": "01-diff-from-c"
+    },
+    {
+     "title": "クラスとデストラクタ ― RAII という考え方",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "classes",
+      "memory"
+     ],
+     "summary": "C++ のクラス（public・private・コンストラクタの初期化リスト・const のメソッド）と、オブジェクトが消えるときに必ず呼ばれるデストラクタ ~Product()。片付けを「範囲を抜けたら自動」にする RAII を、実行の順番で確かめる。",
+     "body": "## このレッスンのゴール\n\n- C++ のクラスの書き方（`public:`・`private:`・コンストラクタ・`const` のメソッド）を読める\n- デストラクタ（`~クラス名()`）がいつ呼ばれるか、実行の順番から説明できる\n- RAII が、C 言語コースの「free 忘れ」をどう防ぐか説明できる\n\n## クラス\n\n```cpp\nclass Product {\npublic:\n    Product(std::string name, int price) : name_(std::move(name)), price_(price) {\n        std::cout << \"  [作った] \" << name_ << \"\\n\";\n    }\n    ~Product() { std::cout << \"  [片付けた] \" << name_ << \"\\n\"; }\n\n    int withTax() const { return price_ * 110 / 100; }\n    void discount(int yen) { price_ -= yen; }\n    const std::string& name() const { return name_; }\n\nprivate:\n    std::string name_;\n    int price_;\n};\n```\n\n| 部分 | 意味 | 似ているもの |\n|---|---|---|\n| `public:` / `private:` | ここから下は公開／非公開（Java の書き方を、まとめて書く形） | Java の `public` / `private` |\n| `Product(std::string name, int price)` | コンストラクタ（クラスと同じ名前） | Java・Python の `__init__` |\n| `: name_(std::move(name)), price_(price)` | **初期化リスト**：フィールドに最初の値を入れる | `self.name = name` |\n| `~Product()` | **デストラクタ**：オブジェクトが消えるときに呼ばれる | （次で説明） |\n| `int withTax() const` | **const のメソッド**：オブジェクトの中身を変えない約束 | Rust の `&self` |\n| `name_` | フィールドの名前の後ろに `_` を付ける習慣（引数の name と区別） | Python の `self._name` |\n| `std::move(name)` | コピーせずに中身を移す（Rust のムーブに近い） | |\n\n### const のメソッド\n\n```cpp\nint withTax() const { price_ = 1; return price_; }\n```\n\n```text\nerror: assignment of member 'P::price_' in read-only object\n```\n\nメソッドの後ろの `const` は「このメソッドは中身を変えません」という約束で、変えようとすると **コンパイルエラー** になります。Rust の `&self`（見るだけ）と `&mut self`（書き換える）の区別を、C++ では `const` の有無で表します（Rust コースのレッスン 3）。\n\n## デストラクタはいつ呼ばれるか\n\n```cpp\nvoid useProduct() {\n    std::cout << \"useProduct 開始\\n\";\n    Product milk(\"牛乳\", 200);\n    std::cout << \"  \" << milk.name() << \" \" << milk.withTax() << \"\\n\";\n    std::cout << \"useProduct 終わり\\n\";\n}\n\nint main() {\n    Product apple(\"りんご\", 120);\n    apple.discount(20);\n    std::cout << apple.name() << \" \" << apple.withTax() << \"\\n\";\n    useProduct();\n    {\n        Product bread(\"食パン\", 250);\n        std::cout << \"  { } の中\\n\";\n    }\n    std::cout << \"main 終わり\\n\";\n}\n```\n\n```text\n  [作った] りんご\nりんご 110\nuseProduct 開始\n  [作った] 牛乳\n  牛乳 220\nuseProduct 終わり\n  [片付けた] 牛乳        ← useProduct を抜けた瞬間\n  [作った] 食パン\n  { } の中\n  [片付けた] 食パン      ← { } を抜けた瞬間\nmain 終わり\n  [片付けた] りんご      ← main を抜けた瞬間\n```\n\n| オブジェクト | 作られた場所 | 片付けられたとき |\n|---|---|---|\n| 牛乳 | useProduct の中 | **useProduct を抜けたとき** |\n| 食パン | `{ }` の中 | **`}` を抜けたとき** |\n| りんご | main の中 | **main を抜けたとき** |\n\nC++ のオブジェクトは、**作った範囲（`{ }`）を抜けたとき、必ずデストラクタが呼ばれます**。途中で `return` しても、例外が起きても（レッスン 5 で少し触れます）呼ばれます。Python の GC のように「いつか片付ける」ではなく、**いつ片付けられるか、コードを見れば分かる** のが特徴です。\n\n## RAII：片付けを自動にする\n\nこの仕組みを使って、**資源（メモリ・ファイル・ロック・接続）を、オブジェクトが持ち、デストラクタで必ず返す** ようにする考え方を **RAII**（Resource Acquisition Is Initialization：資源の確保は初期化のときに）と呼びます。名前は難しいですが、中身は単純です。\n\n```text\n作る（コンストラクタ）  → 資源を借りる（メモリを確保・ファイルを開く・ロックをかける）\n範囲を抜ける（デストラクタ）→ 資源を返す（自動で。忘れられない）\n```\n\nC 言語コースのレッスン 5 では、`product_new` で借りたら、**どこかで必ず `product_free` を呼ぶ** 必要があり、忘れるとリーク、2 回呼ぶと二重解放でした。RAII なら、**返すのはデストラクタの仕事** なので、人が忘れることがありません。\n\n| 言語 | 「範囲を抜けたら必ず片付け」 |\n|---|---|\n| C++ | デストラクタ（RAII） |\n| Rust | 持ち主がいなくなったら `Drop`（C++ の RAII を、コンパイラのルールでさらに確実にしたもの） |\n| Python | `with` 文（`__exit__`） |\n| Go | `defer` |\n| Java | try-with-resources |\n| シェル | `trap ... EXIT` |\n\n`std::string`・`std::vector`（レッスン 3）も、中で RAII を使っています。中では `malloc` のようにメモリを借りていますが、デストラクタで自動で返すので、**使う側は free のことを考えなくてよい** のです。\n\n```cpp\nstd::lock_guard<std::mutex> lock(mu);   // ロックをかける\n// ... 処理 ...\n// } を抜けると自動でロックが外れる（Go の defer mu.Unlock() に当たる）\n```\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `class Foo { public: ... private: ... };` | 最後の `;` を忘れるとエラー |\n| `~Foo()` | デストラクタ。中で `delete` や `close` をしている |\n| `Foo(int x) : x_(x) {}` | 初期化リスト |\n| `int get() const` | 中身を変えないメソッド |\n| `std::lock_guard` / `std::unique_lock` / `std::fstream` | RAII の部品（ロック・ファイル） |\n| デストラクタで `delete` している自作のクラス | ⚠️ コピーされると二重解放になりうる（「3 つのルール」）。スマートポインタ（レッスン 4）にすれば不要 |\n| `explicit Foo(std::string n)` | 勝手な型の変換で、このコンストラクタが呼ばれないようにする印 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "C++ で、関数の中で作ったオブジェクトのデストラクタが呼ばれるのはいつ？",
+        "choices": [
+         "プログラムが終わるとき",
+         "ガベージコレクタが動いたとき",
+         "その関数（作った範囲の { }）を抜けたとき"
+        ],
+        "answer": 2,
+        "explain": "C++ のオブジェクトは、作った範囲を抜けると必ずデストラクタが呼ばれます。実行の順番でも、useProduct を抜けた瞬間に牛乳が片付けられていました。"
+       },
+       {
+        "question": "`int withTax() const { ... }` の `const` の意味は？",
+        "choices": [
+         "このメソッドはオブジェクトの中身を変えない",
+         "このメソッドの戻り値は変えられない定数",
+         "このメソッドは一度しか呼べない"
+        ],
+        "answer": 0,
+        "explain": "メソッドの後ろの const は「中身を変えない」約束で、変えようとするとコンパイルエラーです。"
+       },
+       {
+        "question": "RAII の考え方として正しいのは？",
+        "choices": [
+         "資源は使い終わったら、必ず手で free する",
+         "資源をオブジェクトに持たせ、デストラクタで自動で返すので、返し忘れが起きない",
+         "資源はプログラムの最後にまとめて返す"
+        ],
+        "answer": 1,
+        "explain": "作ったときに借りて、範囲を抜けたら自動で返します。C の free 忘れを防ぐ仕組みで、Python の with、Go の defer に当たります。"
+       }
+      ]
+     ],
+     "id": "02-classes-raii"
+    },
+    {
+     "title": "STL ― vector・map と algorithm",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "collections",
+      "higher_order",
+      "generics"
+     ],
+     "summary": "標準の部品の集まり STL。伸び縮みする配列 vector、並んだ辞書 map と速い unordered_map、範囲 for、sort・accumulate・count_if とラムダ。map は「読むだけで追加される」、[] は範囲を確かめない、という 2 つの落とし穴を実際の結果で。",
+     "body": "## このレッスンのゴール\n\n- `std::vector`・`std::map` の基本の操作と範囲 for を読める\n- `std::sort`・`std::accumulate` などの `begin(), end()` の書き方とラムダを読める\n- `map[key]` で読むと追加される、`v[i]` は範囲を確かめない、という落とし穴が分かる\n\n## vector：伸び縮みする配列\n\n```cpp\n#include <vector>\n\nstd::vector<int> prices = {120, 90, 200, 1200, 250, 180};\nprices.push_back(80);\nstd::cout << prices.size() << \" \" << prices[0] << \" \" << prices.back() << \"\\n\";   // 7 120 80\n\nfor (int p : prices) std::cout << p << \" \";\n// 120 90 200 1200 250 180 80\n```\n\n| C++ | Python | 意味 |\n|---|---|---|\n| `std::vector<int> v = {1, 2}` | `v = [1, 2]` | int の vector |\n| `v.push_back(x)` | `v.append(x)` | 末尾に追加 |\n| `v.size()` | `len(v)` | 数 |\n| `v[0]` / `v.back()` | `v[0]` / `v[-1]` | 最初／最後 |\n| `for (int p : v)` | `for p in v:` | **範囲 for** |\n| `for (const auto& p : v)` | `for p in v:` | コピーせずに借りて回す（大きな要素なら、この形） |\n\n`std::vector` は、C 言語コースの「`malloc` と `realloc` で伸ばす配列」を、**RAII（レッスン 2）で包んだもの** です。足りなくなったら自動で広い場所に引っ越し、範囲を抜けたら自動で返します。`<int>` は Java・Rust と同じジェネリクス（ここでは **テンプレート** と呼ぶ。レッスン 5）です。\n\n### ⚠️ [] は範囲を確かめない\n\n```cpp\nstd::vector<int> v = {1, 2, 3};\ntry { std::cout << v.at(10); } catch (const std::out_of_range& e) { std::cout << \"at(10): out_of_range\\n\"; }\nstd::cout << \"v[10] = \" << v[10] << \"（範囲を確かめない）\\n\";\n```\n\n```text\nat(10): out_of_range\nv[10] = 120（範囲を確かめない）\n```\n\n| 書き方 | 範囲外のとき |\n|---|---|\n| `v.at(10)` | **例外**（`std::out_of_range`）を投げる |\n| `v[10]` | **確かめない**。隣のメモリの値（ここでは 120）を読んでしまう |\n\nC の配列と同じ危険が、`[]` には残っています（速さのため）。AddressSanitizer を付けてコンパイルすると、`heap-buffer-overflow ... READ of size 4 ... in main a3.cpp:41` と、その行で止めてくれました。\n\n## algorithm：begin と end\n\n```cpp\n#include <algorithm>\n#include <numeric>\n\nstd::sort(prices.begin(), prices.end());\nstd::cout << \"sort: \" << prices.front() << \"..\" << prices.back() << \"\\n\";   // sort: 80..1200\n\nint total = std::accumulate(prices.begin(), prices.end(), 0);\nauto cheap = std::count_if(prices.begin(), prices.end(), [](int p) { return p < 200; });\nstd::cout << \"total=\" << total << \" cheap=\" << cheap << \"\\n\";              // total=2120 cheap=4\n```\n\n| C++ | Python |\n|---|---|\n| `std::sort(v.begin(), v.end())` | `v.sort()` |\n| `std::accumulate(v.begin(), v.end(), 0)` | `sum(v)` |\n| `std::count_if(..., 条件)` | `sum(1 for p in v if 条件)` |\n| `std::find(v.begin(), v.end(), x)` | `x in v` / `v.index(x)` |\n| `std::max_element(...)` | `max(v)` |\n\n`v.begin()` と `v.end()` は **イテレータ**（「どこからどこまで」の印）で、STL の関数は「この範囲に対して」処理する、という形をしています。C++20 からは `std::ranges::sort(prices);` のように、範囲そのものを渡す書き方もできます。\n\n### ラムダ式\n\n```cpp\n[](int p) { return p < 200; }\n```\n\n| 部分 | 意味 |\n|---|---|\n| `[]` | **キャプチャ**：外の変数のうち、何を中で使うか（レッスン 5） |\n| `(int p)` | 引数 |\n| `{ return ...; }` | 本体 |\n\nPython の `lambda p: p < 200`、JavaScript の `p => p < 200`、Rust の `|p| p < 200` です。並べ替えの順番も、ラムダで決めます。\n\n```cpp\nstd::sort(products.begin(), products.end(),\n          [](const Product& a, const Product& b) { return a.price > b.price; });\n// コーヒー豆 食パン 牛乳 クロワッサン りんご バナナ\n```\n\n「a を b より前に置くなら true」を返す関数を渡します。`a.price > b.price` なので値段の高い順です。\n\n## map：辞書\n\n```cpp\n#include <map>\n\nstd::map<std::string, int> stock;\nstock[\"りんご\"] = 10;\nstock[\"りんご\"] += 5;\nstock[\"バナナ\"] += 3;\nstd::cout << \"size=\" << stock.size() << \"\\n\";   // size=2\n\nfor (const auto& [name, n] : stock) std::cout << name << \"=\" << n << \" \";\n```\n\n| C++ | Python |\n|---|---|\n| `std::map<std::string, int> m` | `m: dict[str, int] = {}` |\n| `m[\"k\"] = v` | `m[\"k\"] = v` |\n| `m.contains(\"k\")`（C++20）/ `m.count(\"k\")` | `\"k\" in m` |\n| `m.find(\"k\")` → 見つからなければ `m.end()` | `m.get(\"k\")` |\n| `for (const auto& [k, v] : m)` | `for k, v in m.items():` |\n\n`std::map` は、**キーの順番に並んでいる** 辞書です（中は木の形）。順番がいらず、速さが欲しいときは `std::unordered_map`（中はハッシュ表。Python の dict に近い）を使います。\n\n### ⚠️ [] で読むと、追加されてしまう\n\n```cpp\nstd::cout << \"ぶどう: \" << stock[\"ぶどう\"] << \" → size=\" << stock.size() << \"\\n\";\n// ぶどう: 0 → size=3\n```\n\nぶどうの在庫を **読んだだけ** なのに、size が 2 から 3 に増えました。`map[key]` は、**キーが無ければ、値を 0（ゼロ値）にして追加してから返す** 決まりだからです。一覧に `ぶどう=0` が混ざりました。\n\n```text\nぶどう=0 りんご=15 バナナ=3\n```\n\n| やりたいこと | 書き方 |\n|---|---|\n| あるかどうか | `m.contains(\"ぶどう\")` / `m.count(\"ぶどう\")` |\n| 読むだけ（無ければ例外） | `m.at(\"ぶどう\")` |\n| 読むだけ（無いことも扱う） | `if (auto it = m.find(\"ぶどう\"); it != m.end()) { it->second ... }` |\n\nGo のマップは「無ければゼロ値を返す（追加はしない）」、Python は `KeyError`、Rust は `Option` でした（それぞれのコースのレッスンを参照）。C++ の `[]` は、**読むだけで中身が変わる** 点が独特です。数を数えるとき（`byCat[p.category]++`）には便利ですが、「あるか確かめる」のに使うとバグになります。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `std::vector<Foo> items; items.push_back(...)` | 伸び縮みする配列 |\n| `items.reserve(1000)` | 先に場所を確保しておく（引っ越しを減らして速く） |\n| `for (auto& x : items)` / `for (const auto& x : items)` | 書き換えながら／見るだけで回す |\n| `if (m[key] == ...)` | ⚠️ 無いキーが追加される。`contains`・`find` に |\n| `v[i]` でループの外の番号 | ⚠️ 範囲を確かめない。`at()` か、ループの条件を確認 |\n| `std::sort(v.begin(), v.end(), [](auto& a, auto& b) { ... })` | 並べ替えの順番をラムダで |\n| `auto it = std::find(...); if (it != v.end())` | 見つかったか（end は「見つからなかった」の印） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`std::map<std::string, int> m;` が空のとき、`std::cout << m[\"x\"];` の後の `m.size()` は？",
+        "choices": [
+         "0",
+         "1",
+         "エラーで止まる"
+        ],
+        "answer": 1,
+        "explain": "map の [] は、キーが無ければ 0 を入れて追加してから返します。読むだけで中身が増えるので、あるかどうかは contains や find で確かめます。"
+       },
+       {
+        "question": "`std::vector<int> v = {1, 2, 3};` で、`v.at(10)` と `v[10]` の違いは？",
+        "choices": [
+         "at は範囲外なら例外を投げ、[] は確かめずに隣のメモリを読んでしまう",
+         "どちらも例外を投げる",
+         "どちらも 0 を返す"
+        ],
+        "answer": 0,
+        "explain": "[] は速さのために範囲を確かめません。実際に、関係ない値（120）が読めてしまいました。"
+       },
+       {
+        "question": "`std::count_if(v.begin(), v.end(), [](int p) { return p < 200; })` は何を数える？",
+        "choices": [
+         "v の要素の数",
+         "v のうち 200 未満の要素の数",
+         "v の 200 番目までの要素の数"
+        ],
+        "answer": 1,
+        "explain": "begin から end までの範囲で、ラムダが true を返すものを数えます。Python の `sum(1 for p in v if p < 200)` です。"
+       }
+      ]
+     ],
+     "id": "03-stl"
+    },
+    {
+     "title": "スマートポインタ ― new と delete を書かない",
+     "level": 3,
+     "minutes": 18,
+     "concepts": [
+      "memory",
+      "classes"
+     ],
+     "summary": "new だけ書いて delete を忘れるとリークする（LeakSanitizer で確認）。持ち主が 1 人の unique_ptr（コピーできず、move で渡す）、持ち主を数える shared_ptr（use_count）、make_unique・make_shared。Rust の所有権との対応。",
+     "body": "## このレッスンのゴール\n\n- 生の `new` / `delete` の危険と、スマートポインタがそれをどう防ぐか説明できる\n- `std::unique_ptr` と `std::move` を読み、コピーできない理由が分かる\n- `std::shared_ptr` の `use_count` の意味と、使いどころが分かる\n\n## 生の new と delete\n\nC++ では、C の `malloc` / `free` の代わりに、`new` / `delete` でヒープにオブジェクトを作ります。\n\n```cpp\nProduct* p = new Product(\"生ポインタ\");\n// ... delete p; を忘れて終わる\n```\n\nAddressSanitizer を付けて実行すると、こうなりました。\n\n```text\n==8583==ERROR: LeakSanitizer: detected memory leaks\nDirect leak of 32 byte(s) in 1 object(s) allocated from:\n    #0 0x... in operator new(unsigned long)\nSUMMARY: AddressSanitizer: 32 byte(s) leaked in 1 allocation(s).\n```\n\nC 言語コースのレッスン 5 と同じ **メモリリーク** です。デストラクタ（レッスン 2）も呼ばれていません（「[片付けた]」が表示されない）。`new` で作ったものは、**範囲を抜けても自動では片付けられない** からです。\n\n**今の C++ では、生の `new` と `delete` は（ほぼ）書きません**。代わりに、レッスン 2 の RAII を使った **スマートポインタ** を使います。\n\n## unique_ptr：持ち主は 1 人\n\n```cpp\n#include <memory>\n\nstd::unique_ptr<Product> make(const std::string& name) {\n    return std::make_unique<Product>(name);\n}\n\n{\n    auto a = make(\"りんご\");\n    std::cout << \"  \" << a->name << \"\\n\";\n    auto b = std::move(a);\n    std::cout << \"  move 後: a は \" << (a ? \"あり\" : \"空\") << \"、b は \" << b->name << \"\\n\";\n}\n```\n\n```text\n  [作った] りんご\n  りんご\n  move 後: a は 空、b は りんご\n  [片付けた] りんご       ← } を抜けたとき、自動で\n```\n\n| 部分 | 意味 |\n|---|---|\n| `std::unique_ptr<Product>` | Product を **1 人だけで持つ** スマートポインタ |\n| `std::make_unique<Product>(name)` | ヒープに作って、unique_ptr に入れて返す（`new` を書かない） |\n| `a->name` | 普通のポインタと同じように使える |\n| `std::move(a)` | **持ち主を a から b に移す**。a は空になる |\n| `}` を抜けると | 持ち主（b）が消えるので、デストラクタで **自動で delete** |\n\n### コピーできない\n\n```cpp\nauto a = std::make_unique<std::string>(\"x\");\nauto b = a;\n```\n\n```text\nerror: use of deleted function 'std::unique_ptr<...>::unique_ptr(const std::unique_ptr<...>&)'\n```\n\nエラーの文は長いですが、「unique_ptr の **コピー** は消された（使えない）関数です」という意味です。持ち主が 1 人だけなので、コピーして 2 人にすることはできません。渡すときは `std::move` で **移します**。\n\n**これは Rust の所有権とムーブ（Rust コースのレッスン 2）と同じ考え方です**。Rust では `let b = a;` だけで自動でムーブになり、その後 a を使うとコンパイルエラーでしたが、C++ では `std::move` と明示して、move した後の a は **空になる**（使うとまずいが、コンパイルは通る）という違いがあります。Rust は、C++ のこの仕組みを、コンパイラで確実に守らせるようにした言語とも言えます。\n\n## shared_ptr：持ち主を数える\n\n```cpp\n{\n    auto s1 = std::make_shared<Product>(\"牛乳\");\n    std::cout << \"  持ち主の数: \" << s1.use_count() << \"\\n\";\n    {\n        auto s2 = s1;                                         // コピーできる\n        std::cout << \"  コピー後: \" << s1.use_count() << \"\\n\";\n    }\n    std::cout << \"  s2 が消えた後: \" << s1.use_count() << \"\\n\";\n}\n```\n\n```text\n  [作った] 牛乳\n  持ち主の数: 1\n  コピー後: 2\n  s2 が消えた後: 1\n  [片付けた] 牛乳        ← 最後の持ち主（s1）が消えたとき\n```\n\n`std::shared_ptr` は、**何人が持っているかを数えていて**（参照カウント）、**最後の 1 人がいなくなったら片付けます**。\n\n| | unique_ptr | shared_ptr |\n|---|---|---|\n| 持ち主 | 1 人 | 何人でも |\n| コピー | できない（move する） | できる（数が増える） |\n| 片付け | 持ち主が消えたら | 最後の持ち主が消えたら |\n| 速さ | 生のポインタとほぼ同じ | 数を数える分、少し遅い |\n| 使う場面 | **ほとんどの場合** | 本当に複数の持ち主が必要なとき |\n| Rust で言うと | `Box<T>` | `Rc<T>` / `Arc<T>` |\n\nPython のオブジェクトも、実は参照カウントで管理されています（`sys.getrefcount(x)` で数が見られる）。shared_ptr は、それを C++ で必要なところにだけ使う道具です。\n\n⚠️ shared_ptr どうしがお互いを持ち合う（循環参照）と、数が 0 にならずにリークします。片方を `std::weak_ptr`（数に入らない弱い参照）にして避けます。\n\n## vector の中に入れる\n\n```cpp\n{\n    std::vector<std::unique_ptr<Product>> items;\n    items.push_back(make(\"食パン\"));\n    items.push_back(make(\"バナナ\"));\n    std::cout << \"  \" << items.size() << \" 個\\n\";\n}\n```\n\n```text\n  [作った] 食パン\n  [作った] バナナ\n  2 個\n  [片付けた] 食パン\n  [片付けた] バナナ       ← vector が消えると、中の unique_ptr も全部片付く\n```\n\nvector（レッスン 3）が消えると中の unique_ptr が消え、unique_ptr が消えると Product が片付きます。**RAII が入れ子になって、全部自動で片付く** のが今の C++ の書き方です。この main には `delete` が 1 つもありません。\n\n## まとめ：C++ のメモリの書き方\n\n| 書き方 | 判定 |\n|---|---|\n| 普通の変数（`Product p(...)`）・`std::vector`・`std::string` | ✅ いちばん良い。範囲を抜けたら自動 |\n| `std::make_unique<T>(...)` | ✅ ヒープが必要なとき |\n| `std::make_shared<T>(...)` | ✅ 本当に共有が必要なとき |\n| `new` / `delete` | ⚠️ 忘れ・二重・例外のときの漏れ。今は書かない |\n| `malloc` / `free` | ⚠️ C の書き方。C++ では使わない（デストラクタが呼ばれない） |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `Foo* p = new Foo(...)` | ⚠️ どこで delete している？ 例外や途中の return で漏れない？ `make_unique` に |\n| `std::unique_ptr<Foo>` を引数で受け取る | 持ち主ごと受け取る（呼ぶ側は `std::move` で渡す） |\n| `const Foo&` / `Foo*` を引数で受け取る | 持ち主にはならず、借りるだけ |\n| `std::move(x)` の後に x を使っている | ⚠️ x は空になっている |\n| `shared_ptr` だらけ | 本当に共有が必要か。unique_ptr で足りることが多い |\n| `delete[] arr;` | `new int[10]` で作った配列の片付け。`std::vector` にすれば不要 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`Product* p = new Product(\"x\");` の後、`delete p;` を書かずに関数を抜けると？",
+        "choices": [
+         "範囲を抜けたので自動で片付けられる",
+         "片付けられずにメモリリークになる（デストラクタも呼ばれない）",
+         "コンパイルエラーになる"
+        ],
+        "answer": 1,
+        "explain": "new で作ったものは、範囲を抜けても自動では片付きません。make_unique を使えば、範囲を抜けたときに自動で片付きます。"
+       },
+       {
+        "question": "`auto b = a;`（a は std::unique_ptr）がコンパイルエラーになる理由は？",
+        "choices": [
+         "unique_ptr は持ち主が 1 人だけなので、コピーできないから",
+         "unique_ptr は代入できないから",
+         "a が空だから"
+        ],
+        "answer": 0,
+        "explain": "渡すときは `auto b = std::move(a);` で持ち主を移します。Rust の所有権のムーブと同じ考え方です。"
+       },
+       {
+        "question": "shared_ptr の `use_count()` が 2 から 1 になった。何が起きた？",
+        "choices": [
+         "オブジェクトが片付けられた",
+         "持ち主の 1 人が消えた（まだ 1 人残っているので、オブジェクトは生きている）",
+         "メモリリークが起きた"
+        ],
+        "answer": 1,
+        "explain": "shared_ptr は持ち主の数を数え、最後の 1 人が消えたときに片付けます。"
+       }
+      ]
+     ],
+     "id": "04-smart-pointers"
+    },
+    {
+     "title": "テンプレート・ラムダ・optional ― 今の C++ を読む",
+     "level": 3,
+     "minutes": 18,
+     "concepts": [
+      "generics",
+      "higher_order",
+      "types",
+      "reading"
+     ],
+     "summary": "型を後から決める関数とクラスのテンプレート、型に条件を付ける concepts（std::integral）、ラムダのキャプチャ [tax]・[&]、null の代わりの std::optional。長いテンプレートのエラーの読み方と、AI の C++ を読むときのまとめ。",
+     "body": "## このレッスンのゴール\n\n- `template <typename T>` の関数とクラスを読める\n- concepts（`template <std::integral T>`）と、テンプレートのエラーの読み方が分かる\n- ラムダのキャプチャ（`[tax]`・`[&]`）と `std::optional` を読める\n\n## 関数のテンプレート\n\n```cpp\ntemplate <typename T>\nT largest(const std::vector<T>& items) {\n    T max = items[0];\n    for (const auto& x : items) if (x > max) max = x;\n    return max;\n}\n\nstd::cout << largest(std::vector<int>{3, 9, 2}) << \" \"\n          << largest(std::vector<double>{1.5, 0.2}) << \" \"\n          << largest(std::vector<std::string>{\"b\", \"c\", \"a\"}) << \"\\n\";\n// 9 1.5 c\n```\n\n`template <typename T>` は「**T という型を後から決める**」という意味で、Java・Rust・TypeScript のジェネリクスと同じ考え方です。同じ `largest` が、int・double・string のどれにも使えました。\n\n| 言語 | 書き方 |\n|---|---|\n| C++ | `template <typename T> T largest(const std::vector<T>& items)` |\n| Rust | `fn largest<T: PartialOrd + Copy>(items: &[T]) -> T` |\n| Java | `static <T extends Comparable<T>> T largest(List<T> items)` |\n| Python | `def largest[T](items: list[T]) -> T:` |\n\nC++ のテンプレートは、**使われた型ごとに、コンパイラが別の関数を作ります**（int 用・double 用・string 用の 3 つ）。そのため速いのですが、コンパイルに時間がかかり、エラーが長くなりがちです。\n\n### クラスのテンプレート\n\n```cpp\ntemplate <typename T>\nstruct Box {\n    T value;\n    void show() const { std::cout << \"Box(\" << value << \")\\n\"; }\n};\n\nBox<int>{42}.show();               // Box(42)\nBox<std::string>{\"りんご\"}.show();  // Box(りんご)\n```\n\n`std::vector<int>`・`std::map<std::string, int>`・`std::unique_ptr<Product>` は、どれも **STL の作ったクラスのテンプレート** でした。\n\n## concepts：T に条件を付ける\n\nRust では、`T: PartialOrd` と書かないと `>` が使えませんでした（Rust コースのレッスン 5）。C++ のテンプレートは、昔は **条件を書かなくても、使ってみて駄目ならエラー** という仕組みでした。C++20 から、**concepts** で条件を書けるようになりました。\n\n```cpp\n#include <concepts>\n\ntemplate <std::integral T>          // T は整数の型に限る\nT twice(T x) { return x * 2; }\n\ntwice(21);      // 42\ntwice(1.5);     // ← 小数を渡すと？\n```\n\n```text\na5b.cpp:3:19: error: no matching function for call to 'twice(double)'\n/usr/include/c++/13/concepts:100:24: note: the expression 'is_integral_v<_Tp> [with _Tp = double]' evaluated to 'false'\n```\n\n「`twice(double)` に合う関数がありません。**T = double のとき、『整数か？』が false になりました**」。条件を書いておくと、エラーがこのように **短く、理由が分かる** ものになります。\n\n### 長いエラーの読み方\n\nC++ のテンプレートのエラーは、何十行・何百行になることがあります。レッスン 4 の unique_ptr のコピーのエラーも、`std::unique_ptr<_Tp, _Dp>::unique_ptr(const std::unique_ptr<_Tp, _Dp>&) [with _Tp = ...; _Dp = ...]` と長いものでした。\n\n| コツ | |\n|---|---|\n| **最初の `error:` の行** を読む | 原因はたいていそこにある |\n| 自分のファイル名（`a5b.cpp:3`）の行を探す | 標準ライブラリの中の行は、だいたい読み飛ばしてよい |\n| `[with T = double]` を見る | どの型のときに駄目だったか |\n| `deleted function` | 使えないように消された関数（コピーできないなど） |\n| `no matching function` | 引数の型が合う関数が無い |\n\n## ラムダのキャプチャ\n\n```cpp\nint tax = 10;\nauto withTax = [tax](int price) { return price * (100 + tax) / 100; };\nstd::cout << withTax(120) << \"\\n\";   // 132\n```\n\nラムダの `[ ]` は、**外の変数のうち、何を中に持ち込むか**（キャプチャ）を書く場所です。\n\n| 書き方 | 意味 |\n|---|---|\n| `[]` | 何も持ち込まない |\n| `[tax]` | tax を **コピー** して持ち込む |\n| `[&tax]` | tax を **参照** で持ち込む（外の tax が変わると、中でも変わる） |\n| `[=]` | 使う変数を全部コピー |\n| `[&]` | 使う変数を全部参照 |\n| `[this]` | クラスのメソッドの中で、自分のメンバーを使う |\n\nPython や JavaScript のラムダは、外の変数を **自動で** 使えましたが、C++ では書く必要があります。⚠️ `[&]` で参照を持ち込んだラムダを、**その変数が消えた後に呼ぶ** と、消えたメモリを読むことになります（C 言語コースの「解放後の使用」と同じ）。ラムダを後で使う（別のスレッドに渡す・保存する）なら、コピーで持ち込みます。\n\n## optional：null の代わり\n\n```cpp\n#include <optional>\n\nstd::optional<int> findPrice(const std::string& name) {\n    if (name == \"りんご\") return 120;\n    return std::nullopt;\n}\n\nauto p = findPrice(\"ぶどう\");\nstd::cout << p.value_or(0) << \" \" << findPrice(\"りんご\").value() << \" \" << p.has_value() << \"\\n\";\n// 0 120 0\n```\n\n| C++ | Rust | Java | 意味 |\n|---|---|---|---|\n| `std::optional<int>` | `Option<i32>` | `Optional<Integer>` | あるかもしれない |\n| `return 120;` / `std::nullopt` | `Some(120)` / `None` | `Optional.of` / `empty` | ある／無い |\n| `.value_or(0)` | `.unwrap_or(0)` | `.orElse(0)` | 無ければ 0 |\n| `.value()` | `.unwrap()` | `.orElseThrow()` | 無ければ例外 |\n| `.has_value()` / `if (p)` | `.is_some()` | `.isPresent()` | あるか |\n\n言語は違っても、**「無いかもしれない」を型で表す** という考え方は、今の言語の共通の流れです。\n\n## AI の C++ を読むときのまとめ\n\n```cpp\nauto it = std::ranges::find_if(users, [&](const User& u) { return u.id == id; });\nif (it == users.end()) return std::nullopt;\nreturn std::make_unique<Session>(*it);\n```\n\n| 部分 | 読み方 | レッスン |\n|---|---|---|\n| `std::ranges::find_if(users, ...)` | users の中から条件に合う最初の 1 つを探す | 3 |\n| `[&](const User& u) { ... }` | 外の id を参照で使うラムダ。u は借りて見るだけ | 1・5 |\n| `it == users.end()` | 見つからなかった | 3 |\n| `return std::nullopt;` | 「無い」を返す | 5 |\n| `std::make_unique<Session>(*it)` | 見つかったユーザーから Session をヒープに作り、持ち主ごと返す | 4 |\n\n「id が一致するユーザーを探して、いなければ無し、いれば新しいセッションを作って返す」と読めれば十分です。\n\n| 見かけたら | チェック |\n|---|---|\n| `template <typename T>` に何の条件も無いのに、中で `<` や `.size()` を使っている | 合わない型で使うと、長いエラーになる（concepts を付けると分かりやすい） |\n| `[&]` のラムダをスレッドに渡す・保存する | ⚠️ 変数が先に消えると、消えたメモリを読む |\n| `optional` に `.value()` | ⚠️ 無ければ例外。`value_or` や `if` で確かめているか |\n| `#include <bits/stdc++.h>` | 競技プログラミングでよく見る「全部読み込む」書き方。普通のプロジェクトでは使わない |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`template <typename T> T largest(const std::vector<T>& items)` の T は？",
+        "choices": [
+         "使うときに決まる型（int の vector なら int）",
+         "必ず int",
+         "テンプレートという名前の型"
+        ],
+        "answer": 0,
+        "explain": "template は型を後から決める仕組みで、Java・Rust のジェネリクスと同じ考え方です。int・double・string のどれにも使えました。"
+       },
+       {
+        "question": "ラムダ `[tax](int p) { return p * tax; }` の `[tax]` の意味は？",
+        "choices": [
+         "引数が tax",
+         "外の変数 tax をコピーして、ラムダの中で使えるようにする",
+         "tax を返す"
+        ],
+        "answer": 1,
+        "explain": "`[ ]` はキャプチャで、外の変数のうち何を持ち込むかを書きます。`[&tax]` なら参照で持ち込みます。"
+       },
+       {
+        "question": "`std::optional<int> p = std::nullopt;` のとき、`p.value_or(0)` は？",
+        "choices": [
+         "0",
+         "エラー",
+         "nullopt"
+        ],
+        "answer": 0,
+        "explain": "値が無いときは、value_or に渡した 0 が返ります。value() だと例外になります。"
+       }
+      ]
+     ],
+     "id": "05-templates-lambdas"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "C#",
