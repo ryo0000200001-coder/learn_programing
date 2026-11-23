@@ -3,13 +3,10 @@
  "icon": "🔧",
  "order": 92,
  "category": "language",
- "status": "planned",
- "description": "多くの言語の祖先。マイコンや OS など、機械に近い所で使われる。",
- "outline": [
-  "main 関数と printf",
-  "型とメモリ",
-  "ポインタ",
-  "配列と文字列",
-  "malloc と free"
- ]
+ "description": "多くの言語の祖先で、マイコンや OS など機械に近い所で使われる言語。main と printf、型とメモリの大きさ、ポインタ、配列と文字列（\\0 とバッファオーバーフロー）、malloc と free。メモリの間違いを AddressSanitizer で実際に見つけながら、他の言語がなぜ今の形なのかを理解する。gcc 13 で実行して確かめたもの。",
+ "levels": {
+  "1": "入門：形と型",
+  "2": "基礎：ポインタと配列",
+  "3": "実践：メモリを管理する"
+ }
 }

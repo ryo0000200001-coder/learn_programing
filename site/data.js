@@ -5289,17 +5289,253 @@ window.SITE_DATA = {
    "icon": "🔧",
    "order": 92,
    "category": "language",
-   "status": "planned",
-   "description": "多くの言語の祖先。マイコンや OS など、機械に近い所で使われる。",
-   "outline": [
-    "main 関数と printf",
-    "型とメモリ",
-    "ポインタ",
-    "配列と文字列",
-    "malloc と free"
-   ],
+   "description": "多くの言語の祖先で、マイコンや OS など機械に近い所で使われる言語。main と printf、型とメモリの大きさ、ポインタ、配列と文字列（\\0 とバッファオーバーフロー）、malloc と free。メモリの間違いを AddressSanitizer で実際に見つけながら、他の言語がなぜ今の形なのかを理解する。gcc 13 で実行して確かめたもの。",
+   "levels": {
+    "1": "入門：形と型",
+    "2": "基礎：ポインタと配列",
+    "3": "実践：メモリを管理する"
+   },
    "id": "92-c",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "main 関数と printf ― C のプログラムの形",
+     "level": 1,
+     "minutes": 15,
+     "concepts": [
+      "basics",
+      "tooling",
+      "errors"
+     ],
+     "summary": "#include と int main(void)、printf の書式（%d・%s・%f）、gcc でのコンパイルと -Wall の警告、return 0 と終了コード。書式を間違えるとプログラムが落ちることを実際に確かめる。",
+     "body": "## このレッスンのゴール\n\n- `#include`・`int main(void)`・`return 0` の意味を説明できる\n- `printf` の書式指定（`%d`・`%s`・`%f`）を読める\n- `gcc -Wall` の警告を読み、警告を無視してはいけない理由が分かる\n\n## C 言語とは\n\n**C 言語** は 1970 年代に作られた言語で、Python・Go・Java・JavaScript など **多くの言語の祖先** です。今も、OS（Linux・Windows の中心部分）、マイコン（家電・車）、データベース（SQLite）、Python 自身（いちばん使われている CPython は C で書かれている）などで使われています。\n\nC は **コンピュータの仕組みに近い** 言語で、メモリを直接扱えます。そのぶん速く、そのぶん **間違えると危ない** 言語でもあります。このコースでは、C を読めるようになると同時に、**他の言語がなぜ今の形になっているのか**（Rust の所有権、Java の参照、Python のガベージコレクション）を理解することを目指します。\n\n## 最初のプログラム\n\n```c\n#include <stdio.h>\n\nint add(int a, int b) {\n    return a + b;\n}\n\nint main(void) {\n    int price = 120;\n    int count = 3;\n    printf(\"こんにちは、%s さん\\n\", \"Ryo\");\n    printf(\"合計 %d 円\\n\", price * count);\n    printf(\"%d %d %.2f\\n\", 7 / 2, 7 % 2, 7 / 2.0);\n    printf(\"add: %d\\n\", add(2, 3));\n    return 0;\n}\n```\n\n```text\nこんにちは、Ryo さん\n合計 360 円\n3 1 3.50\nadd: 5\n```\n\n（このコースの出力と警告は、すべて gcc 13 でコンパイルして実際に実行したものです）\n\n| C | 意味 | Python で言うと |\n|---|---|---|\n| `#include <stdio.h>` | 標準入出力の **ヘッダーファイル**（関数の宣言の一覧）を読み込む | `import ...` |\n| `int add(int a, int b)` | int を 2 つ受け取って int を返す関数。**型が先**（Java と同じ） | `def add(a: int, b: int) -> int:` |\n| `int main(void)` | 入口。`void` は「引数無し」 | `if __name__ == \"__main__\":` |\n| `printf(\"合計 %d 円\\n\", x)` | 書式付きで表示 | `print(f\"合計 {x} 円\")` |\n| `return 0;` | main の戻り値が **終了コード**。0 は成功（シェルコースのレッスン 3） | `sys.exit(0)` |\n\nJava の `System.out.printf`、Go の `fmt.Printf`、PHP の `printf` は、どれも **この C の printf を真似したもの** です。\n\n### printf の書式\n\n| 書式 | 型 | 例 |\n|---|---|---|\n| `%d` | 整数（int） | `printf(\"%d\", 360)` → `360` |\n| `%s` | 文字列 | `printf(\"%s\", \"Ryo\")` → `Ryo` |\n| `%f` / `%.2f` | 小数（double） | `printf(\"%.2f\", 3.5)` → `3.50` |\n| `%c` | 1 文字 | `printf(\"%c\", 'A')` → `A` |\n| `%zu` | 大きさ（size_t。レッスン 2） | |\n| `%p` | ポインタ（メモリの番地。レッスン 3） | |\n| `\\n` | 改行 | |\n\n## コンパイルして実行する\n\n```bash\ngcc -Wall -Wextra -o hello hello.c    # コンパイルして hello という実行ファイルを作る\n./hello                               # 実行\necho $?                               # 0（main の return 0）\n```\n\n| 部分 | 意味 |\n|---|---|\n| `gcc` | C のコンパイラ（他に `clang`。Windows では Visual Studio の `cl` や MinGW の gcc） |\n| `-Wall -Wextra` | **警告を（ほぼ）全部出す**。必ず付ける |\n| `-o hello` | 作る実行ファイルの名前 |\n| `-g` | デバッグ用の情報を入れる（エラーの場所が行番号で分かる） |\n| `-O2` | 速くなるように最適化する |\n\nC は、Go や Rust と同じく、ソースコードを **その OS・その CPU 用の機械語** に変換します。できた実行ファイルは、C を入れていないパソコンでも動きます（同じ OS なら）。\n\n大きなプロジェクトでは、ファイルがたくさんあるので、**Makefile**（`make` というコマンドでビルドの手順を自動で実行する）や **CMake** が使われます。\n\n## 警告を無視すると何が起きるか\n\nわざと間違いを入れたプログラムです。\n\n```c\n#include <stdio.h>\nint main(void) {\n    int price = 120;\n    double rate;\n    printf(\"%d\\n\", \"120\");\n    printf(\"%s\\n\", price);\n    printf(\"%f\\n\", rate);\n    if (price = 0) printf(\"zero\\n\");\n    return 0;\n}\n```\n\n```text\nwarn.c:5:14: warning: format '%d' expects argument of type 'int', but argument 2 has type 'char *' [-Wformat=]\nwarn.c:6:14: warning: format '%s' expects argument of type 'char *', but argument 2 has type 'int' [-Wformat=]\nwarn.c:8:9: warning: suggest parentheses around assignment used as truth value [-Wparentheses]\nwarn.c:7:5: warning: 'rate' is used uninitialized [-Wuninitialized]\n```\n\n| 行 | 間違い |\n|---|---|\n| 5・6 | 書式と値の型が合っていない（`%d` に文字列、`%s` に数） |\n| 7 | `rate` に値を入れないまま使っている（中身は **何が入っているか分からない**。Go のゼロ値のような決まりは無い） |\n| 8 | `==`（比べる）のつもりで `=`（代入）を書いている。price に 0 が入り、条件はいつも偽 |\n\n**どれも警告で、エラーではありません**。コンパイルはでき、実行ファイルもできます。実行すると…\n\n```text\n$ ./warn\nSegmentation fault\n（終了コード 139）\n```\n\n**プログラムが落ちました**。`%s` は「文字列の場所」を受け取るはずのところに、`120` という数を渡されたので、**メモリの 120 番地** を読みに行き、OS に止められたのです（**セグメンテーション違反**。レッスン 3）。\n\nPython なら型の間違いは `TypeError` で教えてくれますし、Go や Rust ならコンパイルエラーで止めてくれました。**C は「警告はしたけど、あとはあなたの責任で」** という言語です。だから、**C では警告を 0 にするのが鉄則** です。`-Werror` を付けると、警告をエラーとして扱ってくれます。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `#include <stdlib.h>` / `<string.h>` | malloc など（レッスン 5）／文字列の関数（レッスン 4） |\n| `#include \"myheader.h\"`（`\"\"`） | 自分のプロジェクトのヘッダーファイル |\n| `int main(int argc, char *argv[])` | コマンドラインの引数を受け取る main（argc が数、argv が中身） |\n| `#define MAX_LEN 100` | 定数（コンパイル前に文字を置き換える **マクロ**） |\n| `gcc ... -lm` | 数学のライブラリ（`math.h`）をつなげる |\n| `if (x = 0)` | ⚠️ 代入になっている。`==` のつもりでは？ |\n| コンパイルで警告が出ている | ⚠️ C では無視しない |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "C の `int main(void) { ... return 0; }` の `return 0` は何を表す？",
+        "choices": [
+         "プログラムが成功して終わったことを表す終了コード",
+         "main が 0 回実行されたこと",
+         "戻り値が無いこと"
+        ],
+        "answer": 0,
+        "explain": "main の戻り値は終了コードになります。0 が成功、0 以外が失敗です（シェルコースで学んだ $?）。"
+       },
+       {
+        "question": "`printf(\"%d 円\\n\", price);` の `%d` は何？",
+        "choices": [
+         "小数を表示する書式",
+         "整数をその場所に入れて表示する書式",
+         "改行"
+        ],
+        "answer": 1,
+        "explain": "`%d` は整数、`%s` は文字列、`%f` は小数です。値の型と書式が合わないと、正しく表示されないか、プログラムが落ちることもあります。"
+       },
+       {
+        "question": "gcc で警告が出たが、実行ファイルはできた。どうするのがよい？",
+        "choices": [
+         "動くなら気にしない",
+         "警告の原因を直す（C では警告が実行時の落ちるバグにつながりやすい）",
+         "警告を消すオプションを付ける"
+        ],
+        "answer": 1,
+        "explain": "書式の間違いの警告を無視したプログラムは、実際にセグメンテーション違反で落ちました。C では警告を 0 にするのが鉄則です。"
+       }
+      ]
+     ],
+     "id": "01-main-printf"
+    },
+    {
+     "title": "型とメモリ ― sizeof とあふれる数",
+     "level": 1,
+     "minutes": 16,
+     "concepts": [
+      "types",
+      "memory",
+      "hardware",
+      "encoding"
+     ],
+     "summary": "char・int・long・double がメモリで何バイトか（sizeof）、unsigned の数が 0 の下で一周する、int のあふれは「未定義の動作」、int32_t などの大きさが決まった型、文字は数であること。",
+     "body": "## このレッスンのゴール\n\n- 型ごとのメモリの大きさを `sizeof` で確かめられる\n- unsigned の数の回り込みと、signed のオーバーフローが「未定義の動作」であることが分かる\n- `char` が 1 バイトの数であることと、`int32_t` などの型の意味が分かる\n\n## 型ごとの大きさ\n\nC の型は、**メモリの何バイトを使うか** と結びついています（コンピュータの基礎コースの「2 進数とデータの量」）。\n\n```c\nprintf(\"char=%zu short=%zu int=%zu long=%zu long long=%zu double=%zu pointer=%zu\\n\",\n    sizeof(char), sizeof(short), sizeof(int), sizeof(long), sizeof(long long),\n    sizeof(double), sizeof(int *));\n```\n\n```text\nchar=1 short=2 int=4 long=8 long long=8 double=8 pointer=8\n```\n\n| 型 | この環境での大きさ | 表せる範囲（だいたい） |\n|---|---|---|\n| `char` | 1 バイト | -128〜127（または 0〜255） |\n| `short` | 2 バイト | ±3 万 |\n| `int` | 4 バイト | ±21 億 |\n| `long` | 8 バイト | ±922 京 |\n| `double` | 8 バイト | 小数 |\n| ポインタ（`int *`） | 8 バイト | メモリの番地（レッスン 3） |\n\n`sizeof(型)` は、その型が **何バイトか** を返します。⚠️ 大きさは **パソコンや OS によって変わる** ことがあります（`long` は Linux・Mac の 64 ビットでは 8 バイト、Windows では 4 バイト）。C のプログラムを別の環境に持っていくと動きが変わる理由の 1 つです。\n\n### 大きさが決まった型\n\n```c\n#include <stdint.h>\nint32_t fixed = 100;   // 必ず 32 ビット（4 バイト）の符号付き整数\nuint8_t byte = 200;    // 必ず 8 ビット（1 バイト）の 0 以上の整数\n```\n\n環境によらず大きさを決めたいときは、`<stdint.h>` の `int32_t`・`uint8_t`・`int64_t` などを使います。Rust の `i32`・`u8`、Go の `int32`・`uint8` は、この考え方を最初から言語に入れたものです。\n\n## unsigned：0 以上の数\n\n```c\nunsigned char u = 255; u = u + 1;\nprintf(\"unsigned char 255+1 = %d\\n\", u);     // 0\n\nunsigned int n = 0; n = n - 1;\nprintf(\"unsigned 0-1 = %u\\n\", n);            // 4294967295\n```\n\n`unsigned`（符号なし）の型は、0 以上の数だけを表します。1 バイトの `unsigned char` は 0〜255 なので、255 に 1 を足すと **0 に戻り**、0 から 1 を引くと **一番大きな数に回り込みます**。時計の針が 12 の次に 1 に戻るのと同じです。\n\n⚠️ 「在庫の数を unsigned にして、0 から 1 を引いたら 42 億個になった」というバグが起きます。\n\n## signed のオーバーフローは「未定義の動作」\n\n```c\nint big = INT_MAX;       // 2147483647\nint next = big + 1;\nprintf(\"%d\\n\", next);    // -2147483648\n```\n\nJava（Java コースのレッスン 2）と同じく、マイナスになりました。ところが C では、**int（符号付き）があふれることは「未定義の動作」（undefined behavior）** と決められています。「何が起きても文句は言えない」という意味で、コンパイラは「あふれることは起きない」と考えて最適化してよいことになっています。そのため、最適化の設定によって **結果が変わる** ことさえあります。\n\n検出する道具を付けてコンパイルすると、教えてくれます。\n\n```bash\ngcc -fsanitize=undefined -o ovu overflow.c && ./ovu\n```\n\n```text\noverflow.c:5:9: runtime error: signed integer overflow: 2147483647 + 1 cannot be represented in type 'int'\n```\n\n「2147483647 + 1 は int で表せません」。`-fsanitize=undefined`（UBSan）は、未定義の動作を実行中に見つけてくれる道具です。\n\n| 言語 | int があふれたら |\n|---|---|\n| Python | あふれない（いくらでも大きくなる） |\n| Java | 回り込む（決まった動き） |\n| Rust | デバッグでは panic で止まる、本番（release）では回り込む |\n| C | **未定義の動作**（何が起きるか保証されない） |\n\n## 文字は数\n\n```c\nchar c = 'A';\nprintf(\"'A' = %d, 'A'+1 = %c\\n\", c, c + 1);   // 'A' = 65, 'A'+1 = B\n```\n\nC の `char` は、**1 バイトの数** です。`'A'` は 65（ASCII の番号。コンピュータの基礎コースの「文字コード」）で、1 足すと 66 ＝ `'B'` になります。\n\n⚠️ 日本語の 1 文字は UTF-8 で 3 バイトなので、`char` 1 つには入りません（レッスン 4）。C の「文字」は、実は「バイト」のことです。\n\n## 初期化しない変数\n\n```c\nint x;          // 値を入れていない\nprintf(\"%d\\n\", x);\n```\n\nC では、関数の中で作った変数に値を入れないと、**そのメモリに前から残っていた、でたらめな値** が入っています（レッスン 1 の `'rate' is used uninitialized` の警告）。Go のゼロ値、Java の「初期化しないとコンパイルエラー」、Rust の「初期化しないと使えない」は、どれもこの C の問題を防ぐための決まりです。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `size_t len` | 大きさ・長さの型（unsigned）。`%zu` で表示 |\n| `for (size_t i = n - 1; i >= 0; i--)` | ⚠️ size_t は 0 未満にならないので、`i >= 0` がいつも真で終わらない（無限ループ） |\n| `uint8_t buf[256]` | 1 バイトずつのデータ（通信・ファイル・画像） |\n| `int total` に大きな数を足し続ける | ⚠️ オーバーフロー |\n| `int x;` の後、値を入れる前に使っている | ⚠️ でたらめな値 |\n| `-fsanitize=address,undefined` | メモリの間違いと未定義の動作を見つける設定（テストのときに付ける） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`unsigned int n = 0; n = n - 1;` の結果は？",
+        "choices": [
+         "-1",
+         "4294967295（一番大きな数に回り込む）",
+         "エラーで止まる"
+        ],
+        "answer": 1,
+        "explain": "unsigned は 0 以上しか表せないので、0 から 1 を引くと一番大きな値に回り込みます。"
+       },
+       {
+        "question": "C で int の最大値に 1 を足すことについて正しいのは？",
+        "choices": [
+         "いつも必ず -2147483648 になると決まっている",
+         "「未定義の動作」で、何が起きるかは保証されない",
+         "Python と同じく、大きな数になる"
+        ],
+        "answer": 1,
+        "explain": "この環境ではマイナスになりましたが、C の決まりでは未定義です。`-fsanitize=undefined` を付けると検出できます。"
+       },
+       {
+        "question": "`char c = 'A'; c + 1` を `%c` で表示すると？",
+        "choices": [
+         "B",
+         "A1",
+         "エラー"
+        ],
+        "answer": 0,
+        "explain": "char は 1 バイトの数で、'A' は 65 です。1 足すと 66 ＝ 'B' になります。"
+       }
+      ]
+     ],
+     "id": "02-types-memory"
+    },
+    {
+     "title": "ポインタ ― メモリの番地を扱う",
+     "level": 2,
+     "minutes": 20,
+     "concepts": [
+      "memory",
+      "variables",
+      "functions"
+     ],
+     "summary": "& で番地を取り、* で番地の中身を読み書きする。関数に値を渡すとコピーなので変わらず、番地を渡すと変わる（swap）。NULL を読むとセグメンテーション違反。Go・Rust・Java の「参照」や「借用」の元になった考え方。",
+     "body": "## このレッスンのゴール\n\n- `&x`（番地を取る）と `*p`（番地の中身）の意味を説明できる\n- 関数に「値を渡す」と「番地を渡す」の違いを、実験の結果で説明できる\n- NULL ポインタとセグメンテーション違反の関係が分かる\n\n## メモリには番地がある\n\nコンピュータの基礎コースのレッスン 1 で、メモリは「作業机」だと学びました。この机には、1 バイトごとに **番地**（アドレス）が付いています。変数は、どこかの番地に置かれた値です。\n\n```text\n番地         中身\n0x7ffd...a0  120     ← price（int なので 4 バイト使う）\n0x7ffd...a8  0x7ffd...a0   ← p（price の番地を入れたポインタ）\n```\n\n**ポインタ** は、「**番地を入れておく変数**」です。\n\n## & と *\n\n```c\nint price = 120;\nint *p = &price;\nprintf(\"price=%d  &price=%p  p=%p  *p=%d\\n\", price, (void *)&price, (void *)p, *p);\n*p = 200;\nprintf(\"*p = 200 の後: price=%d\\n\", price);\n```\n\n```text\nprice=120  &price=0x7ffd...  p=0x7ffd...  *p=120\n*p = 200 の後: price=200\n```\n\n（番地は実行するたびに変わります）\n\n| 書き方 | 意味 |\n|---|---|\n| `int *p` | p は「int が置いてある番地」を入れる変数（int へのポインタ） |\n| `&price` | price の **番地** |\n| `p = &price` | p に price の番地を入れる（p は price を **指す**） |\n| `*p` | p が指している番地の **中身**（= price） |\n| `*p = 200` | p が指している番地の中身を 200 にする（= price が 200 になる） |\n\n`&` は「番地をください」、`*` は「その番地の中身」と読みます。`*p = 200` で、**price という名前を一度も書かずに、price の値が変わった** のがポイントです。\n\n⚠️ `*` は 2 つの意味で使われるので、混乱しやすいところです。\n\n| 場所 | 意味 |\n|---|---|\n| 宣言（`int *p`） | 「p はポインタ」 |\n| 式の中（`*p = 200`、`x = *p`） | 「p が指す中身」 |\n\n## 関数に渡すと何が起きるか\n\n```c\nvoid add_tax_bad(int price) { price = price * 110 / 100; }\nvoid add_tax(int *price) { *price = *price * 110 / 100; }\n\nint price = 120;\nadd_tax_bad(price);\nprintf(\"値を渡す: %d\\n\", price);     // 120   ← 変わっていない\nadd_tax(&price);\nprintf(\"場所を渡す: %d\\n\", price);   // 132   ← 変わった\n```\n\n| 呼び方 | 関数が受け取るもの | 元の price は |\n|---|---|---|\n| `add_tax_bad(price)` | price の値の **コピー**（120） | 変わらない |\n| `add_tax(&price)` | price の **番地** | 番地の中身を書き換えるので、変わる |\n\nC の関数の引数は、**いつもコピー** です（値渡し）。元の変数を変えてほしいときは、番地をコピーして渡し、関数の中で `*` を使って書き換えます。\n\nこの話は、もう出てきています。\n\n| 言語 | 同じ話 |\n|---|---|\n| Go | `func (p Product)` はコピー、`func (p *Product)` は本体（Go コースのレッスン 3）。`*` と `&` は C から来ている |\n| Rust | `&x` で借りる、`&mut x` で書き換えのために借りる（Rust コースのレッスン 2）。ポインタに安全のルールを付けたもの |\n| Java | オブジェクトの変数は、実は番地（参照）を持っている。`==` は番地を比べる（Java コースのレッスン 2） |\n| Python | すべての変数が、実はオブジェクトへの参照。だからリストを関数に渡すと、中で変えた結果が外に見える |\n\n### 2 つの値を入れ替える\n\n```c\nvoid swap(int *a, int *b) { int t = *a; *a = *b; *b = t; }\n\nint x = 1, y = 2;\nswap(&x, &y);\nprintf(\"swap: x=%d y=%d\\n\", x, y);   // swap: x=2 y=1\n```\n\nPython なら `x, y = y, x` で済みますが、C の関数で 2 つの変数を書き換えるには、両方の番地を渡します。C の関数は値を 1 つしか返せないので、**「結果を入れる場所の番地」を渡して、そこに書いてもらう** 書き方がよく使われます（`scanf(\"%d\", &n)` など）。\n\n## 構造体とポインタ：->\n\n```c\ntypedef struct { char *name; int price; } Product;\n\nProduct *p = ...;\np->price = 120;       // (*p).price = 120 と同じ\n```\n\n構造体のポインタから中身を使うときは、**`->`** と書きます。PHP のメソッドの `->`（PHP コースのレッスン 3）は、ここから来ています。レッスン 5 でたくさん出てきます。\n\n## NULL：どこも指していない\n\n```c\nint *nothing = NULL;\nprintf(\"NULL を読むと...\\n\");\nprintf(\"%d\\n\", *nothing);\n```\n\n```text\nNULL を読むと...\n（ここで落ちる。終了コード 139 ＝ Segmentation fault）\n```\n\n`NULL` は「**どこも指していない**」ことを表す特別な値（番地 0）です。その中身を読もうとすると、OS が **「そこはあなたのプログラムが使ってよい場所ではない」** と止めます。これが **セグメンテーション違反**（Segmentation fault、segfault）です。レッスン 1 で書式を間違えたプログラムが落ちたのも同じ理由でした。\n\n| 言語 | 「何も指していない」を使ったら |\n|---|---|\n| C | セグメンテーション違反で落ちる（落ちないで、でたらめな場所を読むこともある） |\n| Java | NullPointerException（どの変数かまで教えてくれる） |\n| Go | panic: nil pointer dereference |\n| Python | `AttributeError: 'NoneType' object has no attribute ...` |\n| Rust | **そもそも null が無い**（Option で表す。Rust コースのレッスン 3） |\n\nC の NULL を発明した人自身が、のちに「10 億ドルの間違いだった」と言ったほど、多くのバグの原因になってきました。Rust が null を無くしたのは、この反省からです。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `void f(int *out)` | 結果を out の番地に書いてもらう関数 |\n| `const char *s` | 中身を変えない文字列へのポインタ（読むだけ。Rust の `&str` に近い） |\n| `p->name` | 構造体のポインタから中身 |\n| `if (p == NULL) return -1;` | ✅ NULL チェック |\n| `*p` の前に NULL かどうか確かめていない | ⚠️ 落ちる可能性 |\n| `int **pp` | ポインタのポインタ（「番地の番地」）。関数の中でポインタ自体を書き換えたいとき |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`int x = 5; int *p = &x; *p = 10;` の後、x の値は？",
+        "choices": [
+         "5",
+         "10",
+         "x の番地"
+        ],
+        "answer": 1,
+        "explain": "p は x の番地を持っていて、`*p = 10` はその番地の中身（= x）を 10 にします。"
+       },
+       {
+        "question": "`void f(int n) { n = 0; }` を `f(x)` で呼んでも x が変わらない理由は？",
+        "choices": [
+         "C の引数はコピーなので、関数の中で変わるのはコピーだけだから",
+         "n が int だから",
+         "f が何も返さないから"
+        ],
+        "answer": 0,
+        "explain": "元の変数を変えるには、`void f(int *n) { *n = 0; }` として `f(&x)` と番地を渡します。"
+       },
+       {
+        "question": "NULL ポインタの中身（`*p`）を読むと、たいていどうなる？",
+        "choices": [
+         "0 が返る",
+         "セグメンテーション違反でプログラムが落ちる",
+         "コンパイルエラーになる"
+        ],
+        "answer": 1,
+        "explain": "NULL はどこも指していない値です。中身を読もうとすると OS に止められます（Java なら NullPointerException に当たる）。"
+       }
+      ]
+     ],
+     "id": "03-pointers"
+    },
+    {
+     "title": "配列と文字列 ― \\0 とバッファオーバーフロー",
+     "level": 2,
+     "minutes": 22,
+     "concepts": [
+      "collections",
+      "strings",
+      "memory",
+      "security"
+     ],
+     "summary": "配列は大きさが決まっていて、範囲の外を読んでもエラーにならない。文字列は \\0 で終わる char の配列、strlen はバイト数、== で比べてはいけない。そして、文字列を長く書き込みすぎて隣の is_admin を書き換えてしまうバッファオーバーフローを実際に起こし、AddressSanitizer で見つける。",
+     "body": "## このレッスンのゴール\n\n- C の配列の大きさが決まっていること、範囲外を読み書きしてもエラーにならないことが分かる\n- C の文字列が `\\0` で終わる char の配列であることと、`strlen`・`strcmp`・`snprintf` を読める\n- バッファオーバーフローが何で、なぜセキュリティの問題になるのかを説明できる\n\n## 配列\n\n```c\nint prices[5] = {120, 90, 200, 1200, 250};\nprintf(\"prices[0]=%d  要素数=%zu  sizeof=%zu\\n\",\n       prices[0], sizeof(prices) / sizeof(prices[0]), sizeof(prices));\n// prices[0]=120  要素数=5  sizeof=20\n```\n\n| C | 意味 | Python で言うと |\n|---|---|---|\n| `int prices[5]` | int を 5 つ並べた配列。**大きさは決まっていて変えられない** | （リストは伸び縮みする） |\n| `prices[0]` | 0 番目 | `prices[0]` |\n| `sizeof(prices) / sizeof(prices[0])` | 要素の数（全体のバイト数 ÷ 1 つのバイト数）。**C には `len()` が無い** | `len(prices)` |\n\n配列は、メモリの上に **同じ型が隙間なく並んだもの** です（int 5 つ × 4 バイト ＝ 20 バイト）。\n\n### 関数に渡すと、長さが分からなくなる\n\n```c\nint sum(int *items, int n) {\n    int s = 0;\n    for (int i = 0; i < n; i++) s += items[i];\n    return s;\n}\n\nprintf(\"sum=%d\\n\", sum(prices, 5));   // sum=1860\n```\n\n配列を関数に渡すと、**先頭の番地（ポインタ）だけ** が渡されます。関数の中では、何個あるのか分からないので、**長さも一緒に渡す** のが C の決まりです。Go のスライス、Rust の `&[T]`、Java の配列は、「番地」と「長さ」をセットで持つことで、この面倒と危険を無くしています。\n\n### ⚠️ 範囲外を読んでもエラーにならない\n\n```c\nprintf(\"prices[5] (範囲外) = %d\\n\", prices[5]);\n// prices[5] (範囲外) = 207\n```\n\n5 つしかない配列の **6 つ目**（番号 5）を読みました。Python なら `IndexError`、Go なら panic、Java なら `ArrayIndexOutOfBoundsException` で止まりますが、**C は止まりません**。配列のすぐ後ろのメモリにあった、**関係ない値（207）を読んだ** だけです。書き込んだら、関係ない値を壊します。\n\n## 文字列は \\0 で終わる char の配列\n\n```c\nchar name[] = \"Ryo\";\nprintf(\"name=%s  sizeof=%zu  strlen=%zu  最後の文字の番号=%d\\n\",\n       name, sizeof(name), strlen(name), name[3]);\n// name=Ryo  sizeof=4  strlen=3  最後の文字の番号=0\n```\n\n```text\nname:  'R'  'y'  'o'  '\\0'\n番号:   0    1    2    3\n```\n\nC には「文字列の型」がありません。文字列は **char の配列** で、**最後に `\\0`（番号 0 の文字）** を置いて「ここで終わり」の印にします。だから「Ryo」の 3 文字に、`sizeof` は 4 バイト必要です。\n\n| 関数 | 意味 | Python で言うと |\n|---|---|---|\n| `strlen(s)` | `\\0` までの **バイト数** | `len(s.encode())` |\n| `strcpy(dst, src)` | コピー | `dst = src` |\n| `strcat(dst, src)` | 後ろにつなげる | `dst += src` |\n| `strcmp(a, b)` | 比べる（同じなら 0） | `a == b` |\n| `snprintf(buf, size, ...)` | 書式付きで buf に書く（size を超えない） | `f\"...\"` |\n\n```c\nchar jp[] = \"りんご\";\nprintf(\"jp: strlen=%zu\\n\", strlen(jp));   // jp: strlen=9\n```\n\n日本語は 1 文字 3 バイトなので、strlen は 9 です（PHP の `strlen` と同じ。コンピュータの基礎コースの「文字コード」）。\n\n### 文字列を == で比べてはいけない\n\n```c\nchar a[10] = \"abc\";\nchar b[10] = \"abc\";\nprintf(\"a == b: %d   strcmp: %d\\n\", a == b, strcmp(a, b));\n// a == b: 0   strcmp: 0\n```\n\n```text\nwarning: comparison between two arrays [-Warray-compare]\n```\n\n`a == b` は **番地を比べる** ので、中身が同じでも 0（偽）です。中身を比べるのは `strcmp`（同じなら **0** を返す）。Java の `==` と `equals`（Java コースのレッスン 2）の話は、ここから来ています。\n\n## バッファオーバーフロー\n\n配列の範囲を超えて **書き込む** と何が起きるか、実際に試しました。名前の欄の後ろに、管理者かどうかの印があるデータです。\n\n```c\n#include <stdio.h>\n#include <string.h>\n\nstruct User {\n    char name[8];      // 名前は 8 バイトまで\n    int is_admin;      // そのすぐ後ろ\n};\n\nint main(void) {\n    struct User u = { \"\", 0 };\n    printf(\"前: is_admin=%d\\n\", u.is_admin);\n    strcpy(u.name, \"AAAAAAAA\\x01\");               // 9 文字 ＋ \\0 ＝ 10 バイトを、8 バイトの場所に\n    printf(\"後: name=%s is_admin=%d\\n\", u.name, u.is_admin);\n    if (u.is_admin) printf(\"管理者としてログインしました！\\n\");\n    return 0;\n}\n```\n\n```text\n前: is_admin=0\n後: name=AAAAAAAA is_admin=1\n管理者としてログインしました！\n```\n\n**名前を入れただけで、管理者になってしまいました**。\n\n```text\nメモリ:  [A][A][A][A][A][A][A][A] [01][00][00][00]\n         └──── name（8 バイト）───┘ └── is_admin ──┘\n                                     ↑ はみ出した \\x01 と \\0 がここに書き込まれた\n```\n\n`strcpy` は、**コピー先の大きさを確かめずに、`\\0` が来るまで書き続けます**。8 バイトの name からはみ出した分が、すぐ後ろの is_admin を書き換えたのです。これが **バッファオーバーフロー** です。\n\n利用者の入力を `strcpy` などでコピーするプログラムでは、攻撃者が **入力の長さと中身を工夫して、メモリの好きな場所を書き換えられます**。実際に、何十年にもわたって、OS やブラウザやサーバーの深刻な脆弱性の大きな原因になってきました。\n\n### AddressSanitizer で見つける\n\n`-fsanitize=address` を付けてコンパイルすると、はみ出した瞬間に止めて教えてくれます（別の、`char name[8]` に 21 バイト書き込む例です）。\n\n```bash\ngcc -g -fsanitize=address -o bof_asan bof.c && ./bof_asan\n```\n\n```text\n==8312==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x7f47eed00028 ...\nWRITE of size 21 at 0x7f47eed00028 thread T0\n    #0 ... in strcpy\n    #1 ... in main bof.c:7\n```\n\n「**スタックのバッファから、はみ出しました**。21 バイト書き込みました。場所は bof.c の 7 行目の strcpy」。コンパイラ自身も、`warning: 'strcpy' writing 21 bytes into a region of size 8 overflows the destination` と警告していました。\n\n### 安全な書き方\n\n```c\nchar buf[16];\nsnprintf(buf, sizeof(buf), \"合計 %d 円\", 360);\nprintf(\"snprintf: %s\\n\", buf);                      // snprintf: 合計 360 円\n\nsnprintf(buf, sizeof(buf), \"とても長いメッセージです\");\nprintf(\"切り詰め: [%s] (%zu バイト)\\n\", buf, strlen(buf));   // 切り詰め: [とても長い] (15 バイト)\n```\n\n`snprintf` は、**書き込む先の大きさ（`sizeof(buf)`）を受け取って、それ以上は書きません**。入りきらない分は切り捨てて、最後に必ず `\\0` を置きます（16 バイトの場所に、15 バイト ＋ `\\0`）。\n\n| ⚠️ 危ない | ✅ 代わり |\n|---|---|\n| `gets(buf)` | `fgets(buf, sizeof(buf), stdin)`（`gets` は危なすぎて C の規格から削除された） |\n| `strcpy(dst, src)` | `snprintf(dst, sizeof(dst), \"%s\", src)` など、大きさを渡すもの |\n| `strcat(dst, src)` | 残りの大きさを確かめる |\n| `sprintf(buf, ...)` | `snprintf(buf, sizeof(buf), ...)` |\n| `scanf(\"%s\", buf)` | `scanf(\"%15s\", buf)` のように最大の長さを書く |\n\n⚠️ 日本語の文字列を途中で切ると、3 バイトの文字の途中で切れて **文字化け** することがあります（今回は「とても長い」の 5 文字 ＝ 15 バイトでちょうど切れました）。\n\n## なぜ他の言語は安全なのか\n\n| 言語 | 範囲外の読み書き |\n|---|---|\n| C | 止まらない（隣のメモリを読み書きしてしまう） |\n| Python・Java・Go・JavaScript | 必ず確かめて、範囲外ならエラー |\n| Rust | 必ず確かめて、範囲外なら panic（`get()` なら Option で返す） |\n\nC 以外の言語は、配列を使うたびに「範囲の中か」を確かめる、わずかな手間を払う代わりに、バッファオーバーフローを根本から防いでいます。アメリカ政府なども、新しく作るソフトには Rust などの **メモリ安全な言語** を使うよう勧めています。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `char buf[256]; strcpy(buf, input);` | ⚠️ input が 256 バイト以上ならバッファオーバーフロー |\n| `gets(...)` / `sprintf(...)` | ⚠️ 大きさを確かめない関数 |\n| `for (i = 0; i <= n; i++) a[i] = ...` | ⚠️ `<=` だと 1 つはみ出す（よくある間違い） |\n| `if (strcmp(a, b) == 0)` | ✅ 中身が同じ |\n| `if (a == b)`（文字列） | ⚠️ 番地を比べている |\n| `char s[3] = \"abc\";` | ⚠️ `\\0` の場所が無い（4 バイト必要） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "C の `char s[] = \"cat\";` の sizeof(s) が 4 になる理由は？",
+        "choices": [
+         "C は 1 文字に 4 バイト使うから",
+         "文字列の終わりの印の `\\0` が、最後に 1 バイト付くから",
+         "配列はいつも 4 バイトだから"
+        ],
+        "answer": 1,
+        "explain": "C の文字列は、最後に `\\0` が付いた char の配列です。3 文字なら 4 バイト必要です。"
+       },
+       {
+        "question": "8 バイトの name に、`strcpy` で 10 バイトの文字列をコピーしたら、すぐ後ろの is_admin が 0 から 1 に変わった。何が起きた？",
+        "choices": [
+         "入りきらない分がはみ出して、隣のメモリを書き換えた（バッファオーバーフロー）",
+         "strcpy が is_admin を自動で更新した",
+         "コンパイラが is_admin を 1 に最適化した"
+        ],
+        "answer": 0,
+        "explain": "strcpy はコピー先の大きさを確かめないので、はみ出した分が隣の変数を壊しました。攻撃者はこれを使ってメモリを書き換えます。"
+       },
+       {
+        "question": "C で 2 つの文字列の中身が同じか確かめる正しい書き方は？",
+        "choices": [
+         "`a == b`",
+         "`strcmp(a, b) == 0`",
+         "`strlen(a) == strlen(b)`"
+        ],
+        "answer": 1,
+        "explain": "`==` は番地を比べます。strcmp は中身が同じなら 0 を返します。"
+       }
+      ]
+     ],
+     "id": "04-arrays-strings"
+    },
+    {
+     "title": "malloc と free ― メモリを自分で借りて返す",
+     "level": 3,
+     "minutes": 20,
+     "concepts": [
+      "memory",
+      "errors",
+      "security"
+     ],
+     "summary": "必要なときに malloc でメモリを借り、使い終わったら free で返す。返し忘れ（メモリリーク）、返した後に使う（解放後の使用）、2 回返す（二重解放）を実際に起こし、AddressSanitizer の報告を読む。ガベージコレクションと Rust の所有権が何を解決したのか。",
+     "body": "## このレッスンのゴール\n\n- `malloc`・`free`・`realloc` で、必要な大きさのメモリを借りて返すコードを読める\n- メモリリーク・解放後の使用・二重解放が何か、AddressSanitizer の報告から読み取れる\n- Python の GC や Rust の所有権が、この問題をどう解決しているか説明できる\n\n## スタックとヒープ\n\nこれまでの変数（`int price = 120;`）は、**スタック** という場所に置かれ、関数が終わると **自動で片付けられます**。でも、「実行してみるまで、どれだけ必要か分からない」データ（ユーザーが入力した名前、読み込んだファイル）もあります。\n\n| | スタック | ヒープ |\n|---|---|---|\n| 使い方 | 普通に変数を作る | `malloc` で借りる |\n| 大きさ | コンパイルのときに決まる | 実行中に決められる |\n| 片付け | 関数が終わると自動 | **自分で `free` する** |\n\nPython のリストや文字列は、すべてヒープに置かれ、使われなくなったら **ガベージコレクタ**（GC）が片付けてくれていました（Rust コースのレッスン 2）。C では、それを **全部自分で** やります。\n\n## malloc と free\n\n```c\n#include <stdlib.h>\n#include <string.h>\n\ntypedef struct {\n    char *name;\n    int price;\n} Product;\n\nProduct *product_new(const char *name, int price) {\n    Product *p = malloc(sizeof(Product));          // ① Product 1 つ分を借りる\n    if (p == NULL) return NULL;                     //    借りられなかったら NULL\n    p->name = malloc(strlen(name) + 1);             // ② 名前の分も借りる（\\0 の 1 バイトも）\n    if (p->name == NULL) { free(p); return NULL; }\n    strcpy(p->name, name);                          //    大きさを計算して借りたので、はみ出さない\n    p->price = price;\n    return p;\n}\n\nvoid product_free(Product *p) {\n    if (p == NULL) return;\n    free(p->name);                                  // 借りた順と逆に返す\n    free(p);\n}\n```\n\n```c\nProduct *apple = product_new(\"りんご\", 120);\nprintf(\"%s %d\\n\", apple->name, apple->price);   // りんご 120\n...\nproduct_free(apple);\napple = NULL;\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `malloc(バイト数)` | ヒープからその大きさを借りて、先頭の番地を返す。借りられないと NULL |\n| `sizeof(Product)` | Product 1 つのバイト数（レッスン 2） |\n| `strlen(name) + 1` | 文字列のバイト数 ＋ `\\0`（レッスン 4） |\n| `free(p)` | 返す |\n| `typedef struct { ... } Product;` | 構造体に Product という名前を付ける |\n| `p->name` | ポインタから中身（レッスン 3） |\n\n**`malloc` した数だけ `free` する** のが C の約束です。`product_new` と `product_free` のように、**作る関数と片付ける関数を対にする** のが C のよくある書き方で、Python の「クラスとガベージコレクタ」の役目を、人の手でやっています。\n\n### realloc：大きさを変える\n\n```c\nint n = 3;\nint *prices = malloc(n * sizeof(int));          // int を 3 つ分\nfor (int i = 0; i < n; i++) prices[i] = (i + 1) * 100;\nprices = realloc(prices, 5 * sizeof(int));      // 5 つ分に広げる\nprices[3] = 400; prices[4] = 500;\nprintf(\"prices[4]=%d\\n\", prices[4]);            // prices[4]=500\nfree(prices);\n```\n\n`realloc` は、借りたメモリの大きさを変えます。足りなければ **別の広い場所に引っ越して**、新しい番地を返します。Python の `list.append` や Go の `append` も、中ではこれをやっています。Rust コースのレッスン 2 で「`v.push(4)` で中身が引っ越すので、借りている `first` が無効になる」と学んだのは、まさにこの動きです。\n\n（⚠️ `prices = realloc(prices, ...)` は、失敗して NULL が返ると元の番地を失ってしまうので、本当は一度別の変数で受け取るのが正しい書き方です）\n\n## 3 つの典型的な間違い\n\nAddressSanitizer（`-fsanitize=address`）を付けてコンパイルし、わざと間違えてみました。\n\n### ① 解放した後に使う（use-after-free）\n\n```c\nproduct_free(apple);\nprintf(\"解放後: %s\\n\", apple->name);    // もう返したメモリを読んでいる\n```\n\n```text\n==8341==ERROR: AddressSanitizer: heap-use-after-free on address 0x... at pc 0x...\nREAD of size 8 at 0x... thread T0\n    #0 0x... in main mem.c:38\nfreed by thread T0 here:\n    #1 0x... in product_free mem.c:23\n    #2 0x... in main mem.c:37\npreviously allocated by thread T0 here:\n    #1 0x... in product_new mem.c:11\n```\n\n| 部分 | 意味 |\n|---|---|\n| `heap-use-after-free` | 解放した後のヒープのメモリを使った |\n| `READ of size 8 ... in main mem.c:38` | 38 行目で 8 バイト読んだ（`apple->name` の番地） |\n| `freed by ... product_free mem.c:23` | そのメモリは 23 行目で解放されていた |\n| `previously allocated by ... product_new mem.c:11` | もともとは 11 行目で借りたもの |\n\n**どこで借りて、どこで返して、どこで使ってしまったか** の 3 か所が全部分かります。AddressSanitizer を付けないと、たまたま古い中身が残っていて **普通に動いてしまう** ことも多く、発見がとても難しいバグです。攻撃者は、返されたメモリに自分のデータを置かせて、プログラムを乗っ取ることがあります。\n\n### ② 2 回解放する（double free）\n\n```c\nproduct_free(apple);\nproduct_free(apple);\n```\n\n```text\n==8345==ERROR: AddressSanitizer: heap-use-after-free on address 0x...\nREAD of size 8 at 0x... thread T0\n    #0 0x... in product_free mem.c:22\n    #1 0x... in main mem.c:43\nfreed by thread T0 here:\n    #1 0x... in product_free mem.c:23\n    #2 0x... in main mem.c:42\n```\n\n2 回目の `product_free` の中で、`free(p->name)` のために **解放済みの p から name を読んだ** ところで見つかりました（22 行目）。ここを通り抜けても、同じ番地を 2 回 `free` すると、メモリの管理が壊れます。\n\n`free` した後に **`apple = NULL;`** と書いておけば、`product_free` の最初の `if (p == NULL) return;` で止まるので安全です（上の正しいコードの最後の行）。\n\n### ③ 返し忘れる（メモリリーク）\n\n```c\nProduct *apple = product_new(\"りんご\", 120);\n...\nreturn 0;          // product_free を呼ばずに終わった\n```\n\n```text\n==8349==ERROR: LeakSanitizer: detected memory leaks\nDirect leak of 16 byte(s) in 1 object(s) allocated from:\n    #1 0x... in product_new mem.c:11\n    #2 0x... in main mem.c:27\n...\nSUMMARY: AddressSanitizer: 26 byte(s) leaked in 2 allocation(s).\n```\n\n「**26 バイトが返されずに漏れています**。Product の 16 バイト（11 行目）と、名前の 10 バイト（13 行目。りんご 9 バイト ＋ `\\0`）」。\nすぐ終わるプログラムならメモリは OS が回収しますが、**サーバーのように何日も動き続けるプログラム** で、リクエストごとに少しずつ漏れると、やがてメモリを使い果たして落ちます（コンピュータの基礎コースのレッスン 1）。\n\n## 他の言語は、これをどう解決したか\n\n| 言語 | 片付け方 | ① 解放後の使用 | ② 二重解放 | ③ リーク |\n|---|---|---|---|---|\n| C | 人が `free` | 起きる | 起きる | 起きる |\n| C++ | スマートポインタ（C++ コース）で自動に近づける | 減らせる | 減らせる | 減らせる |\n| Python・Java・Go・JavaScript | **GC** が、使われなくなったら自動で | 起きない | 起きない | ほぼ起きない（参照を残し続けると起きる） |\n| Rust | **所有権**：持ち主がいなくなったら自動で。間違いはコンパイルエラー | 起きない | 起きない | ほぼ起きない |\n\nRust のコンパイラが「ムーブした後の値は使えない」「借りている間は書き換えられない」と怒っていたのは（Rust コースのレッスン 2）、**まさにこのレッスンの ① と ② を、コンパイルの時点で止めるため** です。C を知ると、Rust のルールの意味がよく分かります。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `malloc` の後に NULL チェックが無い | ⚠️ 借りられなかったときに落ちる |\n| `malloc` に対応する `free` が見つからない | ⚠️ リーク。特に途中で `return` するところ |\n| `free(p);` の後に `p` を使っている | ⚠️ 解放後の使用 |\n| `free(p); p = NULL;` | ✅ 二重解放・解放後の使用を防ぐ習慣 |\n| `malloc(strlen(s))` | ⚠️ `\\0` の分の `+ 1` を忘れている |\n| `malloc(n * sizeof(int))` で n がとても大きい | 掛け算があふれて、小さすぎる大きさを借りることがある（`calloc(n, sizeof(int))` は確かめてくれる） |\n| `-fsanitize=address` / `valgrind` | メモリの間違いを見つける道具。テストで使う |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`char *s = malloc(strlen(name) + 1);` の `+ 1` は何のため？",
+        "choices": [
+         "文字列の最後の `\\0` の 1 バイト分",
+         "安全のための予備",
+         "malloc は必ず 1 多く渡す決まりだから"
+        ],
+        "answer": 0,
+        "explain": "C の文字列は最後に `\\0` が必要です。strlen はそれを数えないので、1 足します。"
+       },
+       {
+        "question": "`free(p);` の後に `p->name` を読んだら AddressSanitizer が `heap-use-after-free` と報告した。意味は？",
+        "choices": [
+         "メモリが足りない",
+         "すでに返したメモリを使っている",
+         "p が NULL だった"
+        ],
+        "answer": 1,
+        "explain": "解放後の使用です。報告には、借りた場所・返した場所・使ってしまった場所の 3 つが示されます。"
+       },
+       {
+        "question": "サーバーのプログラムで、リクエストごとに malloc して free を忘れると、どうなる？",
+        "choices": [
+         "何も問題はない（プログラムが終われば OS が回収する）",
+         "少しずつメモリが減り続け、やがて使い果たして落ちる（メモリリーク）",
+         "コンパイルエラーになる"
+        ],
+        "answer": 1,
+        "explain": "動き続けるプログラムでは、漏れたメモリがたまり続けます。LeakSanitizer は漏れた大きさと借りた場所を教えてくれます。"
+       }
+      ]
+     ],
+     "id": "05-malloc-free"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "C++",
