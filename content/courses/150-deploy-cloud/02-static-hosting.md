@@ -36,13 +36,18 @@ content/（Markdown）──→ python tools/build.py ──→ site/data.js
 
 ## pages.yml を読む
 
-このリポジトリには、GitHub Pages に公開するための設定がすでに入っています。
+このリポジトリには、GitHub Pages に公開するための設定が入っていて、実際に `https://ryo0000200001-coder.github.io/learn_programing/` で公開されています。
 
 ```yaml
 name: Deploy site
 
-on:
-  workflow_dispatch:        # ① いつ動くか：手動で「実行」ボタンを押したとき
+on:                         # ① いつ動くか（きっかけ）
+  push:
+    branches: [main]        #    main に push されたとき
+  workflow_run:             #    別のワークフロー（自動マージ）が終わったとき
+    workflows: ["Auto merge Claude branches into main"]
+    types: [completed]
+  workflow_dispatch:        #    手動で「実行」ボタンを押したとき
 
 permissions:                # ② この作業に与える権限（最小権限）
   contents: read            #    リポジトリは読むだけ
@@ -55,12 +60,16 @@ concurrency:                # ③ 同時に 2 つ走ったら、古い方を止�
 
 jobs:
   deploy:
+    # 自動マージが失敗したときは公開しない
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest  # ④ GitHub が用意する Linux のパソコンで動かす
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4              # ⑤ リポジトリの中身を取ってくる
+      - uses: actions/checkout@v4              # ⑤ リポジトリの中身（main）を取ってくる
+        with:
+          ref: main
       - uses: actions/setup-python@v5          # ⑥ Python 3.12 を用意
         with:
           python-version: "3.12"
@@ -75,7 +84,8 @@ jobs:
 
 | 番号 | 読み方 |
 |---|---|
-| ① | `on:` は「きっかけ」。今は `workflow_dispatch`（手動）だけ。ファイルの先頭のコメントに、`push: branches: [main]` を戻せば main に push するたびに自動で公開される、と書かれている |
+| ① | `on:` は「きっかけ」。3 つ書かれていて、どれか 1 つが起きれば動く。`workflow_run` があるのは、**GitHub Actions 自身が main に push したときは `push` のきっかけが起きない** という決まりがあるため。Claude のブランチを自動マージ（レッスン 7）した後は、こちらで拾っている |
+| `if:` | 自動マージが失敗した（コンフリクトなど）ときは、公開しない |
 | ② | `permissions:` で、この作業ができることを最小限にしている（セキュリティのコースのレッスン 1） |
 | ④〜⑩ | 毎回、まっさらな Linux のパソコンを借りて、取ってくる → Python を入れる → ビルド → アップロード → 公開、を順番に行う |
 | `uses:` | 他の人が作った部品（アクション）を使う。`@v4` はバージョン |
@@ -85,11 +95,13 @@ GitHub Actions の書き方は、レッスン 7 でくわしく読みます。
 
 ### 公開する手順
 
-ファイルの先頭のコメントのとおりです。
+自分の別のリポジトリで同じことをするなら、次の手順です。
 
 1. GitHub のリポジトリの **Settings → Pages → Build and deployment → Source** を **GitHub Actions** にする
-2. **Actions** タブ → 「Deploy site」→ **Run workflow** を押す（または `on:` に push を戻す）
+2. 上のようなワークフローを `.github/workflows/` に置いて、main に push する（または **Actions** タブ → 「Deploy site」→ **Run workflow**）
 3. 数分後に `https://ユーザー名.github.io/リポジトリ名/` で見られる
+
+このサイトでは、Claude がレッスンを push する → 自動マージ → 自動で公開、までがつながっているので、スマホからも数分後には新しいレッスンが見られます。
 
 ⚠️ 公開すると、**URL を知っている人は誰でも見られます**。非公開のリポジトリで Pages を使うには有料プランが必要な場合があり、有料でも「サイト自体を非公開にする」機能は一部のプランだけです。見られて困るものは置かない、が原則です。
 
