@@ -1,3 +1,11 @@
-{"title": "Go", "icon": "🐹", "order": 70, "status": "planned",
- "description": "シンプルで速い、サーバー向けの言語。",
- "outline": ["パッケージと main", "静的型と := ", "構造体とメソッド", "エラーを値で返す", "goroutine と channel"]}
+{
+ "title": "Go",
+ "icon": "🐹",
+ "order": 70,
+ "description": "シンプルで速い、サーバーやコマンドラインのツール向けの言語。package と main、:= と静的型、構造体とインターフェース、if err != nil のエラー処理、goroutine と channel、最後に小さな Web API を読む。すべて Go 1.24 で実行して確かめたもの。",
+ "levels": {
+  "1": "入門：形と型",
+  "2": "基礎：構造体とエラー",
+  "3": "実践：並行処理と Web API"
+ }
+}

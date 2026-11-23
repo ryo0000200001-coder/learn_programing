@@ -4141,17 +4141,299 @@ window.SITE_DATA = {
    "title": "Go",
    "icon": "🐹",
    "order": 70,
-   "status": "planned",
-   "description": "シンプルで速い、サーバー向けの言語。",
-   "outline": [
-    "パッケージと main",
-    "静的型と := ",
-    "構造体とメソッド",
-    "エラーを値で返す",
-    "goroutine と channel"
-   ],
+   "description": "シンプルで速い、サーバーやコマンドラインのツール向けの言語。package と main、:= と静的型、構造体とインターフェース、if err != nil のエラー処理、goroutine と channel、最後に小さな Web API を読む。すべて Go 1.24 で実行して確かめたもの。",
+   "levels": {
+    "1": "入門：形と型",
+    "2": "基礎：構造体とエラー",
+    "3": "実践：並行処理と Web API"
+   },
    "id": "70-go",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "package と main ― Go のプログラムの形",
+     "level": 1,
+     "minutes": 14,
+     "concepts": [
+      "basics",
+      "modules",
+      "tooling"
+     ],
+     "summary": "Go のプログラムの基本の形（package main・import・func main）、go run と go build、1 つのファイルになる実行ファイル。使っていない import や変数がエラーになる厳しさ。",
+     "body": "## このレッスンのゴール\n\n- `package main`・`import`・`func main()` の役割を説明できる\n- `go run` と `go build` の違いが分かる\n- 「使っていない変数・import はエラー」という Go の決まりを知っている\n\n## Go とは\n\n**Go**（Golang とも呼ばれる）は、Google が作った言語です。**シンプルで、速く、1 つのファイルの実行ファイルになる** のが特徴で、Web のサーバー（API）や、ターミナルで使うツール（Docker・GitHub CLI の `gh`・Kubernetes なども Go 製）によく使われます。\n\n## 最初のプログラム\n\n```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"strings\"\n)\n\nfunc greet(name string) string {\n\treturn \"こんにちは、\" + name + \" さん\"\n}\n\nfunc main() {\n\tfmt.Println(greet(\"Ryo\"))\n\tfmt.Printf(\"%s は %d 歳です\\n\", \"Hana\", 30)\n\tfmt.Println(strings.ToUpper(\"go\"))\n}\n```\n\n```text\nこんにちは、Ryo さん\nHana は 30 歳です\nGO\n```\n\n（このコースの出力は、すべて Go 1.24 で実際に実行したものです）\n\nPython で書くと、こうなります。\n\n```python\ndef greet(name: str) -> str:\n    return \"こんにちは、\" + name + \" さん\"\n\nprint(greet(\"Ryo\"))\nprint(f\"{'Hana'} は {30} 歳です\")\nprint(\"go\".upper())\n```\n\n| Go | 意味 | Python で言うと |\n|---|---|---|\n| `package main` | このファイルは「main」という **パッケージ**（まとまり）に属する。**実行するプログラムは必ず main** | （ファイル＝モジュール） |\n| `import (\"fmt\" \"strings\")` | 標準ライブラリを読み込む | `import ...` |\n| `func greet(name string) string` | 関数。引数 `name` は string 型、戻り値も string 型 | `def greet(name: str) -> str:` |\n| `func main()` | **プログラムの入口**。ここから実行される | `if __name__ == \"__main__\":` |\n| `{ ... }` | ブロック（インデントではなく波かっこ） | インデント |\n| `fmt.Println(...)` | 表示して改行 | `print(...)` |\n| `fmt.Printf(\"%s %d\\n\", ...)` | 書式を指定して表示（`%s` 文字列、`%d` 整数、`\\n` 改行） | `print(\"%s %d\" % (...))` |\n\n関数や変数の **型を後ろに書く** のが Go の特徴です（`name string`）。TypeScript の `name: string` に似ていますが、`:` はありません。\n\n### 大文字で始まる名前は「外から使える」\n\n`fmt.Println` の `Println`、`strings.ToUpper` の `ToUpper` は **大文字で始まって** います。Go では、\n\n- **大文字で始まる名前** は、他のパッケージから使える（公開）\n- **小文字で始まる名前** は、そのパッケージの中だけ（非公開）\n\nというルールです。Python の「`_` で始まる名前は内部用」という慣習を、**文法として決めた** ものです。\n\n## 実行する\n\n```bash\ngo mod init example.com/hello   # 最初に 1 回。go.mod というファイルができる\ngo run .                        # コンパイルして、すぐ実行\ngo build -o hello .             # 実行ファイル hello を作る\n./hello                         # 作った実行ファイルを実行\n```\n\n| コマンド | 意味 |\n|---|---|\n| `go mod init 名前` | **モジュール**（プロジェクト）を始める。`go.mod` に名前と Go のバージョン、使うライブラリが書かれる（Python の `pyproject.toml`、JavaScript の `package.json`） |\n| `go run .` | このディレクトリのプログラムを、その場でコンパイルして実行 |\n| `go build` | **実行ファイル** を作る |\n| `go get パッケージ` | ライブラリを追加（`pip install` / `npm install`） |\n| `go test ./...` | テストを全部実行 |\n| `gofmt` / `go fmt` | コードの書き方（字下げなど）を自動でそろえる |\n\n`go build` で作った `hello` は、この環境では約 2.2MB の **1 つのファイル** でした。**Go をインストールしていないパソコンにも、このファイルをコピーするだけで動きます**。Python のように「動かす人も Python とライブラリを入れる」必要がないので、配布やデプロイが楽です（公開とクラウドのコースの Docker のイメージも小さくできる）。\n\n## 使っていないものはエラー\n\n```go\npackage main\n\nimport (\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tx := 1\n\tfmt.Println(\"hi\")\n}\n```\n\n```text\n./l1b.go:5:2: \"os\" imported and not used\n./l1b.go:9:2: declared and not used: x\n```\n\n**使っていない import と、使っていない変数は、コンパイルエラー** になります。Python なら警告すら出ないことです。最初は面倒に感じますが、消し忘れのゴミが残らないので、AI のコードも読みやすくなります。\n\n一時的に使わない値は、`_`（空白の識別子）で受け取ります。\n\n```go\n_ = x                 // 「使わない」と明示\nfor _, v := range items { ... }   // 番号は使わない（レッスン 2）\n```\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方 |\n|---|---|\n| `package main` と `func main()` | 実行するプログラム（コマンド） |\n| `package handlers` など main 以外 | 他から使われる部品のパッケージ |\n| `cmd/server/main.go` | Go のプロジェクトでよくある形。`cmd/` の下に実行するプログラムを置く |\n| `go.mod` / `go.sum` | 使うライブラリの一覧と、その中身の確認用の値（ロックファイル。セキュリティのコースのレッスン 6） |\n| `import \"github.com/gin-gonic/gin\"` | ライブラリは **URL のような名前** で読み込む |\n| `func (s *Server) Start()` | メソッド（レッスン 3） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Go のプログラムが実行されるとき、最初に動くのは？",
+        "choices": [
+         "ファイルの一番上の行",
+         "`package main` の中の `func main()`",
+         "`import` の中のパッケージ"
+        ],
+        "answer": 1,
+        "explain": "Go は main パッケージの main 関数から実行が始まります。Python の `if __name__ == \"__main__\":` に当たります。"
+       },
+       {
+        "question": "Go で `import \"os\"` と書いたのに、os を一度も使わなかった。どうなる？",
+        "choices": [
+         "何も起きない",
+         "警告が出るが動く",
+         "コンパイルエラーで、実行できない"
+        ],
+        "answer": 2,
+        "explain": "Go は使っていない import と変数をエラーにします。不要なら消すか、`_` で受け取ります。"
+       },
+       {
+        "question": "`strings.ToUpper` の `ToUpper` が大文字で始まっている意味は？",
+        "choices": [
+         "大文字に変換する関数だから",
+         "大文字で始まる名前は、他のパッケージから使える（公開）というルールだから",
+         "Go では関数名は必ず大文字で始めるから"
+        ],
+        "answer": 1,
+        "explain": "大文字で始まる名前は公開、小文字は同じパッケージの中だけです。自分のパッケージの中で使う関数は小文字でも書けます。"
+       }
+      ]
+     ],
+     "id": "01-package-main"
+    },
+    {
+     "title": "静的型と := ・スライスとマップ",
+     "level": 1,
+     "minutes": 18,
+     "concepts": [
+      "variables",
+      "types",
+      "collections",
+      "loops"
+     ],
+     "summary": "var と := での変数の作り方、ゼロ値、int と float64 を混ぜるとエラーになる静的型、複数の戻り値。Python のリストと辞書にあたるスライスとマップ、for range、「無いキーは 0 になる」ので ok で確かめる書き方。",
+     "body": "## このレッスンのゴール\n\n- `var x int = 3` と `x := 3` を読み分けられる\n- 静的型・ゼロ値・型変換の意味が分かる\n- スライス・マップ・`for range`・`v, ok := m[key]` を読める\n\n## 変数の作り方\n\n```go\nvar count int = 3      // 型を書いて作る\nname := \"Ryo\"          // := は「作って入れる」。型は値から決まる（string）\nprice := 1980          // int\nrate := 0.1            // float64（小数）\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `var 名前 型 = 値` | 型を書いて作る |\n| `名前 := 値` | **作って入れる**。型は自動で決まる（関数の中だけで使える） |\n| `名前 = 値` | すでにある変数に入れ直す（`:` が無い） |\n| `const tax = 0.1` | 定数（変えられない） |\n\n`:=` と `=` の違いがポイントです。`:=` は **新しく作る**、`=` は **入れ直す**。Python には区別がありませんが、Go では間違えるとエラーになります。\n\n### ゼロ値：入れなくても空ではない\n\n```go\nvar zeroInt int\nvar zeroStr string\nvar zeroBool bool\nfmt.Printf(\"[%d] [%q] [%t]\\n\", zeroInt, zeroStr, zeroBool)\n// [0] [\"\"] [false]\n```\n\n値を入れずに作った変数は、**型ごとの「ゼロ値」** になります（数は 0、文字列は空文字、真偽は false、ポインタやマップは `nil`）。Python の `None` のような「何も入っていない」状態は、普通の変数にはありません。\n\n## 静的型：型は変わらない\n\n```go\nprice := 1980\nrate := 0.1\n_ = price * rate\n// invalid operation: price * rate (mismatched types int and float64)\n\nvar s string = 3\n// cannot use 3 (untyped int constant) as string value in variable declaration\n```\n\nGo は **静的型** の言語で、変数の型は作ったときに決まり、変わりません。**int（整数）と float64（小数）を、そのまま混ぜて計算することもできません**。Python なら `1980 * 0.1` は普通に動きますが、Go は型を明示的に変換します。\n\n```go\ntotal := float64(price) * (1 + rate)   // int を float64 に変換してから\n```\n\n| 型 | 中身 | Python で言うと |\n|---|---|---|\n| `int` | 整数 | `int`（ただし大きさに上限がある） |\n| `float64` | 小数 | `float` |\n| `string` | 文字列 | `str` |\n| `bool` | `true` / `false`（小文字） | `True` / `False` |\n| `[]string` | 文字列のスライス | `list[str]` |\n| `map[string]int` | 文字列 → 整数のマップ | `dict[str, int]` |\n\n`fmt.Printf(\"%T\", x)` で型を表示でき、上の変数は `int float64 []string map[string]int` と出ました。\n\n## 複数の値を返す\n\n```go\nfunc divide(a, b int) (int, int) {\n\treturn a / b, a % b\n}\n\nq, r := divide(7, 2)\nfmt.Println(q, r)   // 3 1\n```\n\nGo の関数は **複数の値を返せます**。Python のタプルを返すのと似ています。そして、`7 / 2` が **3**（整数どうしの割り算は切り捨て。SQL コースのレッスン 8 と同じ）なのにも注意です。\nこの「複数の戻り値」は、レッスン 4 の **エラー処理** で必ず使います。\n\n## スライス：伸び縮みする配列\n\n```go\nfruits := []string{\"りんご\", \"バナナ\"}\nfruits = append(fruits, \"みかん\")\nfmt.Println(fruits, len(fruits), fruits[0], fruits[1:])\n// [りんご バナナ みかん] 3 りんご [バナナ みかん]\n```\n\n| Go | Python |\n|---|---|\n| `[]string{\"a\", \"b\"}` | `[\"a\", \"b\"]` |\n| `fruits = append(fruits, \"c\")` | `fruits.append(\"c\")` |\n| `len(fruits)` | `len(fruits)` |\n| `fruits[1:]` | `fruits[1:]` |\n\n⚠️ `append` は **新しいスライスを返す** ので、`fruits = append(fruits, ...)` と **受け取り直す** のが決まりです。`append(fruits, \"c\")` だけ書くと、エラー（結果を使っていない）になります。\n\n`[3]string` のように数を書くと、大きさが決まった **配列** になります。普段使うのはスライスです。\n\n## マップ：辞書\n\n```go\nprices := map[string]int{\"りんご\": 120, \"バナナ\": 90}\nprices[\"みかん\"] = 80\n\np, ok := prices[\"ぶどう\"]\nfmt.Println(prices[\"りんご\"], p, ok)\n// 120 0 false\n```\n\n**無いキーを読むと、エラーにならずにゼロ値（0）が返ります**。Python の `prices[\"ぶどう\"]` は `KeyError` でしたね。\n「0 円の商品」なのか「無い商品」なのかを区別するには、**2 つ目の値 `ok`**（あれば true）で確かめます。\n\n```go\nif p, ok := prices[name]; ok {\n\tfmt.Println(name, \"は\", p, \"円\")\n} else {\n\tfmt.Println(name, \"はありません\")\n}\n```\n\nPython の `if name in prices:` や `prices.get(name)` に当たります。\n\n## for range：繰り返し\n\n```go\nfor i, f := range fruits {\n\tfmt.Println(i, f)          // 0 りんご / 1 バナナ / 2 みかん\n}\n\nfor k, v := range prices {     // マップのキーと値\n\tfmt.Println(k, v)\n}\n\nfor _, f := range fruits { }   // 番号を使わないなら _\nfor i := 0; i < 3; i++ { }     // 数で繰り返す\n```\n\n| Go | Python |\n|---|---|\n| `for i, f := range fruits` | `for i, f in enumerate(fruits):` |\n| `for k, v := range m` | `for k, v in m.items():` |\n| `for i := 0; i < 3; i++` | `for i in range(3):` |\n| `for 条件 { }` | `while 条件:`（Go に while は無い） |\n\n⚠️ マップを `range` で回す順番は **毎回変わります**（わざとランダムにしてある）。順番が大事なら、キーを取り出して並べ替えます。\n\n## if：条件の前に 1 文書ける\n\n```go\nif n := len(fruits); n > 2 {\n\tfmt.Println(\"3 つ以上\", n)\n}\n```\n\n`if 準備の文; 条件 {` と書けて、`n` は if の中だけで使えます。Go のコードでとてもよく見る形です。条件にかっこは付けません。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `x := ...` と `x = ...` | 作る／入れ直す。`:=` を 2 回書くと「新しい変数が無い」エラー |\n| `float64(n)` / `int(f)` / `strconv.Itoa(n)` | 型の変換。`int(2.9)` は 2（切り捨て） |\n| `v := m[key]` だけで使っている | ⚠️ 無いキーでもゼロ値が返る。`v, ok := m[key]` で確かめているか |\n| `items = append(items, x)` | スライスに追加（受け取り直す） |\n| `make([]int, 0, 10)` / `make(map[string]int)` | 空のスライス・マップを作る（10 は最初に用意する大きさ） |\n| `var m map[string]int` のあと `m[\"a\"] = 1` | ⚠️ nil のマップに書くと panic（停止）。`make` で作る |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Go で `x := 1` の後、同じ関数の中で `x := 2` と書くと？",
+        "choices": [
+         "x が 2 になる",
+         "エラーになる（:= は新しく作る書き方で、x はもうあるから）",
+         "別の変数 x ができる"
+        ],
+        "answer": 1,
+        "explain": "入れ直すときは `x = 2` と書きます。`:=` は「作って入れる」です。"
+       },
+       {
+        "question": "`prices := map[string]int{\"りんご\": 120}` のとき、`prices[\"ぶどう\"]` の値は？",
+        "choices": [
+         "エラー（KeyError のようなもの）",
+         "0（int のゼロ値）",
+         "nil"
+        ],
+        "answer": 1,
+        "explain": "無いキーはゼロ値になります。あるかどうかは `p, ok := prices[\"ぶどう\"]` の ok で確かめます。"
+       },
+       {
+        "question": "`price := 1980; rate := 0.1; total := price * rate` がエラーになる理由は？",
+        "choices": [
+         "int と float64 を、変換せずに混ぜて計算しているから",
+         "1980 が大きすぎるから",
+         ":= で計算はできないから"
+        ],
+        "answer": 0,
+        "explain": "Go は型を自動で変換しません。`float64(price) * rate` のように変換してから計算します。"
+       }
+      ]
+     ],
+     "id": "02-types-slices-maps"
+    },
+    {
+     "title": "構造体・メソッド・インターフェース",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "classes",
+      "types",
+      "generics"
+     ],
+     "summary": "Go にはクラスが無く、データは構造体（struct）、処理はメソッドで書く。値で受け取るメソッドとポインタ（*）で受け取るメソッドの違いを実験で確かめ、「同じメソッドを持てばよい」インターフェースを読む。",
+     "body": "## このレッスンのゴール\n\n- `type Product struct { ... }` と、そのメソッドを読める\n- `func (p Product)` と `func (p *Product)` の違い（コピーか本体か）を説明できる\n- インターフェースが「必要なメソッドの一覧」であることが分かる\n\n## 構造体：データのまとまり\n\n```go\ntype Product struct {\n\tName  string\n\tPrice int\n\tstock int        // 小文字 → このパッケージの中だけ（レッスン 1）\n}\n\napple := Product{Name: \"りんご\", Price: 120}\nfmt.Println(apple.Name)     // りんご\n```\n\nPython の `@dataclass`（Python コースのレッスン 12）にそっくりです。\n\n```python\n@dataclass\nclass Product:\n    name: str\n    price: int\n    _stock: int = 0\n```\n\n書かなかった項目（`stock`）は、ゼロ値（0）になります。\n\n## メソッド：構造体に処理を付ける\n\n```go\nfunc (p Product) WithTax() int {\n\treturn p.Price * 110 / 100\n}\n\nfmt.Println(apple.WithTax())   // 132\n```\n\n`func (p Product) WithTax()` の **`(p Product)` の部分** が「この関数は Product のメソッドで、本体を `p` という名前で使う」という意味です（**レシーバー** と呼びます）。Python の `def with_tax(self):` の `self` を、関数名の前に書いている形です。\n\nGo には `class` がありません。**構造体（データ）と、メソッド（処理）を別々に書く** のが Go の流儀です。継承もありません。\n\n## 値で受け取るか、ポインタで受け取るか\n\nここが Go のメソッドでいちばん大事なところです。値段を下げるメソッドを、2 通り書いて試しました。\n\n```go\nfunc (p *Product) Discount(yen int) {       // * が付いている\n\tp.Price -= yen\n}\n\nfunc (p Product) DiscountCopy(yen int) {    // * が無い\n\tp.Price -= yen\n}\n\napple.DiscountCopy(20)\nfmt.Println(\"コピーに値引き:\", apple.Price)     // 120   ← 変わっていない！\napple.Discount(20)\nfmt.Println(\"ポインタで値引き:\", apple.Price)   // 100   ← 変わった\n```\n\n| 書き方 | p に入るもの | 中を変えると |\n|---|---|---|\n| `func (p Product)` | **コピー** | コピーが変わるだけ。元の apple は変わらない |\n| `func (p *Product)` | **ポインタ**（元の apple の場所） | 元の apple が変わる |\n\n`*Product` の `*` は **ポインタ**（データが置いてある場所を指すもの）を表します。C 言語コースでくわしく扱いますが、ここでは **「`*` 付きなら本体を直接さわる」** と覚えれば十分です。\n\nPython では、メソッドの中で `self.price -= 20` とすれば必ず本体が変わりました。Go では **`*` を付け忘れると、変えたつもりが変わっていない** というバグになります。\n\n| 迷ったら | |\n|---|---|\n| 中身を **変える** メソッド | `*` 付き |\n| 構造体が大きい | `*` 付き（コピーが重いので） |\n| 読むだけで小さい | どちらでもよい（そろえるのが一般的） |\n\n## 表示を決める：String メソッド\n\n```go\nfunc (p Product) String() string {\n\treturn fmt.Sprintf(\"%s（%d 円）\", p.Name, p.Price)\n}\n\nfmt.Println(apple)   // りんご（100 円）\n```\n\n`String() string` というメソッドを持たせると、`fmt.Println` での表示がそれになります。Python の `__str__` です。これは次のインターフェースの仕組みで動いています。\n\n## インターフェース：「このメソッドを持っていればよい」\n\n```go\ntype Shape interface {\n\tArea() float64\n}\n\ntype Rect struct{ W, H float64 }\ntype Circle struct{ R float64 }\n\nfunc (r Rect) Area() float64   { return r.W * r.H }\nfunc (c Circle) Area() float64 { return 3.14 * c.R * c.R }\n\nshapes := []Shape{Rect{W: 2, H: 3}, Circle{R: 1}}\nfor _, s := range shapes {\n\tfmt.Printf(\"%T %.2f\\n\", s, s.Area())\n}\n// main.Rect 6.00\n// main.Circle 3.14\n```\n\n| 部分 | 意味 |\n|---|---|\n| `type Shape interface { Area() float64 }` | 「`Area() float64` というメソッドを持つものは、何でも Shape として扱える」 |\n| `[]Shape{Rect{...}, Circle{...}}` | 違う型を、同じ Shape として 1 つのスライスに入れられる |\n| `s.Area()` | 中身が Rect なら Rect の、Circle なら Circle の Area が呼ばれる |\n\n⚠️ Rect にも Circle にも **「Shape を実装します」とはどこにも書いていません**。必要なメソッドを持っていれば、**自動で** そのインターフェースとして使えます。\n\nPython で言うと、「`area()` を持っていれば何でもよい」という **ダックタイピング** を、型のチェック付きにしたものです（Python の `typing.Protocol` がほぼ同じ考え方）。TypeScript の interface（TypeScript コースのレッスン 3）にも近いです。\n\n### よく出てくる標準のインターフェース\n\n| インターフェース | 持つべきメソッド | 意味 |\n|---|---|---|\n| `fmt.Stringer` | `String() string` | 表示の仕方（上の例） |\n| `error` | `Error() string` | エラー（次のレッスン） |\n| `io.Reader` / `io.Writer` | `Read(...)` / `Write(...)` | 読める・書けるもの（ファイル・ネットワーク・文字列…） |\n| `http.Handler` | `ServeHTTP(...)` | Web のリクエストを処理するもの（レッスン 6） |\n\n## nil\n\n```go\nvar nothing *Product\nfmt.Println(nothing == nil)   // true\n```\n\nポインタ・スライス・マップ・インターフェースは、何も指していないとき **`nil`**（Python の `None`）になります。⚠️ nil のポインタのフィールドを読む（`nothing.Name`）と、**panic**（プログラムが止まる）します。Go のプログラムでいちばんよく見る停止の原因の 1 つです。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `func (s *Service) Create(...)` | Service のメソッド。中を変えるので `*` |\n| 中身を変えるメソッドなのに `func (s Service)` | ⚠️ コピーを変えているだけで、元が変わらない |\n| `type Repository interface { Find(id int) (*User, error) }` | 「Find を持っていれば何でもよい」。テストで偽物（モック）に差し替えるためによく使う |\n| `return &Product{...}` | 作った構造体のポインタを返す（`&` は「場所を取る」） |\n| `` `json:\"name\"` `` | 構造体のタグ。JSON にするときの名前（レッスン 6） |\n| `if p == nil { return ... }` | nil チェック。panic を防ぐ |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`func (p Product) SetPrice(n int) { p.Price = n }` を呼んでも、元の値段が変わらない理由は？",
+        "choices": [
+         "Price が小文字ではないから",
+         "レシーバーが `*` 無しなので、p はコピーで、元の Product は変わらないから",
+         "メソッドは値を変えられないから"
+        ],
+        "answer": 1,
+        "explain": "中身を変えるメソッドは `func (p *Product)` とポインタで受け取ります。"
+       },
+       {
+        "question": "Go の Rect 型を `Shape` インターフェースとして使えるようにするには？",
+        "choices": [
+         "`type Rect struct implements Shape` と書く",
+         "Shape を継承する",
+         "Shape が必要とするメソッド（`Area() float64`）を Rect に定義する"
+        ],
+        "answer": 2,
+        "explain": "Go のインターフェースは、必要なメソッドを持っていれば自動で当てはまります。「実装します」という宣言はいりません。"
+       },
+       {
+        "question": "`fmt.Println(apple)` で「りんご（100 円）」と表示されたのは、なぜ？",
+        "choices": [
+         "fmt.Println がすべての構造体を日本語で表示するから",
+         "Product に `String() string` メソッドがあり、fmt.Stringer インターフェースとして表示に使われたから",
+         "Name と Price が大文字だから"
+        ],
+        "answer": 1,
+        "explain": "String メソッドを持つ型は、表示のときにそれが使われます。Python の `__str__` に当たります。"
+       }
+      ]
+     ],
+     "id": "03-structs-interfaces"
+    },
+    {
+     "title": "エラーを値で返す ― if err != nil",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "errors",
+      "functions"
+     ],
+     "summary": "Go には try/except が無く、エラーは戻り値の最後で返して if err != nil で確かめる。fmt.Errorf の %w で包む、errors.Is で種類を見分ける、defer で後片付け、panic との違い。err を _ で捨てる危険。",
+     "body": "## このレッスンのゴール\n\n- `値, err := 関数()` と `if err != nil { ... }` の流れを読める\n- `fmt.Errorf(\"...: %w\", err)` と `errors.Is` の意味が分かる\n- `defer` の動きと、`panic` との違いを説明できる\n\n## Go には例外が無い\n\nPython では、失敗すると **例外** が飛んで、`try / except` で受け止めました。Go には例外の仕組みがありません。代わりに、**失敗したかどうかを、戻り値で返します**。\n\n```go\nn, err := strconv.Atoi(\"12a\")      // 文字列を数に変換\nfmt.Println(n, err)\n// 0 strconv.Atoi: parsing \"12a\": invalid syntax\n```\n\n| 戻り値 | 成功したとき | 失敗したとき |\n|---|---|---|\n| 1 つ目（n） | 変換した数 | ゼロ値（0） |\n| 2 つ目（err） | **`nil`**（エラー無し） | エラーの内容 |\n\n**最後の戻り値が `error` 型** なのが Go の決まりです。そして、呼んだ側は必ずこう確かめます。\n\n```go\nn, err := strconv.Atoi(s)\nif err != nil {\n\treturn 0, err        // 失敗したら、呼んだ人にそのまま返す\n}\n// ここから下は、成功したときだけ\n```\n\nPython で書くと、こうです。\n\n```python\ntry:\n    n = int(s)\nexcept ValueError as e:\n    raise e\n```\n\nGo のコードに `if err != nil` が何十回も出てくるのはこのためです。最初はくどく見えますが、**どこで失敗しうるかが、コードを見れば全部分かる** という良さがあります。\n\n## 自分でエラーを返す\n\n```go\nvar ErrNotFound = errors.New(\"商品が見つかりません\")\n\nfunc findPrice(name string) (int, error) {\n\tprices := map[string]int{\"りんご\": 120}\n\tp, ok := prices[name]\n\tif !ok {\n\t\treturn 0, ErrNotFound\n\t}\n\treturn p, nil\n}\n\np, err := findPrice(\"ぶどう\")\nif err != nil {\n\tfmt.Println(\"エラー:\", err, p)    // エラー: 商品が見つかりません 0\n}\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `errors.New(\"...\")` | 新しいエラーを作る（Python の `raise ValueError(\"...\")` の中身） |\n| `var ErrNotFound = ...` | よく使うエラーに名前を付けておく（**センチネルエラー**）。`Err` で始める習慣 |\n| `return 0, ErrNotFound` | 失敗：ゼロ値とエラー |\n| `return p, nil` | 成功：値と nil |\n\n## 種類を見分ける：errors.Is\n\n```go\nif errors.Is(err, ErrNotFound) {\n\tfmt.Println(\"→ 404 を返す\")     // → 404 を返す\n}\n```\n\n`errors.Is(err, 種類)` は「err は、この種類のエラーか？」を調べます。Python の `except NotFoundError:` で種類ごとに分けるのに当たります。Web API なら「見つからない → 404、それ以外 → 500」のように分けるのに使います。\n\n## 包む：fmt.Errorf と %w\n\n```go\nfunc loadConfig(path string) (string, error) {\n\tdata, err := os.ReadFile(path)\n\tif err != nil {\n\t\treturn \"\", fmt.Errorf(\"設定を読めません（%s）: %w\", path, err)\n\t}\n\treturn string(data), nil\n}\n\n_, err = loadConfig(\"config.toml\")\nfmt.Println(err)\n// 設定を読めません（config.toml）: open config.toml: no such file or directory\nfmt.Println(errors.Is(err, os.ErrNotExist))\n// true\n```\n\n`fmt.Errorf` で、**元のエラーに「何をしようとして失敗したか」を足して** 返しています。表示すると、外側から内側へ `:` でつながって読めます。\n\n`%w`（wrap）で包むと、元のエラー（ファイルが無い `os.ErrNotExist`）が中に残るので、`errors.Is` で **包んだ後でも種類を見分けられます**。`%v` で包むと、ただの文字になってしまい、`errors.Is` が false になります。\n\nPython の `raise ConfigError(\"...\") from e` に当たります。\n\n## defer：関数を抜けるときに実行\n\n```go\nf, err := os.Create(\"out.txt\")\nif err != nil {\n\tpanic(err)\n}\ndefer f.Close()                               // 関数を抜けるときに閉じる\ndefer fmt.Println(\"defer 1（後に登録したものが先）\")\ndefer fmt.Println(\"defer 2\")\nfmt.Fprintln(f, \"hello\")\nfmt.Println(\"main の終わり\")\n```\n\n```text\nmain の終わり\ndefer 2\ndefer 1（後に登録したものが先）\n```\n\n`defer` を付けた処理は、**その関数が終わるときに** 実行されます。途中で `return` しても実行されるので、ファイルを閉じる・ロックを外す（レッスン 5）などの **後片付け** に使います。シェルコースの `trap ... EXIT`、Python の `with open(...)` や `finally` に当たります。複数あると、**後に書いたものから** 実行されます。\n\n## panic：本当に続けられないとき\n\n```go\npanic(err)\n```\n\n`panic` は、プログラムを **止めて** しまいます（Python の、受け止められなかった例外のようなもの）。nil のポインタを読んだとき（レッスン 3）、スライスの範囲外を読んだとき（`items[10]`）も panic になります。\n\n| | `return err` | `panic(err)` |\n|---|---|---|\n| 使う場面 | **ふつうの失敗**（ファイルが無い、入力がおかしい） | 起きるはずのないこと、起動時の致命的な設定ミス |\n| 呼んだ側 | `if err != nil` で対応できる | 止まる（`recover` で受け止める特殊な方法はある） |\n\nWeb サーバーのリクエストの処理の中で panic を使うのは避けます。\n\n## ⚠️ err を捨てる\n\n```go\ndata, _ := os.ReadFile(\"config.toml\")      // ⚠️ 失敗しても気づけない\n```\n\n`_` で err を受け取ると、**失敗を黙って無視** することになります。data は空のまま、何事も無かったように先へ進みます。シェルコースの「`set -e` が無いスクリプト」と同じ危険です。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `if err != nil { return nil, err }` | 失敗をそのまま呼んだ人に返す（定番） |\n| `if err != nil { return fmt.Errorf(\"ユーザー取得: %w\", err) }` | ✅ 何をしていたかを足して返す |\n| `x, _ := ...` | ⚠️ エラーを捨てている。本当に失敗しない？ |\n| `if err != nil { log.Println(err) }` だけで先に進む | ⚠️ ログに出すだけで処理を続けている。続けて大丈夫か |\n| `errors.Is(err, sql.ErrNoRows)` | データベースで行が見つからなかった（→ 404 にすることが多い） |\n| `log.Fatal(err)` | ログに出して **プログラムを終了**。main の起動時以外で使っていたら要注意 |\n| `defer rows.Close()` / `defer mu.Unlock()` | 後片付け。付け忘れると、接続やロックが残り続ける |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Go の関数 `func Load() (Config, error)` が成功したとき、2 つ目の戻り値は？",
+        "choices": [
+         "nil",
+         "true",
+         "空の文字列"
+        ],
+        "answer": 0,
+        "explain": "成功したときの error は nil です。呼んだ側は `if err != nil` で失敗かどうかを確かめます。"
+       },
+       {
+        "question": "`fmt.Errorf(\"設定を読めません: %w\", err)` で `%w` を使う利点は？",
+        "choices": [
+         "エラーメッセージが短くなる",
+         "元のエラーが中に残り、包んだ後でも `errors.Is` で種類を見分けられる",
+         "エラーが自動で直る"
+        ],
+        "answer": 1,
+        "explain": "`%w` で包むと元のエラーをたどれます。`%v` だと文字になってしまい、種類を見分けられません。"
+       },
+       {
+        "question": "`defer f.Close()` はいつ実行される？",
+        "choices": [
+         "すぐに",
+         "プログラム全体が終わるときに",
+         "その関数が終わるとき（途中で return しても）"
+        ],
+        "answer": 2,
+        "explain": "defer はその関数を抜けるときに実行されます。後片付けを書き忘れないための仕組みです。"
+       }
+      ]
+     ],
+     "id": "04-errors"
+    },
+    {
+     "title": "goroutine と channel ― 同時に動かす",
+     "level": 3,
+     "minutes": 20,
+     "concepts": [
+      "async",
+      "performance",
+      "hardware"
+     ],
+     "summary": "go を付けるだけで同時に動く goroutine、終わるのを待つ WaitGroup、値を受け渡す channel、そしてロック（Mutex）を忘れると数がずれるデータ競合を実際に起こし、-race で見つける。",
+     "body": "## このレッスンのゴール\n\n- `go 関数()` で goroutine を起動し、`sync.WaitGroup` で待つコードを読める\n- channel（`<-`）で値を受け渡すコードを読める\n- データ競合（レースコンディション）を説明でき、`sync.Mutex` と `-race` の役割が分かる\n\nコンピュータの基礎コースの「プロセスとスレッド」の続きです。Go は、**同時に動く処理（並行処理）を書きやすい** ことで人気になった言語です。\n\n## goroutine：go を付けると同時に動く\n\n1 回 0.5 秒かかる処理（通信の代わり）を 3 回します。\n\n```go\nfunc fetch(id int) string {\n\ttime.Sleep(500 * time.Millisecond)\n\treturn fmt.Sprintf(\"結果%d\", id)\n}\n\n// 順番に\nfor i := 1; i <= 3; i++ {\n\tfetch(i)\n}\n// 順番に: 1.5 秒\n\n// goroutine で\nvar wg sync.WaitGroup\nfor i := 1; i <= 3; i++ {\n\twg.Add(1)\n\tgo func(id int) {\n\t\tdefer wg.Done()\n\t\tfetch(id)\n\t}(i)\n}\nwg.Wait()\n// goroutine で: 0.5 秒\n```\n\n（実際に測った時間です）\n\n| 部分 | 意味 |\n|---|---|\n| `go 関数(...)` | **goroutine**（ゴルーチン）として起動。終わるのを待たずに、すぐ次の行へ進む |\n| `func(id int) { ... }(i)` | その場で作った名前の無い関数を、`i` を渡してすぐ呼ぶ |\n| `var wg sync.WaitGroup` | 「いくつ終わるのを待つか」を数える道具 |\n| `wg.Add(1)` | 待つ数を 1 増やす |\n| `defer wg.Done()` | 終わったら 1 減らす（レッスン 4 の defer） |\n| `wg.Wait()` | 0 になるまで待つ |\n\ngoroutine は、スレッドよりずっと **軽い**（何万個も作れる）のが特徴です。Python で言うと、`ThreadPoolExecutor` や `asyncio.gather` を使った並行処理（Python コースのレッスン 13）を、`go` の 2 文字で書ける感覚です。\n\n⚠️ `wg.Wait()` を忘れると、main が先に終わって、**goroutine の仕事が途中で打ち切られます**。\n\n## channel：goroutine どうしで値を受け渡す\n\n```go\nresults := make(chan string)          // string を流す channel を作る\n\nfor i := 1; i <= 3; i++ {\n\tgo func(id int) {\n\t\tresults <- fetch(id)          // channel に送る\n\t}(i)\n}\n\ngot := []string{}\nfor i := 0; i < 3; i++ {\n\tgot = append(got, <-results)      // channel から受け取る（来るまで待つ）\n}\nfmt.Println(len(got), \"件受け取った\")   // 3 件受け取った\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `make(chan string)` | string を流す **channel**（管）を作る |\n| `ch <- 値` | channel に **送る** |\n| `<-ch` | channel から **受け取る**。まだ来ていなければ、来るまで待つ |\n| `close(ch)` | もう送らない、という合図。`for v := range ch` はそこで終わる |\n\nchannel は、**goroutine どうしの受け渡し口** です。受け取る側が「来るまで待つ」ので、WaitGroup が無くても、3 つ受け取った時点で全部終わったと分かります。Python の `queue.Queue` に近いものです。\n\nGo には「**メモリを共有して通信するのではなく、通信してメモリを共有せよ**」という有名な言葉があります。結果は共有の変数に書き込むのではなく、channel で渡そう、という意味です。\n\n## データ競合：同じ変数を同時に書き換える\n\n1000 個の goroutine で、共有の変数に 1 ずつ足しました。\n\n```go\ncounter := 0\nvar wg sync.WaitGroup\nfor i := 0; i < 1000; i++ {\n\twg.Add(1)\n\tgo func() {\n\t\tdefer wg.Done()\n\t\tcounter++\n\t}()\n}\nwg.Wait()\nfmt.Println(\"ロックなし:\", counter)\n// ロックなし: 990   ← 1000 にならない（実行するたびに変わる。874 のときもあった）\n```\n\nコンピュータの基礎コースで、Python のスレッドで見たのと同じ **データ競合（レースコンディション）** です。`counter++` は「読む → 1 足す → 書く」の 3 段階なので、2 つの goroutine が同時に同じ値を読むと、1 回分が消えます。\n\n### Mutex（ロック）で 1 つずつにする\n\n```go\nvar mu sync.Mutex\ngo func() {\n\tdefer wg.Done()\n\tmu.Lock()           // 鍵をかける（他の goroutine はここで待つ）\n\tcounter++\n\tmu.Unlock()         // 鍵を外す\n}()\n// ロックあり: 1000\n```\n\n`mu.Lock()` から `mu.Unlock()` までは、**同時に 1 つの goroutine しか入れません**。Python の `with lock:` です。Unlock を忘れないように、`mu.Lock(); defer mu.Unlock()` と書くことも多いです（レッスン 6 の Web API がこの形）。\n\n## -race：データ競合を見つける\n\n```bash\ngo run -race .\n```\n\n```text\nWARNING: DATA RACE\n...\nロックなし: 874\nロックあり: 1000\nFound 2 data race(s)\n```\n\n`-race` を付けて実行すると、Go が **データ競合が起きた場所を教えてくれます**（どの行とどの行が、同じ変数を同時にさわったか）。ロックありの方は何も言われませんでした。テストも `go test -race ./...` で実行するのが定番です。\n\nデータ競合は **たまにしか起きず、テストで見つけにくい** バグです。goroutine を使う AI のコードは、`-race` で一度実行してみましょう。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `go func() { ... }()` | goroutine を起動。誰が終わりを待っている？（WaitGroup・channel） |\n| goroutine の中で、外の変数・マップ・スライスに書き込んでいる | ⚠️ ロック（`sync.Mutex`）か channel が必要。`-race` で確認 |\n| `for _, v := range items { go func() { use(v) }() }` | Go 1.22 以降は v が毎回別なので OK。古い Go では全部同じ v になるバグがあった（`go func(v T){...}(v)` と渡すのはその名残） |\n| `ctx context.Context` が引数の先頭 | 処理の「取り消し」や「時間切れ」を伝える仕組み。Web のリクエストが切れたら、関係する処理も止める |\n| `select { case v := <-ch: ... case <-time.After(3 * time.Second): ... }` | どれか先に来た channel を処理する。この例は 3 秒の時間切れ |\n| `errgroup.Group` | 複数の goroutine を起動して、どれかが失敗したらまとめてエラーを返す便利な道具 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`go fetch(1)` と書いた直後の行は、いつ実行される？",
+        "choices": [
+         "fetch(1) が終わってから",
+         "fetch(1) の終わりを待たずに、すぐ",
+         "プログラムが終わるとき"
+        ],
+        "answer": 1,
+        "explain": "go を付けると goroutine として起動し、すぐ次の行へ進みます。終わりを待つには WaitGroup や channel を使います。"
+       },
+       {
+        "question": "1000 個の goroutine で `counter++` したら 990 になった。原因と直し方は？",
+        "choices": [
+         "goroutine の数が多すぎる。100 個にする",
+         "同じ変数を同時に「読む → 足す → 書く」して更新が消えた（データ競合）。Mutex でロックするか channel で集める",
+         "counter の型が小さすぎる。int64 にする"
+        ],
+        "answer": 1,
+        "explain": "複数の goroutine が共有の変数を書き換えるときは、ロックで 1 つずつにします。`go run -race` で見つけられます。"
+       },
+       {
+        "question": "`result := <-ch` の動きとして正しいのは？",
+        "choices": [
+         "channel から値を受け取る。まだ値が来ていなければ、来るまで待つ",
+         "channel に値を送る",
+         "channel を閉じる"
+        ],
+        "answer": 0,
+        "explain": "`<-ch` は受け取り、`ch <- v` は送りです。受け取りは値が来るまで待ちます。"
+       }
+      ]
+     ],
+     "id": "05-goroutines"
+    },
+    {
+     "title": "Go の Web API を読む ― net/http と JSON",
+     "level": 3,
+     "minutes": 20,
+     "concepts": [
+      "http_api",
+      "backend",
+      "data_formats",
+      "reading"
+     ],
+     "summary": "標準ライブラリだけで書いたタスク管理の API を 1 行ずつ読む。構造体のタグで JSON にする、ハンドラーの (w, r)、GET /tasks/{id} のルーティング、エラーで 400・404 を返す、Mutex で守る。実際に curl で叩いた結果つき。",
+     "body": "## このレッスンのゴール\n\n- `http.HandleFunc` とハンドラー `func(w http.ResponseWriter, r *http.Request)` を読める\n- 構造体のタグ（`` `json:\"id\"` ``）と、JSON の読み書きが分かる\n- このコースで学んだこと（エラー・ポインタ・Mutex）が、実際の API でどう使われているか説明できる\n\nバックエンドコースで FastAPI（Python）で作ったような API を、Go の **標準ライブラリだけ** で書いたものです。\n\n## 全体\n\n```go\npackage main\n\nimport (\n\t\"encoding/json\"\n\t\"log\"\n\t\"net/http\"\n\t\"strconv\"\n\t\"sync\"\n)\n\ntype Task struct {\n\tID    int    `json:\"id\"`\n\tTitle string `json:\"title\"`\n\tDone  bool   `json:\"done\"`\n}\n\ntype store struct {\n\tmu     sync.Mutex\n\ttasks  []Task\n\tnextID int\n}\n\nfunc (s *store) list(w http.ResponseWriter, r *http.Request) {\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\tw.Header().Set(\"Content-Type\", \"application/json\")\n\tjson.NewEncoder(w).Encode(s.tasks)\n}\n\nfunc (s *store) create(w http.ResponseWriter, r *http.Request) {\n\tvar in struct {\n\t\tTitle string `json:\"title\"`\n\t}\n\tif err := json.NewDecoder(r.Body).Decode(&in); err != nil || in.Title == \"\" {\n\t\thttp.Error(w, \"title は必須です\", http.StatusBadRequest)\n\t\treturn\n\t}\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\ts.nextID++\n\tt := Task{ID: s.nextID, Title: in.Title}\n\ts.tasks = append(s.tasks, t)\n\tw.Header().Set(\"Content-Type\", \"application/json\")\n\tw.WriteHeader(http.StatusCreated)\n\tjson.NewEncoder(w).Encode(t)\n}\n\nfunc (s *store) get(w http.ResponseWriter, r *http.Request) {\n\tid, err := strconv.Atoi(r.PathValue(\"id\"))\n\tif err != nil {\n\t\thttp.Error(w, \"id は数字です\", http.StatusBadRequest)\n\t\treturn\n\t}\n\ts.mu.Lock()\n\tdefer s.mu.Unlock()\n\tfor _, t := range s.tasks {\n\t\tif t.ID == id {\n\t\t\tjson.NewEncoder(w).Encode(t)\n\t\t\treturn\n\t\t}\n\t}\n\thttp.Error(w, \"見つかりません\", http.StatusNotFound)\n}\n\nfunc main() {\n\ts := &store{tasks: []Task{}}\n\thttp.HandleFunc(\"GET /tasks\", s.list)\n\thttp.HandleFunc(\"POST /tasks\", s.create)\n\thttp.HandleFunc(\"GET /tasks/{id}\", s.get)\n\tlog.Println(\"http://localhost:8080 で待っています\")\n\tlog.Fatal(http.ListenAndServe(\":8080\", nil))\n}\n```\n\n## 実際に叩いてみる\n\n```text\n$ curl localhost:8080/tasks\n[]\n$ curl -X POST localhost:8080/tasks -d '{\"title\":\"牛乳を買う\"}'\n{\"id\":1,\"title\":\"牛乳を買う\",\"done\":false}               201\n$ curl -X POST localhost:8080/tasks -d '{}'\ntitle は必須です                                         400\n$ curl localhost:8080/tasks/1\n{\"id\":1,\"title\":\"牛乳を買う\",\"done\":false}               200\n$ curl localhost:8080/tasks/9\n見つかりません                                           404\n$ curl localhost:8080/tasks/abc\nid は数字です                                            400\n$ curl -X DELETE localhost:8080/tasks/1\nMethod Not Allowed                                       405\n```\n\n（右の数字はステータスコード。バックエンドコースの「HTTP」）\n\n## 上から読む\n\n### データの形：構造体とタグ\n\n```go\ntype Task struct {\n\tID    int    `json:\"id\"`\n\tTitle string `json:\"title\"`\n\tDone  bool   `json:\"done\"`\n}\n```\n\n`` `json:\"id\"` `` は **構造体のタグ** で、「JSON にするときは `id` という名前にして」という指定です。Go の項目名は外から使うため大文字（レッスン 1）ですが、JSON では小文字の `id` にしたい、という食い違いをこれで埋めています。\n\nFastAPI の Pydantic のモデル（`class Task(BaseModel): id: int ...`）に当たります。\n\n### 状態：store と Mutex\n\n```go\ntype store struct {\n\tmu     sync.Mutex\n\ttasks  []Task\n\tnextID int\n}\n```\n\nタスクの一覧をメモリに持っています（再起動すると消える。本物はデータベースへ）。`mu` があるのは、Go の HTTP サーバーが **リクエストごとに goroutine を起動して、同時に処理する** からです。2 つの POST が同時に来ても `nextID` や `tasks` が壊れないよう、レッスン 5 の Mutex で守っています。\n\n### ハンドラー：(w, r)\n\n```go\nfunc (s *store) list(w http.ResponseWriter, r *http.Request) {\n```\n\n| 引数 | 意味 |\n|---|---|\n| `w http.ResponseWriter` | **返事を書き込む先**。ヘッダー・ステータスコード・本文を書く |\n| `r *http.Request` | **届いたリクエスト**。メソッド・URL・ヘッダー・本文 |\n\nGo の Web のコードは、ほぼすべてこの `(w, r)` の形です。FastAPI の「関数の引数で受け取り、`return` で返す」と違い、**返事は w に書き込んで** 返します。\n\n`(s *store)` と `*` 付きのメソッドなのは、`create` で中身（tasks）を変えるからです（レッスン 3）。\n\n### JSON を返す・受け取る\n\n```go\njson.NewEncoder(w).Encode(s.tasks)              // s.tasks を JSON にして w に書く\n\nvar in struct { Title string `json:\"title\"` }\njson.NewDecoder(r.Body).Decode(&in)             // リクエストの本文の JSON を in に読む\n```\n\n`&in` の `&` は「in の場所（ポインタ）」で、Decode が in の中身を書き換えられるように渡しています。\n\n受け取る側を **Title だけの構造体** にしているのがポイントです。`{\"title\": \"...\", \"id\": 999, \"done\": true}` を送られても、`id` や `done` は無視されます。セキュリティのコースの **マスアサインメント** の対策になっています。\n\n### エラーで止める\n\n```go\nif err := json.NewDecoder(r.Body).Decode(&in); err != nil || in.Title == \"\" {\n\thttp.Error(w, \"title は必須です\", http.StatusBadRequest)\n\treturn\n}\n```\n\nレッスン 2 の「`if 準備の文; 条件`」と、レッスン 4 の `if err != nil` の組み合わせです。JSON が壊れているか、title が空なら、**400 を返して `return`**。この `return` を忘れると、エラーを返した後も処理が続いてしまうので要注意です。\n\n### ルーティング\n\n```go\nhttp.HandleFunc(\"GET /tasks\", s.list)\nhttp.HandleFunc(\"POST /tasks\", s.create)\nhttp.HandleFunc(\"GET /tasks/{id}\", s.get)\n```\n\n「GET で /tasks に来たら s.list」のように、**メソッドとパス** で振り分けています（Go 1.22 から標準ライブラリだけで書けるようになりました）。`{id}` の部分は `r.PathValue(\"id\")` で取り出せます。登録していない DELETE には、Go が自動で **405 Method Not Allowed** を返しました。\n\nFastAPI の `@app.get(\"/tasks/{id}\")` と同じ考え方です。古い Go のコードや、Gin・Echo・chi などのライブラリでは `r.GET(\"/tasks/:id\", ...)` のような書き方もよく見ます。\n\n### 起動\n\n```go\nlog.Fatal(http.ListenAndServe(\":8080\", nil))\n```\n\n8080 番のポートでリクエストを待ち続けます。起動に失敗したら（ポートが使用中など。コンピュータの基礎コースのレッスン 6）、`log.Fatal` でエラーを出して終了します。\n\n## FastAPI と並べると\n\n| | Go（net/http） | Python（FastAPI） |\n|---|---|---|\n| データの形 | 構造体 ＋ `json` タグ | Pydantic のモデル |\n| ルーティング | `http.HandleFunc(\"GET /tasks/{id}\", h)` | `@app.get(\"/tasks/{id}\")` |\n| パスの値 | `r.PathValue(\"id\")` → 自分で `strconv.Atoi` | 引数 `id: int`（自動で変換・チェック） |\n| 返事 | `w` に書き込む | `return` する |\n| エラー | `http.Error(w, \"...\", 404); return` | `raise HTTPException(404)` |\n| 同時のリクエスト | goroutine で並行に処理（Mutex が必要なことも） | async / スレッド |\n\nGo は **自分で書く部分が多い** 代わりに、**何が起きているかが全部コードに書いてある** のが特徴です。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `http.Error(...)` の後に `return` が無い | ⚠️ エラーを返した後も処理が続く |\n| ハンドラーの中で、構造体のマップやスライスを書き換えているのに Mutex が無い | ⚠️ 同時のリクエストでデータ競合（`go run -race` で確認） |\n| `json.NewDecoder(r.Body).Decode(&user)` で、データベースのモデルに直接読み込んでいる | ⚠️ マスアサインメント。入力用の構造体を分ける |\n| `` `json:\"password\"` `` | ⚠️ JSON で返すときにパスワードも出てしまう。`` `json:\"-\"` `` で出さない |\n| `defer r.Body.Close()` | 本文を閉じる。サーバー側では Go が自動で閉じるが、HTTP クライアント側では必須 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Go のハンドラー `func(w http.ResponseWriter, r *http.Request)` で、返事を返すには？",
+        "choices": [
+         "`return` で値を返す",
+         "`w` にヘッダーや本文を書き込む",
+         "`r` に書き込む"
+        ],
+        "answer": 1,
+        "explain": "Go の HTTP のハンドラーは、返事を w（ResponseWriter）に書き込みます。r は届いたリクエストです。"
+       },
+       {
+        "question": "構造体の項目に付いた `` `json:\"title\"` `` の意味は？",
+        "choices": [
+         "JSON にしたり読んだりするとき、この項目の名前を `title` にする",
+         "この項目を JSON に含めない",
+         "title という型にする"
+        ],
+        "answer": 0,
+        "explain": "Go の項目名は大文字ですが、JSON では小文字にしたいので、タグで名前を指定します。`` `json:\"-\"` `` なら JSON に含めません。"
+       },
+       {
+        "question": "この API の store に `sync.Mutex` がある理由は？",
+        "choices": [
+         "JSON に変換するため",
+         "Go の HTTP サーバーはリクエストを goroutine で同時に処理するので、共有のデータが同時に書き換えられないように守るため",
+         "ポート番号を守るため"
+        ],
+        "answer": 1,
+        "explain": "2 つのリクエストが同時に来ると、tasks や nextID のデータ競合が起きます（レッスン 5）。"
+       }
+      ]
+     ],
+     "id": "06-web-api"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "Rust",
