@@ -3408,17 +3408,390 @@ window.SITE_DATA = {
    "title": "SQL",
    "icon": "🗄️",
    "order": 50,
-   "status": "planned",
-   "description": "データベースに問い合わせる言語。AI がよく書くバックエンドの必需品。",
-   "outline": [
-    "SELECT と WHERE",
-    "並べ替えと集計",
-    "JOIN",
-    "INSERT / UPDATE / DELETE",
-    "インデックスとトランザクション"
-   ],
+   "description": "データベースに問い合わせる言語。全レッスン共通の「お店のデータ」で、SELECT・WHERE・並べ替え・集計・JOIN・追加と更新・サブクエリと WITH・ウィンドウ関数まで。結果はすべて SQLite で実行したもの。最後に PostgreSQL・MySQL との違いも実際に比べる。",
+   "levels": {
+    "1": "入門：取り出す",
+    "2": "基礎：まとめる・つなぐ・変える",
+    "3": "実践：AI の SQL を読む"
+   },
    "id": "50-sql",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "SELECT と WHERE ― 欲しい行と列を取り出す",
+     "level": 1,
+     "minutes": 18,
+     "concepts": [
+      "database",
+      "conditionals",
+      "operators"
+     ],
+     "summary": "このコースで使う「お店のデータ」の紹介と、SELECT・WHERE の読み方。AND と OR の優先順位、IN・BETWEEN・LIKE、そして NULL が = で見つからない理由。",
+     "body": "## このレッスンのゴール\n\n- `SELECT 列 FROM テーブル WHERE 条件` を読み、どの行のどの列が返るか説明できる\n- `AND` と `OR` を混ぜた条件を、正しく読める\n- `NULL` を `IS NULL` で探す理由と、`<>` で NULL の行が消える落とし穴が分かる\n\nバックエンドコースのレッスン 7 で、SQL の CRUD をざっと学びました。このコースでは、**AI が書いた SQL を 1 行ずつ読める** ようになることを目指して、くわしく見ていきます。\n\n## このコースで使うデータ\n\n小さなお店のデータベースです。テーブルの作り方は、データベース設計のコースで学んだ形です。\n\n```text\ncustomers（お客さん）          products（商品）\nid | name | city | joined_at   id | name        | category | price\n1  | Ryo  | 東京 | 2026-01-10  1  | りんご       | 果物     | 120\n2  | Hana | 大阪 | 2026-02-03  2  | バナナ       | 果物     | 90\n3  | Ken  | 東京 | 2026-03-15  3  | 牛乳         | 飲み物   | 200\n4  | Mio  | NULL | 2026-05-20  4  | コーヒー豆   | 飲み物   | 1200\n5  | Sora | 福岡 | 2026-09-01  5  | 食パン       | パン     | 250\n                                6  | クロワッサン | パン     | 180\n\norders（注文）                          order_items（注文の中身）\nid | customer_id | ordered_at | status    order_id | product_id | qty\n1  | 1           | 2026-10-01 | paid      1        | 1          | 3\n2  | 1           | 2026-10-15 | paid      1        | 3          | 1\n3  | 2           | 2026-10-20 | cancelled 2        | 4          | 1\n4  | 3           | 2026-11-02 | paid      3        | 5          | 2\n5  | 2           | 2026-11-05 | paid      4        | 1          | 5\n6  | 4           | 2026-11-10 | shipped   4        | 2          | 6\n                                          4        | 6          | 2\n                                          5        | 3          | 2\n                                          5        | 5          | 1\n                                          6        | 4          | 2\n```\n\nMio さんの `city` は **NULL**（まだ登録されていない）、Sora さんは **まだ 1 回も注文していない** ところがポイントです。後のレッスンで効いてきます。\n\nこのコースの結果は、すべてこのデータを Python の `sqlite3` に入れて、実際に実行したものです。\n\n## SELECT：どの列を\n\n```sql\nSELECT name, price FROM products WHERE price >= 200;\n```\n\n```text\nname       | price\n牛乳       | 200\nコーヒー豆 | 1200\n食パン     | 250\n```\n\n| 部分 | 意味 |\n|---|---|\n| `SELECT name, price` | 取り出す **列** |\n| `FROM products` | どのテーブルから |\n| `WHERE price >= 200` | どの **行** を（条件に合うものだけ） |\n\n`SELECT *` は「全部の列」です。Python で言うと、こんな感じです。\n\n```python\n[(p[\"name\"], p[\"price\"]) for p in products if p[\"price\"] >= 200]\n```\n\n⚠️ `ORDER BY`（次のレッスン）を書かないと、**行の順番は決まっていません**。たまたま id 順に見えても、データベースの都合で変わることがあります。\n\n## 計算と別名\n\n```sql\nSELECT name, price, price * 1.1 AS with_tax FROM products WHERE category = '飲み物';\n```\n\n```text\nname       | price | with_tax\n牛乳       | 200   | 220.00000000000003\nコーヒー豆 | 1200  | 1320.0\n```\n\n`AS with_tax` は、結果の列に付ける **別名** です。そして、`220.00000000000003` に注目してください。コンピュータの基礎コースの「0.1 + 0.2 問題」が、SQL でも起きています。お金は整数で計算しましょう。\n\n## WHERE の書き方\n\n| 書き方 | 意味 |\n|---|---|\n| `=` / `<>`（または `!=`） | 等しい／等しくない（Python の `==` ではなく `=` 1 つ） |\n| `<` `<=` `>` `>=` | 大小 |\n| `AND` / `OR` / `NOT` | かつ／または／ではない |\n| `IN ('果物', 'パン')` | どれかと等しい |\n| `BETWEEN 100 AND 200` | 100 以上 200 以下（両端を含む） |\n| `LIKE '%パン%'` | 「パン」を含む（`%` は何文字でも、`_` は 1 文字） |\n| `IS NULL` / `IS NOT NULL` | 値が無い／ある |\n\n文字列は **シングルクォート `'...'`** で囲みます。ダブルクォート `\"...\"` は、データベースによっては列の名前の意味になります。\n\n```sql\nSELECT name, price FROM products WHERE price BETWEEN 100 AND 200;\n-- りんご 120 / 牛乳 200 / クロワッサン 180   ← 200 も入る\n```\n\n`--` から行末まではコメントです。\n\n## ⚠️ AND と OR の優先順位\n\n「果物かパンで、200 円より高いもの」を探したつもりの SQL です。\n\n```sql\nSELECT name, category, price FROM products\nWHERE category = '果物' OR category = 'パン' AND price > 200;\n```\n\n```text\nりんご | 果物 | 120\nバナナ | 果物 | 90\n食パン | パン | 250\n```\n\n120 円のりんごが出てきました。**`AND` は `OR` より先に計算される** ので、こう読まれています。\n\n```text\ncategory = '果物'  OR  (category = 'パン' AND price > 200)\n```\n\n掛け算が足し算より先なのと同じです。意図どおりにするには、かっこを付けます。\n\n```sql\nWHERE (category = '果物' OR category = 'パン') AND price > 200;\n-- 食パン | パン | 250   ← これだけ\n```\n\n**AND と OR を混ぜるときは、必ずかっこを付ける** のが安全です（Python の `and`・`or` も同じ優先順位です）。\n\n## NULL は「わからない」\n\n```sql\nSELECT name, city FROM customers WHERE city = NULL;\n-- （0 件）\n\nSELECT name, city FROM customers WHERE city IS NULL;\n-- Mio | NULL\n```\n\nNULL は「値が無い・わからない」という特別な状態です。「わからないもの」と比べた結果も「わからない」になるので、`city = NULL` は **どの行でも正しくならず**、0 件になります。**NULL を探すときは必ず `IS NULL`** です。\n\n```sql\nSELECT 1 + NULL, NULL = NULL;\n-- NULL | NULL   ← 計算しても、比べても NULL\n```\n\n### ⚠️ `<>` で NULL の行が消える\n\n「東京以外のお客さん」を探します。\n\n```sql\nSELECT name, city FROM customers WHERE city <> '東京';\n```\n\n```text\nHana | 大阪\nSora | 福岡\n```\n\n**Mio さんがいません**。Mio さんの city は NULL なので、`NULL <> '東京'` も「わからない」になり、条件に合わなかったのです。NULL の人も含めたいなら、こう書きます。\n\n```sql\nWHERE city <> '東京' OR city IS NULL\n```\n\n### NULL の代わりの値を出す\n\n```sql\nSELECT name, COALESCE(city, '未登録') AS city FROM customers;\n-- ...\n-- Mio | 未登録\n```\n\n`COALESCE(a, b)` は「a が NULL なら b」。Python の `city if city is not None else \"未登録\"` です。\n\n## 他の言語では\n\n| | SQL | Python |\n|---|---|---|\n| 等しい | `=` | `==` |\n| 等しくない | `<>` / `!=` | `!=` |\n| 値が無い | `IS NULL` | `is None` |\n| 含まれる | `IN (1, 2)` | `in (1, 2)` |\n| かつ・または | `AND` / `OR` | `and` / `or` |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `WHERE a = 1 OR b = 2 AND c = 3` | ⚠️ かっこが無い。AND が先に計算される |\n| `WHERE x = NULL` / `WHERE x != NULL` | ⚠️ いつも 0 件。`IS NULL` / `IS NOT NULL` |\n| `WHERE status <> 'cancelled'` | NULL の行が含まれなくなる。status に NULL がありうるか確認 |\n| `SELECT *` | 列が増えると遅く・重くなる。必要な列だけ書くと読みやすい |\n| `WHERE name LIKE '%' \\|\\| ? \\|\\| '%'` | 部分一致の検索。値は `?` で渡している（セキュリティのコース） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`WHERE category = '果物' OR category = 'パン' AND price > 200` は、どう読まれる？",
+        "choices": [
+         "（果物 または パン）かつ 200 円より高い",
+         "果物、または（パン かつ 200 円より高い）",
+         "エラーになる"
+        ],
+        "answer": 1,
+        "explain": "AND は OR より先に計算されます。意図どおりにするには、`(category = '果物' OR category = 'パン') AND price > 200` とかっこを付けます。"
+       },
+       {
+        "question": "city が NULL のお客さんを探す正しい書き方は？",
+        "choices": [
+         "`WHERE city = NULL`",
+         "`WHERE city = ''`",
+         "`WHERE city IS NULL`"
+        ],
+        "answer": 2,
+        "explain": "NULL と `=` で比べた結果は NULL（わからない）になり、条件に合いません。`IS NULL` を使います。"
+       },
+       {
+        "question": "`WHERE city <> '東京'` で、city が NULL の Mio さんは結果に入る？",
+        "choices": [
+         "入らない",
+         "入る",
+         "エラーになる"
+        ],
+        "answer": 0,
+        "explain": "`NULL <> '東京'` は NULL になり、条件に合わないので消えます。含めたいなら `OR city IS NULL` を足します。"
+       }
+      ]
+     ],
+     "id": "01-select-where"
+    },
+    {
+     "title": "並べ替え・件数・重複 ― ORDER BY・LIMIT・DISTINCT",
+     "level": 1,
+     "minutes": 12,
+     "concepts": [
+      "database",
+      "collections"
+     ],
+     "summary": "結果を並べ替える ORDER BY（複数の列・降順）、件数を絞る LIMIT と OFFSET（ページ分け）、重複を消す DISTINCT。順番が決まらない落とし穴も。",
+     "body": "## このレッスンのゴール\n\n- `ORDER BY` で、複数の列・昇順と降順の並べ替えを読める\n- `LIMIT`・`OFFSET` でページ分けをする SQL を読める\n- `DISTINCT` で何が起きるかと、並べ替えを書かないときの落とし穴が分かる\n\n## ORDER BY：並べ替え\n\n```sql\nSELECT name, price FROM products ORDER BY price DESC;\n```\n\n```text\nコーヒー豆   | 1200\n食パン       | 250\n牛乳         | 200\nクロワッサン | 180\nりんご       | 120\nバナナ       | 90\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `ORDER BY price` / `ORDER BY price ASC` | 小さい順（昇順。ASC は省略できる） |\n| `ORDER BY price DESC` | 大きい順（降順） |\n\nPython で言うと `sorted(products, key=lambda p: p[\"price\"], reverse=True)` です。\n\n### 複数の列で並べる\n\n```sql\nSELECT name, category, price FROM products ORDER BY category, price DESC;\n```\n\n```text\n食パン       | パン   | 250\nクロワッサン | パン   | 180\nりんご       | 果物   | 120\nバナナ       | 果物   | 90\nコーヒー豆   | 飲み物 | 1200\n牛乳         | 飲み物 | 200\n```\n\n**まず category で並べ、同じ category の中では price の大きい順**。`DESC` は、すぐ前の列（price）にだけ効きます。category は昇順のままです。\n\n文字の並び順は、データベースと設定（照合順序）によって変わります。SQLite では、カタカナの「パン」が漢字の「果物」「飲み物」より前に来ました（Unicode の文字の番号の順。コンピュータの基礎コースの「文字コード」）。\n\n## LIMIT：上から何件\n\n```sql\nSELECT name, price FROM products ORDER BY price DESC LIMIT 3;\n-- コーヒー豆 1200 / 食パン 250 / 牛乳 200\n```\n\n「値段の高い順に 3 つ」。ランキングの定番です。\n\n### OFFSET：ページ分け\n\n```sql\nSELECT name, price FROM products ORDER BY price DESC LIMIT 2 OFFSET 2;\n-- 牛乳 200 / クロワッサン 180\n```\n\n`OFFSET 2` は「最初の 2 件を飛ばす」。1 ページ 2 件なら、2 ページ目です。\n\n```python\npage = 2\nper_page = 2\nsql = \"SELECT name, price FROM products ORDER BY price DESC LIMIT ? OFFSET ?\"\nconn.execute(sql, (per_page, (page - 1) * per_page))\n```\n\nAI の API のコードでよく見る形です。Python のスライス `items[2:4]` と同じ考え方です。\n\n⚠️ OFFSET が大きくなる（10 万件目から）と、データベースは **飛ばす分も全部数える** ので遅くなります。大きなデータでは「前のページの最後の値より後」（`WHERE price < ? ORDER BY price DESC LIMIT 20`）で次のページを取る方法（キーセット・ページネーション）が使われます。\n\n## ⚠️ ORDER BY が無い LIMIT\n\n```sql\nSELECT name, price FROM products LIMIT 2;\n-- りんご 120 / バナナ 90\n```\n\nこれは「たまたま先頭にあった 2 件」です。**ORDER BY が無いと、順番は保証されません**。データが増えたり、データベースが変わったりすると、別の 2 件が返ることがあります。\n\nページ分けで並べ替えの列に同じ値があると、ページの境目で **同じ行が 2 回出たり、出なかったり** します。最後に主キーを足しておくと安全です。\n\n```sql\nORDER BY price DESC, id\n```\n\n## DISTINCT：重複を消す\n\n```sql\nSELECT DISTINCT category FROM products;\n-- 果物 / 飲み物 / パン\n\nSELECT DISTINCT city FROM customers ORDER BY city;\n-- NULL / 大阪 / 東京 / 福岡\n```\n\n東京の 2 人が 1 つにまとまりました。Python の `set(...)` に近いですが、`set` と違って NULL も 1 つの値として残ります。\n\n`DISTINCT` は **選んだ列の組み合わせ全体** で重複を消します。`SELECT DISTINCT city, name` なら、city と name の両方が同じ行だけが消えます。\n\n⚠️ JOIN（レッスン 4）の結果に重複が出たのを、`DISTINCT` で隠しているコードは要注意です。重複の原因（つなぎ方の間違い）がそのまま残っていることがあります。\n\n### NULL の並び順\n\n上の結果で、NULL が **いちばん前** に来ています。これはデータベースによって違い、PostgreSQL では昇順で **いちばん後ろ** になります（レッスン 8 で実際に比べます）。決めたいときは `ORDER BY city NULLS LAST` と書けます。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `LIMIT ? OFFSET ?` | ページ分け。`(page - 1) * per_page` を計算しているか |\n| `LIMIT 1` に `ORDER BY` が無い | ⚠️ どの 1 件が返るか決まっていない |\n| `ORDER BY created_at DESC` | 新しい順。同じ時刻があるなら `, id DESC` も |\n| `SELECT DISTINCT ...` に JOIN | 重複を隠していないか |\n| `ORDER BY 2` | 2 番目の列で並べる、という書き方。列を入れ替えると壊れる |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`ORDER BY category, price DESC` の意味は？",
+        "choices": [
+         "category も price も大きい順",
+         "category の昇順で並べ、同じ category の中では price の大きい順",
+         "price の大きい順で並べ、同じ price の中では category 順"
+        ],
+        "answer": 1,
+        "explain": "DESC はすぐ前の列（price）にだけ付きます。最初に書いた列が優先です。"
+       },
+       {
+        "question": "1 ページ 20 件で 3 ページ目を取り出す SQL は？",
+        "choices": [
+         "`LIMIT 20 OFFSET 3`",
+         "`LIMIT 60`",
+         "`LIMIT 20 OFFSET 40`"
+        ],
+        "answer": 2,
+        "explain": "1・2 ページ目の 40 件を飛ばし、そこから 20 件です。`(3 - 1) × 20 = 40`。"
+       },
+       {
+        "question": "`SELECT * FROM products LIMIT 1` で返る行は？",
+        "choices": [
+         "いつも id が 1 の行",
+         "いつも一番新しい行",
+         "どの行かは決まっていない（ORDER BY が無いため）"
+        ],
+        "answer": 2,
+        "explain": "並べ替えを指定しないと順番は保証されません。決まった 1 件が欲しいなら ORDER BY を付けます。"
+       }
+      ]
+     ],
+     "id": "02-order-limit"
+    },
+    {
+     "title": "集計 ― COUNT・SUM と GROUP BY・HAVING",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "database",
+      "collections",
+      "higher_order"
+     ],
+     "summary": "件数・合計・平均を出す集計関数と、グループごとに集計する GROUP BY、集計した結果で絞る HAVING。COUNT(*) と COUNT(列) の違い、WHERE と HAVING の違い、SQL が実行される順番。",
+     "body": "## このレッスンのゴール\n\n- `COUNT`・`SUM`・`AVG`・`MIN`・`MAX` の結果を読める（NULL の扱いも含めて）\n- `GROUP BY` で「グループごとに 1 行」になる仕組みを説明できる\n- `WHERE` と `HAVING` の違いを、SQL が実行される順番から説明できる\n\n## 集計関数：たくさんの行を 1 つの値に\n\n```sql\nSELECT SUM(price), AVG(price), MIN(price), MAX(price) FROM products;\n-- 2040 | 340.0 | 90 | 1200\n```\n\n| 関数 | 意味 | Python で言うと |\n|---|---|---|\n| `COUNT(*)` | 行の数 | `len(rows)` |\n| `SUM(x)` | 合計 | `sum(...)` |\n| `AVG(x)` | 平均 | `sum(...) / len(...)` |\n| `MIN(x)` / `MAX(x)` | 最小／最大 | `min(...)` / `max(...)` |\n\n### COUNT(*) と COUNT(列)\n\n```sql\nSELECT COUNT(*), COUNT(city), COUNT(DISTINCT city) FROM customers;\n-- 5 | 4 | 3\n```\n\n| 書き方 | 数えるもの | 結果 |\n|---|---|---|\n| `COUNT(*)` | 行の数 | 5 人 |\n| `COUNT(city)` | city が **NULL でない** 行の数 | 4（Mio さんの NULL を数えない） |\n| `COUNT(DISTINCT city)` | NULL でない、違う値の数 | 3（東京・大阪・福岡） |\n\n集計関数は、**NULL を無視する** のが決まりです（`COUNT(*)` だけは行そのものを数えるので例外）。`AVG(x)` も NULL の行を分母に入れません。\n\n## GROUP BY：グループごとに集計\n\n```sql\nSELECT category, COUNT(*) AS n, AVG(price) AS avg_price\nFROM products\nGROUP BY category;\n```\n\n```text\ncategory | n | avg_price\nパン     | 2 | 215.0\n果物     | 2 | 105.0\n飲み物   | 2 | 700.0\n```\n\n`GROUP BY category` は、**category が同じ行を 1 つのグループにまとめ、グループごとに 1 行** を返します。\n\n```text\nproducts（6 行）               グループに分ける            1 グループ 1 行に\nりんご     果物   120   ┐\nバナナ     果物    90   ┘→ 果物   [120, 90]     → 果物   2  105.0\n牛乳       飲み物 200   ┐\nコーヒー豆 飲み物 1200  ┘→ 飲み物 [200, 1200]   → 飲み物 2  700.0\n食パン     パン   250   ┐\nクロワッサン パン 180   ┘→ パン   [250, 180]    → パン   2  215.0\n```\n\nPython で言うと、辞書でグループを作ってから集計するのと同じです。\n\n```python\nfrom collections import defaultdict\ngroups = defaultdict(list)\nfor p in products:\n    groups[p[\"category\"]].append(p[\"price\"])\nresult = {cat: (len(prices), sum(prices) / len(prices)) for cat, prices in groups.items()}\n```\n\n### 月ごとの集計\n\n```sql\nSELECT substr(ordered_at, 1, 7) AS month, COUNT(*) AS orders\nFROM orders\nGROUP BY month;\n```\n\n```text\n2026-10 | 3\n2026-11 | 3\n```\n\n日付の文字列の先頭 7 文字（`2026-10`）でまとめています。売上の月次レポートの定番の形です。\n\n### ⚠️ SELECT に書けるのは「グループで 1 つに決まるもの」だけ\n\n```sql\nSELECT category, name, MAX(price) FROM products GROUP BY category;\n```\n\nグループ「果物」には、りんごとバナナの 2 つの name があります。どちらを出せばよいでしょう？\n\n| データベース | 結果 |\n|---|---|\n| SQLite | 動く。`MAX(price)` の行の name（食パン・りんご・コーヒー豆）を出す（SQLite だけの特別なルール） |\n| PostgreSQL | **エラー**：`column \"products.name\" must appear in the GROUP BY clause or be used in an aggregate function` |\n| MySQL（初期設定） | **エラー**：`... is incompatible with sql_mode=only_full_group_by` |\n\n（3 つとも実際に実行した結果です。レッスン 8）\n\n`SELECT` に書けるのは、**`GROUP BY` に書いた列** か **集計関数** だけ、と覚えましょう。「カテゴリごとに一番高い商品の名前」が欲しいときは、レッスン 7 のウィンドウ関数を使います。\n\n## HAVING：集計した結果で絞る\n\n```sql\nSELECT category, COUNT(*) AS n\nFROM products\nGROUP BY category\nHAVING COUNT(*) >= 2 AND AVG(price) < 500;\n```\n\n```text\nパン | 2\n果物 | 2\n```\n\n飲み物は平均 700 円なので消えました。\n\n### WHERE と HAVING の違い\n\n```sql\nSELECT category, COUNT(*) AS n\nFROM products\nWHERE price < 1000\nGROUP BY category;\n```\n\n```text\nパン   | 2\n果物   | 2\n飲み物 | 1      ← コーヒー豆（1200 円）が、数える前に消えた\n```\n\n| | WHERE | HAVING |\n|---|---|---|\n| いつ絞る | **グループにまとめる前** の 1 行ずつ | **グループにまとめた後** |\n| 使えるもの | 列の値 | 集計関数（`COUNT(*)`・`AVG(price)`） |\n| 例 | 1000 円未満の商品だけを数える | 2 個以上あるカテゴリだけを出す |\n\n## SQL が実行される順番\n\nSQL は、**書く順番と実行される順番が違います**。これが分かると、WHERE と HAVING の違いも、エラーの理由も分かります。\n\n```text\n書く順番        実行される順番\nSELECT          ① FROM / JOIN   どのテーブルから（レッスン 4）\nFROM            ② WHERE          1 行ずつ絞る\nWHERE           ③ GROUP BY       グループにまとめる\nGROUP BY        ④ HAVING         グループを絞る\nHAVING          ⑤ SELECT         列を選ぶ・計算する・別名を付ける\nORDER BY        ⑥ ORDER BY       並べ替える\nLIMIT           ⑦ LIMIT          件数を絞る\n```\n\n- WHERE（②）は GROUP BY（③）より前なので、`WHERE COUNT(*) > 1` は書けない（まだ数えていない）\n- SELECT（⑤）で付けた別名は、ORDER BY（⑥）では使えるが、PostgreSQL・MySQL では WHERE（②）では使えない（SQLite は特別に使えてしまうので、SQLite で動いた SQL が他でエラーになることがある）\n- `LIMIT` は最後なので、「上位 3 件」は並べ替えた後に取られる\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `COUNT(*)` と `COUNT(列)` | NULL を数えたいかどうかで使い分けているか |\n| `AVG(rating)` | NULL（未評価）は分母に入らない。それでよいか |\n| `GROUP BY` に無い列を SELECT している | ⚠️ SQLite では動いても、PostgreSQL・MySQL ではエラー |\n| `HAVING` に、集計関数を使わない条件 | WHERE に書いたほうが、先に行が減って速い |\n| `SUM(price)` が NULL になる | 1 行も無いと SUM は 0 ではなく NULL。`COALESCE(SUM(price), 0)` |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`SELECT COUNT(*), COUNT(city) FROM customers` の結果が `5 | 4` だった。理由は？",
+        "choices": [
+         "1 人が 2 回数えられている",
+         "`COUNT(city)` は city が NULL の行を数えないから",
+         "`COUNT(*)` はテーブルの列の数を数えるから"
+        ],
+        "answer": 1,
+        "explain": "集計関数は NULL を無視します。`COUNT(*)` だけは行そのものを数えるので 5 です。"
+       },
+       {
+        "question": "「2 個以上の商品があるカテゴリだけ」を出したい。条件を書く場所は？",
+        "choices": [
+         "WHERE",
+         "HAVING",
+         "ORDER BY"
+        ],
+        "answer": 1,
+        "explain": "「グループの中の数」はグループにまとめた後で分かるので、HAVING に `COUNT(*) >= 2` と書きます。"
+       },
+       {
+        "question": "SQL が実行される順番として正しいのは？",
+        "choices": [
+         "SELECT → FROM → WHERE → GROUP BY",
+         "FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY",
+         "WHERE → FROM → SELECT → GROUP BY"
+        ],
+        "answer": 1,
+        "explain": "書く順番とは違い、FROM から始まります。だから WHERE ではまだ集計関数が使えません。"
+       }
+      ]
+     ],
+     "id": "03-group-by"
+    },
+    {
+     "title": "JOIN をくわしく ― つなぐと行が増える",
+     "level": 2,
+     "minutes": 22,
+     "concepts": [
+      "database",
+      "collections"
+     ],
+     "summary": "INNER JOIN と LEFT JOIN、3 つ以上のテーブルをつなぐ読み方。LEFT JOIN で COUNT(*) が 0 にならない、つないだら件数が増えて合計がずれる、WHERE に書くと LEFT JOIN が消える、の 3 大落とし穴を実際の結果で。",
+     "body": "## このレッスンのゴール\n\n- `JOIN ... ON ...` を読み、どのテーブルのどの列でつないでいるか説明できる\n- `INNER JOIN` と `LEFT JOIN` の結果の違いが分かる\n- JOIN の 3 つの落とし穴（COUNT(*)・行の増加・WHERE の位置）に気づける\n\nデータベース設計のコースのレッスン 2 で、1 対多・多対多と JOIN の基本を学びました。ここでは、**JOIN を使った集計で、AI がよく間違えるところ** を中心に見ます。\n\n## JOIN の読み方\n\n```sql\nSELECT o.id, c.name, o.ordered_at\nFROM orders o\nJOIN customers c ON c.id = o.customer_id\nORDER BY o.id;\n```\n\n```text\nid | name | ordered_at\n1  | Ryo  | 2026-10-01\n2  | Ryo  | 2026-10-15\n3  | Hana | 2026-10-20\n4  | Ken  | 2026-11-02\n5  | Hana | 2026-11-05\n6  | Mio  | 2026-11-10\n```\n\n| 部分 | 意味 |\n|---|---|\n| `FROM orders o` | orders テーブルに `o` という **短い別名** を付ける |\n| `JOIN customers c` | customers を `c` としてつなぐ |\n| `ON c.id = o.customer_id` | **つなぐ条件**：注文の customer_id と、お客さんの id が同じもの同士 |\n| `o.id`、`c.name` | どちらのテーブルの列か。両方に `id` があるので、付けないとエラー |\n\n```sql\nSELECT name, id FROM customers JOIN orders ON customers.id = orders.customer_id;\n-- エラー：ambiguous column name: id   （どちらの id か分からない）\n```\n\n## INNER JOIN と LEFT JOIN\n\n```sql\nSELECT c.name, COUNT(o.id) AS orders\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nGROUP BY c.id\nORDER BY c.id;\n```\n\n```text\nRyo  | 2\nHana | 2\nKen  | 1\nMio  | 1\nSora | 0      ← 注文の無い Sora さんも出る\n```\n\n| | `JOIN`（`INNER JOIN`） | `LEFT JOIN` |\n|---|---|---|\n| 結果に出るもの | **両方に相手がいる** 組み合わせだけ | 左（FROM の側）は **全部**。相手がいなければ右の列は NULL |\n| Sora さん（注文 0 件） | 出ない | 出る（orders の列は NULL） |\n\n「**注文していないお客さんも含めて** 一覧にしたい」なら LEFT JOIN、「注文があるものだけ」なら JOIN です。\n\n### 相手がいないものを探す\n\n```sql\nSELECT c.name\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nWHERE o.id IS NULL;\n-- Sora\n```\n\nLEFT JOIN して、相手の列が NULL のものだけを残すと、「一度も注文していないお客さん」が分かります（レッスン 6 の `NOT EXISTS` でも書けます）。\n\n## 3 つ以上つなぐ\n\n```sql\nSELECT o.id, p.name, oi.qty, p.price * oi.qty AS subtotal\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.id\nJOIN products p     ON p.id = oi.product_id\nWHERE o.id IN (1, 4)\nORDER BY o.id;\n```\n\n```text\nid | name         | qty | subtotal\n1  | りんご       | 3   | 360\n1  | 牛乳         | 1   | 200\n4  | りんご       | 5   | 600\n4  | バナナ       | 6   | 540\n4  | クロワッサン | 2   | 360\n```\n\n**上から順に、1 つずつつないでいく** と読みます。orders → その注文の中身（order_items）→ その中身の商品（products）。注文 1 は 2 行、注文 4 は 3 行になりました。**注文の中身の数だけ、行が増えた** ことに注目してください。\n\nこれを合計すれば、注文ごとの金額が出ます。\n\n```sql\nSELECT o.id, SUM(p.price * oi.qty) AS total\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.id\nJOIN products p     ON p.id = oi.product_id\nWHERE o.status <> 'cancelled'\nGROUP BY o.id\nORDER BY total DESC;\n```\n\n```text\n6 | 2400\n4 | 1500\n2 | 1200\n5 | 650\n1 | 560\n```\n\n## 落とし穴 ① LEFT JOIN と COUNT(*)\n\n上の「お客さんごとの注文数」で、`COUNT(o.id)` を `COUNT(*)` にすると…\n\n```text\nRyo  | 2\nHana | 2\nKen  | 1\nMio  | 1\nSora | 1      ← 0 のはずが 1 に！\n```\n\nLEFT JOIN では、Sora さんの行が **orders の列が NULL の 1 行** として残ります。`COUNT(*)` は行を数えるのでその 1 行も数え、`COUNT(o.id)` は NULL を数えない（レッスン 3）ので 0 になります。\n**LEFT JOIN で相手の数を数えるときは、`COUNT(相手の列)`** にします。\n\n## 落とし穴 ② つなぐと行が増えて、数がずれる\n\n「お客さんごとの注文数と、買った商品の個数」を 1 回で出そうとしました。\n\n```sql\nSELECT c.name, COUNT(o.id) AS orders, SUM(oi.qty) AS items\nFROM customers c\nJOIN orders o       ON o.customer_id = c.id\nJOIN order_items oi ON oi.order_id = o.id\nGROUP BY c.id;\n```\n\n```text\nRyo  | 3 | 5\nHana | 3 | 5\nKen  | 3 | 13     ← Ken さんの注文は 1 回だけなのに 3\nMio  | 1 | 2\n```\n\norder_items までつないだので、**注文 1 件が中身の数だけ増えて** います（Ken さんの注文 4 は中身が 3 つ → 3 行）。その行を `COUNT(o.id)` で数えたので、注文数が増えてしまいました。\n\n| 直し方 | |\n|---|---|\n| `COUNT(DISTINCT o.id)` | 同じ注文は 1 回だけ数える（結果は Ryo 2・Hana 2・Ken 1・Mio 1 に直った） |\n| 別々に集計してからつなぐ | 注文数と商品数を、それぞれサブクエリや WITH（レッスン 6）で出してからつなぐ。**SUM がずれるときはこちらが必要** |\n\n⚠️ `SUM` は `DISTINCT` では直せません（同じ金額の違う商品まで 1 つにしてしまう）。1 対多のテーブルを 2 つ以上つないで SUM するときは、特に注意が必要です。\n\n**JOIN した後は、1 行が「何を表しているか」を考える** のが大事です。orders だけなら「1 行 ＝ 1 注文」、order_items までつなぐと「1 行 ＝ 注文の中身 1 つ」に変わります。\n\n## 落とし穴 ③ WHERE に書くと LEFT JOIN が消える\n\n「全員を出して、paid の注文があれば一緒に出す」つもりの SQL です。\n\n```sql\nSELECT c.name, o.id\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nWHERE o.status = 'paid';\n```\n\n```text\nRyo  | 1\nRyo  | 2\nHana | 5\nKen  | 4         ← Mio さんと Sora さんが消えた\n```\n\nLEFT JOIN で残った Sora さんの行は、`o.status` が NULL です。それを **WHERE**（つないだ後に 1 行ずつ絞る）で `= 'paid'` と比べたので、消えてしまいました。結果的に、普通の JOIN と同じです。\n\n**相手の側の条件は、`ON` に書きます**。\n\n```sql\nSELECT c.name, o.id\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id AND o.status = 'paid';\n```\n\n```text\nRyo  | 1\nRyo  | 2\nHana | 5\nKen  | 4\nMio  | NULL      ← paid の注文は無いが、本人は残る\nSora | NULL\n```\n\n| 条件を書く場所 | 意味 |\n|---|---|\n| `ON ... AND o.status = 'paid'` | **つなぐ相手を選ぶ**条件。左は全員残る |\n| `WHERE o.status = 'paid'` | つないだ **後の行を絞る** 条件。相手がいない行は消える |\n\n## 他の書き方\n\n```sql\nSELECT COUNT(*) FROM customers, products;   -- 30\n```\n\n`FROM a, b` と並べて ON を書かないと、**すべての組み合わせ**（5 人 × 6 商品 ＝ 30 行）になります（クロス結合）。古い書き方で `WHERE a.id = b.a_id` とつなぐこともありますが、条件を書き忘れると大量の行になるので、`JOIN ... ON` を使うのが安全です。\n\npandas（Python の表計算のライブラリ）では、`pd.merge(orders, customers, left_on=\"customer_id\", right_on=\"id\", how=\"left\")` が LEFT JOIN です。`how` が `\"inner\"`・`\"left\"` に対応します。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `LEFT JOIN` ＋ `COUNT(*)` | ⚠️ 相手がいなくても 1 になる。`COUNT(相手の列)` に |\n| 1 対多を 2 つ以上 JOIN して `SUM` / `COUNT` | ⚠️ 行が増えて数がずれていないか。1 行が何を表すか確認 |\n| `SELECT DISTINCT` で JOIN の重複を消している | ⚠️ 原因を隠していないか |\n| `LEFT JOIN` の相手の列を `WHERE` で条件にしている | ⚠️ 実質 INNER JOIN になっている。意図どおりか |\n| ORM の `joinedload` / `include` | 裏で JOIN が走っている（データベース設計のコースのレッスン 6） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "注文が 0 件のお客さんも含めて「お客さんごとの注文数」を出したい。正しいのは？",
+        "choices": [
+         "`JOIN` と `COUNT(*)`",
+         "`LEFT JOIN` と `COUNT(*)`",
+         "`LEFT JOIN` と `COUNT(o.id)`"
+        ],
+        "answer": 2,
+        "explain": "LEFT JOIN で 0 件の人も残しますが、COUNT(*) だと NULL の 1 行を数えて 1 になります。相手の列を数えると 0 になります。"
+       },
+       {
+        "question": "orders と order_items をつないで `COUNT(o.id)` したら、注文数が実際より多くなった。理由は？",
+        "choices": [
+         "注文 1 件が、中身（order_items）の数だけ行に増えたから",
+         "COUNT は NULL を数えるから",
+         "JOIN の書き方が間違っていて、エラーを無視しているから"
+        ],
+        "answer": 0,
+        "explain": "1 対多をつなぐと「1 行 ＝ 注文の中身 1 つ」になります。注文を数えるなら `COUNT(DISTINCT o.id)` か、つなぐ前に集計します。"
+       },
+       {
+        "question": "`LEFT JOIN orders o ON ... WHERE o.status = 'paid'` で、注文の無いお客さんが消えた。直し方は？",
+        "choices": [
+         "LEFT JOIN を RIGHT JOIN にする",
+         "`o.status = 'paid'` を WHERE ではなく ON の条件に移す",
+         "DISTINCT を付ける"
+        ],
+        "answer": 1,
+        "explain": "WHERE はつないだ後に行を絞るので、相手が NULL の行が消えます。ON に書けば「つなぐ相手を選ぶ」条件になり、左は全員残ります。"
+       }
+      ]
+     ],
+     "id": "04-join"
+    },
+    {
+     "title": "INSERT・UPDATE・DELETE ― データを変える SQL",
+     "level": 2,
+     "minutes": 16,
+     "concepts": [
+      "database",
+      "security",
+      "errors"
+     ],
+     "summary": "行を足す・変える・消す SQL の読み方。WHERE を忘れた UPDATE が全行を書き換える事故、変わった行数（rowcount）の確かめ方、RETURNING、あれば更新・無ければ追加の UPSERT。",
+     "body": "## このレッスンのゴール\n\n- `INSERT`・`UPDATE`・`DELETE` を読み、どの行がどう変わるか説明できる\n- `WHERE` の無い UPDATE・DELETE の危険と、事故を防ぐ習慣が分かる\n- `RETURNING` と `ON CONFLICT`（UPSERT）を読める\n\nここでは、データを変える SQL を見ます。**SELECT と違って、間違えると元に戻せない** ことがあるので、読むときの注意も合わせて学びます。\n\n## INSERT：行を足す\n\n```sql\nINSERT INTO products (name, category, price) VALUES ('ヨーグルト', '飲み物', 150);\n```\n\n| 部分 | 意味 |\n|---|---|\n| `INSERT INTO products` | products に足す |\n| `(name, category, price)` | 値を入れる列（書かない列は DEFAULT か NULL。id は自動の連番） |\n| `VALUES (...)` | 入れる値（列と同じ順番） |\n\n```sql\nINSERT INTO products (name, category, price)\nVALUES ('みかん', '果物', 80), ('ぶどう', '果物', 400)\nRETURNING id, name;\n```\n\n```text\nid | name\n8  | みかん\n9  | ぶどう\n```\n\n`VALUES` を `,` で並べると、まとめて何行も足せます。`RETURNING` は「**足した行の、この列を返して**」という指定で、自動で振られた id をすぐに知りたいときに便利です（SQLite 3.35 以降・PostgreSQL。MySQL には無い）。\n\n⚠️ 列の指定を省略して `INSERT INTO products VALUES (...)` と書くと、**テーブルのすべての列を順番どおり** に書く必要があり、列が増えたときに壊れます。列名は書くのが安全です。\n\n## UPDATE：行を変える\n\n```sql\nUPDATE products SET price = price + 10 WHERE category = '果物';\n-- 4 行が変わった\n```\n\n```text\nりんご 130 / バナナ 100 / みかん 90 / ぶどう 410\n```\n\n| 部分 | 意味 |\n|---|---|\n| `UPDATE products` | products の |\n| `SET price = price + 10` | price を「今の price ＋ 10」に（複数なら `SET a = 1, b = 2`） |\n| `WHERE category = '果物'` | **この条件に合う行だけ** |\n\n`price = price + 10` は、Python の `price += 10` と同じで、今の値を使って計算しています。データベース設計のコースのレッスン 5 で、在庫を安全に減らすときに使った形です。\n\n### ⚠️ WHERE を忘れると全部変わる\n\n```sql\nUPDATE products SET category = 'その他';\n-- 8 行が変わった（全部）\n```\n\n```text\nSELECT DISTINCT category FROM products;\n-- その他\n```\n\n**WHERE を書かない UPDATE は、テーブルのすべての行を書き換えます**。エラーにも警告にもならず、一瞬で終わります。DELETE も同じで、`DELETE FROM products;` は全行を消します。\n\n| 事故を防ぐ習慣 | |\n|---|---|\n| **先に同じ WHERE で SELECT する** | `SELECT * FROM products WHERE category = '果物'` で、変わる行を確かめてから UPDATE に書き換える |\n| トランザクションの中で試す | `BEGIN;` → UPDATE → 確認 → 良ければ `COMMIT;`、だめなら `ROLLBACK;`（データベース設計のコースのレッスン 5） |\n| 変わった行数を確かめる | 下の rowcount |\n| 本番で手作業の SQL を打たない | 打つなら、バックアップを確かめてから（公開とクラウドのコースのレッスン 8） |\n\nMySQL の公式のコマンドツールには、WHERE の無い UPDATE・DELETE を止める `--safe-updates` という設定もあります。\n\n## 変わった行数：rowcount\n\n```python\ncur = conn.execute(\"UPDATE products SET price = 999 WHERE name = ?\", (\"ないもの\",))\nprint(cur.rowcount)    # 0\n```\n\n条件に合う行が無いと、**エラーにはならず、0 行が変わる** だけです。「更新したつもりで、実は何も変わっていなかった」に気づけるよう、`rowcount` を確かめるコードもよく書かれます。\n\n```python\nif cur.rowcount == 0:\n    raise HTTPException(404, \"商品が見つかりません\")\n```\n\n## DELETE：行を消す\n\n```sql\nDELETE FROM products WHERE id = 9 RETURNING name;\n-- ぶどう\n```\n\n外部キーでつながっている行（注文に使われている商品など）は、`ON DELETE` の設定（データベース設計のコースのレッスン 2）によって、一緒に消えたり、消せなかったりします。\n\n### 本当に消す？「論理削除」\n\n```sql\nALTER TABLE products ADD COLUMN deleted_at TEXT;                   -- 消した日時の列を足しておき\nUPDATE products SET deleted_at = '2026-11-23' WHERE id = 9;          -- 「消した」印を付けるだけ\nSELECT * FROM products WHERE deleted_at IS NULL;                     -- 普段は印の無いものだけ見る\n```\n\n行を本当に消さずに **「消した」印を付ける** やり方を **論理削除** と呼びます。間違えて消しても戻せる、過去の注文から商品名を表示できる、などの利点があります。代わりに、**すべての SELECT に `WHERE deleted_at IS NULL` を付け忘れない** 必要があります。\n\n## UPSERT：あれば更新、無ければ追加\n\n```sql\nINSERT INTO products (id, name, category, price) VALUES (1, 'りんご', '果物', 150);\n-- エラー：UNIQUE constraint failed: products.id   （id 1 はもうある）\n\nINSERT INTO products (id, name, category, price) VALUES (1, 'りんご', '果物', 150)\nON CONFLICT (id) DO UPDATE SET price = excluded.price;\n-- 1 行が変わった → りんごの price が 150 に\n```\n\n| 部分 | 意味 |\n|---|---|\n| `ON CONFLICT (id)` | id が重複したら |\n| `DO UPDATE SET price = excluded.price` | 追加しようとした値（`excluded`）で、既存の行を更新する |\n| `DO NOTHING` | 重複したら何もしない |\n\nINSERT（追加）と UPDATE（更新）を合わせて **UPSERT** と呼びます。「先に SELECT して、あれば UPDATE、無ければ INSERT」と書くと、同時に 2 人が実行したときにずれます（データベース設計のコースの「競合」）。1 つの SQL にしておくと安全です。\n\n| データベース | UPSERT の書き方 |\n|---|---|\n| SQLite・PostgreSQL | `ON CONFLICT (...) DO UPDATE SET ... = excluded....` |\n| MySQL | `ON DUPLICATE KEY UPDATE n = VALUES(n)` |\n\n## Python から実行するとき\n\n```python\nwith conn:     # トランザクション：最後に commit、例外なら rollback\n    conn.execute(\"UPDATE products SET price = ? WHERE id = ?\", (new_price, product_id))\n```\n\n- 値は必ず `?` で渡す（セキュリティのコースのレッスン 3）\n- `commit` しないと保存されない（`with conn:` が自動で commit してくれる）\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `UPDATE ... SET ...` / `DELETE FROM ...` に WHERE が無い | ⚠️ 全行が対象。本当に全部？ |\n| `WHERE id = ?` の UPDATE の後に rowcount を見ていない | 見つからなくても成功扱いになる |\n| SELECT → if → INSERT / UPDATE の 3 段階 | 同時に実行するとずれる。UPSERT か制約＋エラー処理に |\n| `deleted_at IS NULL` が一部の SELECT にしか無い | ⚠️ 消したはずのものが表示される |\n| `INSERT INTO t VALUES (...)`（列名なし） | 列の追加で壊れる。列名を書く |\n| `TRUNCATE` / `DROP TABLE` | 全行削除／テーブルごと削除。マイグレーション以外で見たら要確認 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`UPDATE products SET price = 0;` を実行すると？",
+        "choices": [
+         "何も変わらない（WHERE が無いので）",
+         "エラーになる",
+         "すべての商品の値段が 0 になる"
+        ],
+        "answer": 2,
+        "explain": "WHERE の無い UPDATE は全行を書き換えます。エラーも警告も出ないので、実行前に同じ条件の SELECT で確かめる習慣をつけましょう。"
+       },
+       {
+        "question": "`UPDATE products SET price = 999 WHERE name = 'ないもの'` を実行した。結果は？",
+        "choices": [
+         "「見つかりません」というエラー",
+         "エラーにならず、変わった行が 0 になる",
+         "新しい行が追加される"
+        ],
+        "answer": 1,
+        "explain": "条件に合う行が無ければ、0 行が変わるだけです。見つからないことを知りたいなら rowcount を確かめます。"
+       },
+       {
+        "question": "`ON CONFLICT (id) DO UPDATE SET price = excluded.price` の `excluded` は何を指す？",
+        "choices": [
+         "削除された行",
+         "すでにテーブルにある行",
+         "今 INSERT しようとして、重複で入らなかった値"
+        ],
+        "answer": 2,
+        "explain": "重複したときに、追加しようとした値（excluded）を使って既存の行を更新します。"
+       }
+      ]
+     ],
+     "id": "05-insert-update-delete"
+    },
+    {
+     "title": "サブクエリと WITH ― SQL を組み立てて読む",
+     "level": 3,
+     "minutes": 18,
+     "concepts": [
+      "database",
+      "functions",
+      "reading"
+     ],
+     "summary": "SQL の中に SQL を入れるサブクエリ（WHERE の中・IN・EXISTS）と、名前を付けて段階的に書く WITH（CTE）。長い SQL を「部品」に分けて読む方法と、NOT IN に NULL が混ざると 0 件になる罠。",
+     "body": "## このレッスンのゴール\n\n- `WHERE` の中のサブクエリ・`IN`・`EXISTS` を読める\n- `WITH` で書かれた長い SQL を、部品ごとに分けて読める\n- `NOT IN` に NULL が混ざると結果が 0 件になる理由が分かり、`NOT EXISTS` を使える\n\n## サブクエリ：SQL の中の SQL\n\n「平均より高い商品」を出します。\n\n```sql\nSELECT name, price FROM products\nWHERE price > (SELECT AVG(price) FROM products);\n-- コーヒー豆 | 1200\n```\n\nかっこの中の `SELECT AVG(price) FROM products` が **先に計算されて**（340）、外の SQL は `WHERE price > 340` として動きます。Python で言うと、こうです。\n\n```python\navg = sum(p[\"price\"] for p in products) / len(products)\n[p for p in products if p[\"price\"] > avg]\n```\n\n### IN と組み合わせる\n\n```sql\nSELECT name FROM customers\nWHERE id IN (SELECT customer_id FROM orders WHERE status = 'paid');\n-- Ryo / Hana / Ken\n```\n\nかっこの中は「paid の注文をしたお客さんの id の一覧」です。外の SQL はその一覧に入っている人を選びます。\n\n## EXISTS：「あるかどうか」だけを見る\n\n```sql\nSELECT name FROM customers c\nWHERE NOT EXISTS (\n  SELECT 1 FROM orders o WHERE o.customer_id = c.id\n);\n-- Sora\n```\n\n| 部分 | 意味 |\n|---|---|\n| `EXISTS (...)` | かっこの中の SQL が **1 行でも返せば真** |\n| `NOT EXISTS (...)` | 1 行も返さなければ真 |\n| `SELECT 1` | 返す中身は何でもよい（あるかどうかしか見ないので、`1` と書く習慣） |\n| `o.customer_id = c.id` | **外の行（c）を使っている**。お客さん 1 人ずつについて、「その人の注文はある？」を調べる |\n\n外の行を使うサブクエリを **相関サブクエリ** と呼びます。Python の `any()` に近い考え方です。\n\n```python\n[c for c in customers if not any(o[\"customer_id\"] == c[\"id\"] for o in orders)]\n```\n\n## ⚠️ NOT IN と NULL\n\n同じことを `NOT IN` でも書けます。\n\n```sql\nSELECT name FROM customers WHERE id NOT IN (SELECT customer_id FROM orders);\n-- Sora\n```\n\nここまでは同じです。でも、かっこの中の一覧に **NULL が 1 つでも混ざる** と…\n\n```sql\nSELECT name FROM customers\nWHERE id NOT IN (SELECT customer_id FROM orders UNION ALL SELECT NULL);\n-- （0 件）\n```\n\n**誰も出てこなくなりました**。`5 NOT IN (1, 2, 3, 4, NULL)` は、「5 は NULL ではない？」が「わからない」（レッスン 1）になるので、全体も「わからない」になり、条件に合いません。\n\n| 書き方 | 一覧に NULL が混ざると |\n|---|---|\n| `NOT IN (サブクエリ)` | ⚠️ **0 件** になる |\n| `NOT EXISTS (サブクエリ)` | ✅ 正しく Sora さんが出る（実際に確かめました） |\n\n外部キーの列が NULL を許す（注文に「ゲストのお客さん」がいる、など）と、ある日突然 0 件になります。**「〜が無いもの」を探すときは `NOT EXISTS`** にするのが安全です。\n\n## WITH（CTE）：部品に名前を付ける\n\n長い SQL は、**途中の結果に名前を付けて、段階的に書く** と読みやすくなります。`WITH 名前 AS (...)` を **CTE**（共通テーブル式）と呼びます。\n\n「paid の注文について、お客さんごとの注文数・合計・1 回の平均」を出します。\n\n```sql\nWITH order_totals AS (               -- ① 注文ごとの合計を作る\n  SELECT o.id, o.customer_id, SUM(p.price * oi.qty) AS total\n  FROM orders o\n  JOIN order_items oi ON oi.order_id = o.id\n  JOIN products p     ON p.id = oi.product_id\n  WHERE o.status = 'paid'\n  GROUP BY o.id\n)\nSELECT c.name,                       -- ② それをお客さんごとにまとめる\n       COUNT(*)     AS orders,\n       SUM(t.total) AS total,\n       AVG(t.total) AS avg_order\nFROM order_totals t\nJOIN customers c ON c.id = t.customer_id\nGROUP BY c.id\nORDER BY total DESC;\n```\n\n```text\nname | orders | total | avg_order\nRyo  | 2      | 1760  | 880.0\nKen  | 1      | 1500  | 1500.0\nHana | 1      | 650   | 650.0\n```\n\n| 段階 | 1 行が表すもの |\n|---|---|\n| ① `order_totals` | **注文 1 件**（id・お客さん・合計） |\n| ② 最後の SELECT | **お客さん 1 人** |\n\nレッスン 4 の「落とし穴 ②」（つなぐと行が増えて数がずれる）を、**先に注文ごとに集計してからつなぐ** ことで避けています。`COUNT(*)` が正しく注文数になっているのはこのためです。\n\nPython で言うと、途中の結果を変数に入れてから次の処理をするのと同じです。\n\n```python\norder_totals = [...]   # ①\nresult = [...]         # ② order_totals を使う\n```\n\n### WITH を読むコツ\n\n1. `WITH` の部品を **上から 1 つずつ** 読み、それぞれ「1 行が何を表すか」を書き出す\n2. 最後の SELECT で、部品がどうつながっているかを見る\n3. 分からなければ、部品の SQL だけを取り出して実行してみる\n\n`WITH a AS (...), b AS (...)` と `,` で部品をいくつも並べられ、後の部品は前の部品を使えます。\n\n## サブクエリ・JOIN・WITH の使い分け\n\n| やりたいこと | 書き方の例 |\n|---|---|\n| 1 つの値と比べる（平均より高い） | `WHERE x > (SELECT AVG(...) ...)` |\n| 「〜があるもの／無いもの」 | `EXISTS` / `NOT EXISTS` |\n| 相手の列も表示したい | `JOIN` |\n| 集計してからつなぐ・段階が多い | `WITH` |\n\n同じ結果になる書き方がいくつもあるのが SQL です。AI の SQL が自分の思いつく形と違っても、**結果が同じか** を考えればよいのです。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `WHERE id NOT IN (SELECT ...)` | ⚠️ サブクエリの列が NULL になりうるなら `NOT EXISTS` に |\n| `WITH ... AS (...)` が 3 つ 4 つ | 部品ごとに「1 行が何か」を確かめながら読む |\n| SELECT の列の中のサブクエリ（`(SELECT COUNT(*) FROM ... WHERE ... = c.id) AS n`） | 行ごとに実行される。件数が多いと遅いことがある（N+1 と似た形） |\n| `WITH RECURSIVE` | 自分自身を使う CTE。カテゴリの親子・組織図などの木をたどる |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`WHERE price > (SELECT AVG(price) FROM products)` の動きとして正しいのは？",
+        "choices": [
+         "かっこの中で平均を先に計算し、その値より高い商品を選ぶ",
+         "商品ごとに、その商品の値段の平均を計算する",
+         "エラーになる（WHERE に SELECT は書けない）"
+        ],
+        "answer": 0,
+        "explain": "かっこの中のサブクエリが 1 つの値（平均）を返し、外の WHERE がそれと比べます。"
+       },
+       {
+        "question": "「注文したことの無いお客さん」を探すのに、`NOT IN` より `NOT EXISTS` が安全な理由は？",
+        "choices": [
+         "NOT EXISTS のほうが短く書けるから",
+         "サブクエリの結果に NULL が 1 つでも混ざると、NOT IN は 0 件になってしまうから",
+         "NOT IN は古くて使えないから"
+        ],
+        "answer": 1,
+        "explain": "`NOT IN (..., NULL)` は「わからない」になり、どの行も条件に合いません。NOT EXISTS は NULL の影響を受けません。"
+       },
+       {
+        "question": "長い `WITH` の SQL を読むときのコツとして適切なのは？",
+        "choices": [
+         "最後の SELECT から読み、WITH の中は読まない",
+         "部品を上から 1 つずつ読み、それぞれ「1 行が何を表すか」を確かめる",
+         "全体を一度に頭の中で実行する"
+        ],
+        "answer": 1,
+        "explain": "WITH は途中の結果に名前を付けたものです。部品ごとに分けて読めば、長い SQL も短い SQL の組み合わせとして読めます。"
+       }
+      ]
+     ],
+     "id": "06-subquery-cte"
+    },
+    {
+     "title": "ウィンドウ関数 ― 行を残したまま集計する",
+     "level": 3,
+     "minutes": 20,
+     "concepts": [
+      "database",
+      "higher_order",
+      "reading"
+     ],
+     "summary": "GROUP BY と違って「行をまとめずに」順位・グループの平均・累計・前の行との比較を付ける OVER 句。ROW_NUMBER・RANK・DENSE_RANK の違い、カテゴリごとの 1 位を取り出す定番の形、WHERE で使えない理由。",
+     "body": "## このレッスンのゴール\n\n- `関数() OVER (PARTITION BY ... ORDER BY ...)` を読み、何を計算しているか説明できる\n- `ROW_NUMBER`・`RANK`・`DENSE_RANK` の違いが分かる\n- 「グループごとの上位 N 件」「累計」「前の行との差」の SQL を読める\n\n## GROUP BY との違い\n\nレッスン 3 の GROUP BY は、**グループを 1 行にまとめて** しまいました。ウィンドウ関数は、**行はそのまま残して、横に集計の結果を付け足します**。\n\n```sql\nSELECT name, price,\n       AVG(price) OVER (PARTITION BY category) AS cat_avg,\n       price - AVG(price) OVER (PARTITION BY category) AS diff\nFROM products;\n```\n\n```text\nname         | price | cat_avg | diff\n食パン       | 250   | 215.0   | 35.0\nクロワッサン | 180   | 215.0   | -35.0\nりんご       | 120   | 105.0   | 15.0\nバナナ       | 90    | 105.0   | -15.0\n牛乳         | 200   | 700.0   | -500.0\nコーヒー豆   | 1200  | 700.0   | 500.0\n```\n\n6 行のまま、それぞれの行に「同じカテゴリの平均」と「平均との差」が付きました。\n\n| 部分 | 意味 |\n|---|---|\n| `AVG(price)` | 何を計算するか（集計関数がそのまま使える） |\n| `OVER (...)` | 「ウィンドウ関数として使う」という印。かっこの中が **どの範囲（窓）で計算するか** |\n| `PARTITION BY category` | category ごとに区切って計算する（GROUP BY の「まとめない版」） |\n\n## 順位を付ける\n\n```sql\nSELECT name, category, price,\n       RANK() OVER (PARTITION BY category ORDER BY price DESC) AS rank_in_cat\nFROM products;\n```\n\n```text\n食パン       | パン   | 250  | 1\nクロワッサン | パン   | 180  | 2\nりんご       | 果物   | 120  | 1\nバナナ       | 果物   | 90   | 2\nコーヒー豆   | 飲み物 | 1200 | 1\n牛乳         | 飲み物 | 200  | 2\n```\n\n`ORDER BY price DESC` は、**窓の中で** 値段の高い順に並べる、という意味です（SQL 全体の並べ替えではありません）。\n\n### ROW_NUMBER・RANK・DENSE_RANK\n\n同じ値段の商品があると違いが出ます。120 円の「りんご（訳あり）」を足して比べました。\n\n```sql\nSELECT name, price,\n       RANK()       OVER (ORDER BY price) AS r,\n       DENSE_RANK() OVER (ORDER BY price) AS dr,\n       ROW_NUMBER() OVER (ORDER BY price) AS rn\nFROM ...;\n```\n\n```text\nname             | price | r | dr | rn\nバナナ           | 90    | 1 | 1  | 1\nりんご           | 120   | 2 | 2  | 2\nりんご（訳あり） | 120   | 2 | 2  | 3\nクロワッサン     | 180   | 4 | 3  | 4\n牛乳             | 200   | 5 | 4  | 5\n食パン           | 250   | 6 | 5  | 6\nコーヒー豆       | 1200  | 7 | 6  | 7\n```\n\n| 関数 | 同じ値のとき | 次の順位 | 例 |\n|---|---|---|---|\n| `RANK()` | 同じ順位 | **飛ぶ**（2, 2, 4） | スポーツの順位 |\n| `DENSE_RANK()` | 同じ順位 | **飛ばない**（2, 2, 3） | 「何番目に高い値段か」 |\n| `ROW_NUMBER()` | **必ず違う番号** | 1 ずつ | 1 件だけ選びたいとき |\n\n⚠️ `ROW_NUMBER()` で同じ値のどちらが 2 番になるかは、**決まっていません**。決めたいなら `ORDER BY price, id` のように列を足します（レッスン 2 と同じ）。\n\n## 定番：グループごとの 1 位（上位 N 件）\n\n「カテゴリごとに、いちばん高い商品」。レッスン 3 で GROUP BY では書けなかったものです。\n\n```sql\nWITH ranked AS (\n  SELECT name, category, price,\n         ROW_NUMBER() OVER (PARTITION BY category ORDER BY price DESC) AS rn\n  FROM products\n)\nSELECT category, name, price FROM ranked WHERE rn = 1;\n```\n\n```text\nパン   | 食パン     | 250\n果物   | りんご     | 120\n飲み物 | コーヒー豆 | 1200\n```\n\n① 窓関数で、カテゴリの中の順番を付ける → ② WITH（レッスン 6）の外で `rn = 1` を選ぶ。`rn <= 3` にすれば「カテゴリごとの上位 3 件」です。**AI の SQL で最もよく見るウィンドウ関数の使い方** です。\n\n### ⚠️ WHERE では直接使えない\n\n```sql\nSELECT name, ROW_NUMBER() OVER (ORDER BY price DESC) AS rn\nFROM products\nWHERE rn <= 2;\n-- エラー：misuse of aliased window function rn\n```\n\nレッスン 3 の「実行される順番」を思い出してください。ウィンドウ関数は **SELECT（⑤）の段階** で計算されるので、それより前の WHERE（②）では使えません。だから、上のように **WITH やサブクエリで包んでから、外で絞ります**。\n\n## 累計と、前の行との比較\n\n日ごとの売上に、累計と前の日の売上を付けます。\n\n```sql\nWITH daily AS (\n  SELECT o.ordered_at AS d, SUM(p.price * oi.qty) AS sales\n  FROM orders o\n  JOIN order_items oi ON oi.order_id = o.id\n  JOIN products p     ON p.id = oi.product_id\n  WHERE o.status <> 'cancelled'\n  GROUP BY o.ordered_at\n)\nSELECT d, sales,\n       SUM(sales) OVER (ORDER BY d) AS running_total,\n       LAG(sales) OVER (ORDER BY d) AS prev\nFROM daily;\n```\n\n```text\nd          | sales | running_total | prev\n2026-10-01 | 560   | 560           | NULL\n2026-10-15 | 1200  | 1760          | 560\n2026-11-02 | 1500  | 3260          | 1200\n2026-11-05 | 650   | 3910          | 1500\n2026-11-10 | 2400  | 6310          | 650\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `SUM(sales) OVER (ORDER BY d)` | 日付の順に、**その行までの合計**（累計）。`ORDER BY` があると「最初からこの行まで」が窓になる |\n| `LAG(sales) OVER (ORDER BY d)` | **1 つ前の行** の値。最初の行は前が無いので NULL |\n| `LEAD(sales) OVER (...)` | 1 つ後の行の値 |\n\n`sales - LAG(sales) OVER (ORDER BY d)` と書けば「前日比」です。Python で言うと、ループで前の値を覚えておきながら進むのと同じです。\n\n```python\ntotal, prev = 0, None\nfor row in daily:\n    total += row[\"sales\"]\n    print(row[\"d\"], row[\"sales\"], total, prev)\n    prev = row[\"sales\"]\n```\n\npandas なら `df[\"sales\"].cumsum()`（累計）、`df[\"sales\"].shift(1)`（前の行）、`df.groupby(\"category\")[\"price\"].rank()`（グループごとの順位）が対応します。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方 |\n|---|---|\n| `ROW_NUMBER() OVER (PARTITION BY x ORDER BY y DESC)` ＋ 外で `rn = 1` | x ごとに、y が最大の 1 行（最新の 1 件など） |\n| `SUM(...) OVER (ORDER BY 日付)` | 累計 |\n| `LAG(...)` / `LEAD(...)` | 前・次の行との比較（前月比など） |\n| `AVG(...) OVER (PARTITION BY ...)` | グループの平均を、行を残したまま付ける |\n| `ROWS BETWEEN 6 PRECEDING AND CURRENT ROW` | 窓の範囲を「前の 6 行から今の行まで」に（7 日間の移動平均など） |\n| `RANK()` で「上位 3 件」 | 同点があると 3 件より多く返ることがある。ちょうど 3 件なら `ROW_NUMBER()` |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "GROUP BY とウィンドウ関数（OVER）の違いとして正しいのは？",
+        "choices": [
+         "同じもので、書き方が違うだけ",
+         "GROUP BY はグループを 1 行にまとめるが、ウィンドウ関数は行を残したまま集計の結果を付け足す",
+         "ウィンドウ関数は集計関数を使えない"
+        ],
+        "answer": 1,
+        "explain": "6 行の商品にカテゴリの平均を付けても、結果は 6 行のままです。"
+       },
+       {
+        "question": "同じ値段の商品が 2 つ 2 位にいるとき、次の商品の順位が 4 になるのは？",
+        "choices": [
+         "RANK()",
+         "DENSE_RANK()",
+         "ROW_NUMBER()"
+        ],
+        "answer": 0,
+        "explain": "RANK は同点の数だけ順位を飛ばします（2, 2, 4）。DENSE_RANK は飛ばさず（2, 2, 3）、ROW_NUMBER は必ず違う番号です。"
+       },
+       {
+        "question": "`WHERE rn <= 3`（rn は ROW_NUMBER の別名）がエラーになった。直し方は？",
+        "choices": [
+         "ROW_NUMBER を RANK に変える",
+         "WITH やサブクエリで包み、外側の SELECT の WHERE で rn を使う",
+         "ORDER BY を消す"
+        ],
+        "answer": 1,
+        "explain": "ウィンドウ関数は SELECT の段階で計算されるので、先に動く WHERE では使えません。一度包んでから外で絞ります。"
+       }
+      ]
+     ],
+     "id": "07-window-functions"
+    },
+    {
+     "title": "データベースごとの違い ― SQLite・PostgreSQL・MySQL",
+     "level": 3,
+     "minutes": 18,
+     "concepts": [
+      "database",
+      "deploy",
+      "strings"
+     ],
+     "summary": "同じ SQL を SQLite・PostgreSQL 17・MySQL 8.4 で実際に実行して比べた。割り算、文字列のつなぎ方、大文字小文字、文字数、GROUP BY、連番、RETURNING、NULL の並び順、日付の計算。手元の SQLite で動いた SQL が本番で動かない理由。",
+     "body": "## このレッスンのゴール\n\n- SQL には「方言」があり、同じ SQL でもデータベースによって結果やエラーが違うことを説明できる\n- よく問題になる違い（割り算・文字列・大文字小文字・GROUP BY・連番）を知っている\n- 「手元の SQLite では動いたのに、本番の PostgreSQL でエラー」のときに疑う場所が分かる\n\n公開とクラウドのコースのレッスン 1 で、「開発は SQLite、本番は PostgreSQL」のように環境で違うことがある、と学びました。ここでは、実際に **SQLite・PostgreSQL 17・MySQL 8.4** の 3 つを用意して、同じ SQL を実行してみた結果を見ます。\n\n## 割り算\n\n```sql\nSELECT 7 / 2;\n```\n\n| SQLite | PostgreSQL | MySQL |\n|---|---|---|\n| `3` | `3` | `3.5000` |\n\nSQLite と PostgreSQL は、**整数どうしの割り算は整数**（小数点以下を切り捨て）になります。Python 2 の昔の `7 / 2` と同じで、今の Python の `7 // 2` に当たります。\n\n```sql\nSELECT 7 / 2.0;               -- 3.5（どちらかを小数にする）\nSELECT CAST(7 AS REAL) / 2;   -- 3.5（SQLite。PostgreSQL は 7::numeric / 2 など）\n```\n\n⚠️ 「平均の評価」「割合（何 %）」を計算する SQL で、`SUM(good) / COUNT(*)` が **いつも 0** になるのはこのためです。\n\n## 文字列をつなぐ\n\n```sql\nSELECT 'Ryo' || 'さん';\n```\n\n| SQLite | PostgreSQL | MySQL |\n|---|---|---|\n| `Ryoさん` | `Ryoさん` | `0` |\n\nMySQL では、`||` は **「または」（OR）** の意味になるので、文字列が数として扱われて `0` になりました。\n\n```sql\nSELECT CONCAT('Ryo', 'さん');   -- 3 つとも Ryoさん\n```\n\n## 大文字と小文字\n\n```sql\nSELECT 'Ryo' = 'ryo';\n```\n\n| SQLite | PostgreSQL | MySQL |\n|---|---|---|\n| `0`（違う） | `f`（違う） | `1`（**同じ**） |\n\nMySQL は、初期設定の照合順序（文字の比べ方のルール）で **大文字と小文字を区別しません**。逆に、`LIKE` は SQLite では英字の大文字小文字を区別せず（`'Ryo' LIKE 'ryo'` が真）、PostgreSQL では区別します（区別しないなら `ILIKE`）。\n\n⚠️ ログインのメールアドレスやユーザー名の重複チェックで、データベースを変えたら挙動が変わる、ということが起きます。保存するときに小文字にそろえておくのが確実です。\n\n## 文字数とバイト数\n\n```sql\nSELECT length('こんにちは'), char_length('こんにちは');\n```\n\n| SQLite | PostgreSQL | MySQL |\n|---|---|---|\n| `length` は `5`（`char_length` は無い） | `5` と `5` | `15` と `5` |\n\nMySQL の `length` は **バイト数**（UTF-8 の日本語は 1 文字 3 バイト。コンピュータの基礎コースの「文字コード」）を返します。文字数なら `char_length` です。\n\n（ちなみに、MySQL に接続するコマンドの文字コードの設定を UTF-8 にし忘れると、`char_length` まで 15 になりました。文字化けと同じで、接続の文字コードも大事です）\n\n## GROUP BY に無い列\n\nレッスン 3 で見たとおりです。\n\n```sql\nSELECT category, name, MAX(price) FROM products GROUP BY category;\n```\n\n| SQLite | PostgreSQL | MySQL |\n|---|---|---|\n| 動く（最大の行の name を出す） | **エラー** | **エラー**（`only_full_group_by`） |\n\n**SQLite だけが特別に許している** 書き方です。SQLite で作ったアプリを PostgreSQL に移すと、よくここでエラーになります。\n\n## 自動の連番\n\nレッスンのテーブルは `id INTEGER PRIMARY KEY` で作りました。これに id を書かずに INSERT すると…\n\n| SQLite | PostgreSQL | MySQL |\n|---|---|---|\n| 自動で連番が振られる | **エラー**：`null value in column \"id\" ... violates not-null constraint` | **エラー**：`Field 'id' doesn't have a default value` |\n\n`INTEGER PRIMARY KEY` が自動の連番になるのは **SQLite のルール** です。\n\n| データベース | 自動の連番の書き方 |\n|---|---|\n| SQLite | `id INTEGER PRIMARY KEY` |\n| PostgreSQL | `id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY`（古い書き方は `SERIAL`） |\n| MySQL | `id INT AUTO_INCREMENT PRIMARY KEY` |\n\nPostgreSQL で `GENERATED ALWAYS AS IDENTITY` にして試すと、`RETURNING id` で `1` が返りました。\n\n## RETURNING と UPSERT\n\n| | SQLite | PostgreSQL | MySQL |\n|---|---|---|---|\n| `INSERT ... RETURNING id` | ✅ | ✅ | ❌ 文法エラー（`LAST_INSERT_ID()` を使う） |\n| 重複したら更新 | `ON CONFLICT ... DO UPDATE` | `ON CONFLICT ... DO UPDATE` | `ON DUPLICATE KEY UPDATE` |\n\n（レッスン 5。PostgreSQL の ON CONFLICT と、MySQL の ON DUPLICATE KEY UPDATE も実行して確かめました）\n\n## NULL の並び順\n\n```sql\nSELECT city FROM customers ORDER BY city;\n```\n\n| SQLite | PostgreSQL | MySQL |\n|---|---|---|\n| NULL が **先頭** | NULL が **最後** | NULL が **先頭** |\n\n決めたいときは `ORDER BY city NULLS FIRST` / `NULLS LAST`（SQLite・PostgreSQL）と書きます。\n\n## 日付の計算\n\n```sql\n-- 2026-11-23 の 7 日後\nSELECT date('2026-11-23', '+7 days');               -- SQLite\nSELECT DATE '2026-11-23' + 7;                       -- PostgreSQL\nSELECT DATE_ADD('2026-11-23', INTERVAL 7 DAY);      -- MySQL\n```\n\n3 つとも `2026-11-30` でした。日付の扱いは方言が特に多いところです。SQLite には日付の型が無く、文字列（`'2026-11-23'`）で持つのが普通です（データベース設計のコースのレッスン 1）。\n\n## 名前の囲み方\n\n| データベース | 列名・テーブル名を囲む記号 |\n|---|---|\n| SQLite・PostgreSQL | `\"order\"`（ダブルクォート） |\n| MySQL | `` `order` ``（バッククォート） |\n\n`order` や `user` のように **SQL の予約語と同じ名前** の列やテーブルを使うと、囲まないとエラーになります。名前は `orders`・`users` のように予約語を避けるのが楽です。\n\n## 方言とどう付き合うか\n\n| 方法 | |\n|---|---|\n| **開発と本番で同じデータベースを使う** | Docker（公開とクラウドのコースのレッスン 6）で手元にも PostgreSQL を立てる。いちばん確実 |\n| ORM を使う | 多くの違いを吸収してくれる（データベース設計のコースのレッスン 6）。ただし生の SQL の部分は自分で気をつける |\n| AI に頼むとき、データベースの名前とバージョンを伝える | 「PostgreSQL 17 で動く SQL にして」 |\n| テストを本番と同じデータベースで回す | CI（公開とクラウドのコースのレッスン 7）で PostgreSQL のコンテナを使う |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `SUM(x) / COUNT(*)` で割合 | ⚠️ SQLite・PostgreSQL では整数の割り算で 0 になりうる。`* 1.0` や `CAST` |\n| `'a' \\|\\| 'b'` を MySQL で | ⚠️ 0 になる。`CONCAT` |\n| `id INTEGER PRIMARY KEY` を PostgreSQL のマイグレーションに | ⚠️ 自動で連番にならない |\n| `SELECT a, b, MAX(c) ... GROUP BY a` | ⚠️ SQLite でしか動かない |\n| `WHERE email = ?` で重複チェック（MySQL） | 大文字小文字を区別しない。意図どおりか |\n| `SERIAL` / `AUTO_INCREMENT` / `AUTOINCREMENT` | それぞれ PostgreSQL / MySQL / SQLite の連番。どのデータベース向けか分かる |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "SQLite で `SELECT 7 / 2` を実行した結果は？",
+        "choices": [
+         "3",
+         "3.5",
+         "4"
+        ],
+        "answer": 0,
+        "explain": "SQLite と PostgreSQL では、整数どうしの割り算は小数点以下が切り捨てられます。小数が欲しければ `7 / 2.0` のように片方を小数にします（MySQL は 3.5000 でした）。"
+       },
+       {
+        "question": "手元の SQLite で動いた `SELECT category, name, MAX(price) FROM products GROUP BY category` が、本番の PostgreSQL でエラーになった。理由は？",
+        "choices": [
+         "PostgreSQL は MAX が使えないから",
+         "GROUP BY に無い列（name）を SELECT に書くのを、SQLite だけが特別に許しているから",
+         "本番のデータが空だから"
+        ],
+        "answer": 1,
+        "explain": "PostgreSQL と MySQL では、SELECT に書けるのは GROUP BY の列か集計関数だけです。グループごとの最大の行はウィンドウ関数（レッスン 7）で取ります。"
+       },
+       {
+        "question": "MySQL で `SELECT 'Ryo' || 'さん'` の結果は？",
+        "choices": [
+         "`Ryoさん`",
+         "`0`",
+         "エラー"
+        ],
+        "answer": 1,
+        "explain": "MySQL では `||` は「または（OR）」の意味です。文字列をつなぐには `CONCAT('Ryo', 'さん')` を使います。"
+       }
+      ]
+     ],
+     "id": "08-dialects"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "シェル（Bash）",

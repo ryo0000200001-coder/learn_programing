@@ -1,3 +1,11 @@
-{"title": "SQL", "icon": "🗄️", "order": 50, "status": "planned",
- "description": "データベースに問い合わせる言語。AI がよく書くバックエンドの必需品。",
- "outline": ["SELECT と WHERE", "並べ替えと集計", "JOIN", "INSERT / UPDATE / DELETE", "インデックスとトランザクション"]}
+{
+ "title": "SQL",
+ "icon": "🗄️",
+ "order": 50,
+ "description": "データベースに問い合わせる言語。全レッスン共通の「お店のデータ」で、SELECT・WHERE・並べ替え・集計・JOIN・追加と更新・サブクエリと WITH・ウィンドウ関数まで。結果はすべて SQLite で実行したもの。最後に PostgreSQL・MySQL との違いも実際に比べる。",
+ "levels": {
+  "1": "入門：取り出す",
+  "2": "基礎：まとめる・つなぐ・変える",
+  "3": "実践：AI の SQL を読む"
+ }
+}
