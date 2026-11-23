@@ -1,3 +1,11 @@
-{"title": "Rust", "icon": "🦀", "order": 80, "status": "planned",
- "description": "安全さと速さを両立する言語。所有権という独特の考え方がある。",
- "outline": ["let と mut", "所有権と借用", "enum と match", "Result と ? 演算子", "トレイト"]}
+{
+ "title": "Rust",
+ "icon": "🦀",
+ "order": 80,
+ "description": "安全さと速さを両立する言語。let と mut、所有権と借用（Rust だけの考え方）、構造体と enum と match、Option と Result と ? 演算子、トレイトとジェネリクス、イテレータ。コンパイラのエラーメッセージを読みながら進む。すべて Rust 1.97 で実行・コンパイルしたもの。",
+ "levels": {
+  "1": "入門：変数と所有権",
+  "2": "基礎：型で表す",
+  "3": "実践：抽象化と AI のコード"
+ }
+}

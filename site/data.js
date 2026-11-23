@@ -4439,17 +4439,299 @@ window.SITE_DATA = {
    "title": "Rust",
    "icon": "🦀",
    "order": 80,
-   "status": "planned",
-   "description": "安全さと速さを両立する言語。所有権という独特の考え方がある。",
-   "outline": [
-    "let と mut",
-    "所有権と借用",
-    "enum と match",
-    "Result と ? 演算子",
-    "トレイト"
-   ],
+   "description": "安全さと速さを両立する言語。let と mut、所有権と借用（Rust だけの考え方）、構造体と enum と match、Option と Result と ? 演算子、トレイトとジェネリクス、イテレータ。コンパイラのエラーメッセージを読みながら進む。すべて Rust 1.97 で実行・コンパイルしたもの。",
+   "levels": {
+    "1": "入門：変数と所有権",
+    "2": "基礎：型で表す",
+    "3": "実践：抽象化と AI のコード"
+   },
    "id": "80-rust",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "let と mut ― Rust の第一歩",
+     "level": 1,
+     "minutes": 15,
+     "concepts": [
+      "variables",
+      "types",
+      "basics",
+      "tooling"
+     ],
+     "summary": "fn main と println!、変数は最初から変えられない（mut を付けると変えられる）、型と as による変換、シャドーイング。cargo の使い方と、Rust のコンパイラのエラーメッセージの読み方。",
+     "body": "## このレッスンのゴール\n\n- `fn main()`・`println!`・`format!` を読める\n- `let` と `let mut` の違いを説明できる\n- Rust のコンパイラのエラーメッセージ（`error[E....]` と `help:`）の読み方が分かる\n\n## Rust とは\n\n**Rust**（ラスト）は、**C や C++ と同じくらい速く、それでいてメモリの使い方の間違いをコンパイラが防いでくれる** 言語です。ブラウザの部品、OS の一部、コマンドラインのツール（`ripgrep`・Python の `uv` や `ruff` なども Rust 製）、Cloudflare Workers の内部などで使われています。\n\n速さと安全さのために、**所有権**（レッスン 2）という独特の考え方があり、最初はコンパイラによく怒られます。でも、その **エラーメッセージがとても親切** なのも Rust の特徴です。\n\n## 最初のプログラム\n\n```rust\nfn greet(name: &str) -> String {\n    format!(\"こんにちは、{name} さん\")\n}\n\nfn main() {\n    let price = 120;\n    let mut count = 1;\n    count += 2;\n    let total = price * count;\n    println!(\"{}\", greet(\"Ryo\"));\n    println!(\"合計 {total} 円（{count} 個）\");\n}\n```\n\n```text\nこんにちは、Ryo さん\n合計 360 円（3 個）\n```\n\n（このコースの出力とエラーは、すべて Rust 1.97 で実際にコンパイル・実行したものです）\n\n| Rust | 意味 | Python で言うと |\n|---|---|---|\n| `fn main()` | プログラムの入口 | `if __name__ == \"__main__\":` |\n| `fn greet(name: &str) -> String` | 関数。`&str` は文字列を借りる（レッスン 2）、`String` を返す | `def greet(name: str) -> str:` |\n| `format!(\"...{name}...\")` | 文字列を作る | `f\"...{name}...\"` |\n| `println!(\"{}\", x)` | 表示して改行 | `print(x)` |\n| 最後の行に `;` が無い | **それが関数の戻り値** になる（`return` を省略できる） | `return ...` |\n\n`println!` や `format!` の **`!`** は、関数ではなく **マクロ**（コンパイルするときに別のコードに展開されるもの）という印です。読むときは「特別な関数」と思って大丈夫です。\n\n## let と mut：変数は最初は変えられない\n\n```rust\nfn main() {\n    let count = 1;\n    count += 2;\n    println!(\"{count}\");\n}\n```\n\n```text\nerror[E0384]: cannot assign twice to immutable variable `count`\n --> r1b.rs:3:5\n  |\n2 |     let count = 1;\n  |         ----- first assignment to `count`\n3 |     count += 2;\n  |     ^^^^^^^^^^ cannot assign twice to immutable variable\n  |\nhelp: consider making this binding mutable\n  |\n2 |     let mut count = 1;\n  |         +++\n```\n\nRust の変数は、**最初から変えられない（イミュータブル）** のが決まりです。変えたい変数には **`mut`**（mutable：変えられる）を付けます。\n\n### エラーメッセージの読み方\n\n| 部分 | 意味 |\n|---|---|\n| `error[E0384]` | エラーの番号。`rustc --explain E0384` でくわしい説明が出る |\n| `cannot assign twice to immutable variable` | 変えられない変数に、2 回入れようとした |\n| `--> r1b.rs:3:5` | ファイル名・行・列 |\n| `-----` と `^^^^` | 関係する場所に線を引いて、それぞれ説明している |\n| `help:` | **直し方の提案**。`+++` の部分を足せば直る |\n\n**`help:` を読めば、多くの場合そのまま直せます**。AI が書いた Rust のコードがコンパイルできないときも、まずエラーメッセージの `help:` を見ましょう。\n\nPython では変数は何度でも入れ直せましたが、Rust は「変わる変数」に印を付けることで、**どこで値が変わるのかを、コードを読む人にも分かるように** しています。\n\n## 型\n\n```rust\nlet price = 120;                    // i32（整数）と推論される\nlet rate: f64 = 0.1;                // 型を書くなら 名前: 型\nlet total = 360;\nlet with_tax = total as f64 * (1.0 + rate);\nprintln!(\"{with_tax}\");             // 396.00000000000006\n```\n\n| 型 | 中身 | Python で言うと |\n|---|---|---|\n| `i32` / `i64` | 符号付き整数（32・64 ビット） | `int` |\n| `u32` / `u64` / `usize` | **0 以上** の整数（`usize` は長さや番号に使う） | `int` |\n| `f64` | 小数 | `float` |\n| `bool` | `true` / `false` | `bool` |\n| `char` | 1 文字 | — |\n| `&str` / `String` | 文字列（借りたもの／持っているもの。レッスン 2） | `str` |\n| `Vec<T>` | 伸び縮みする配列 | `list` |\n\nGo と同じく、**整数と小数を混ぜて計算できない** ので、`as f64` で変換しています。そして、`396.00000000000006` はコンピュータの基礎コースの「小数の誤差」です。\n\n### シャドーイング\n\n```rust\nlet x = 5;\nlet x = x * 2;       // 新しい x を作り直す\nprintln!(\"shadow {x}\");   // shadow 10\n```\n\n`let` をもう一度書くと、**同じ名前の新しい変数** を作れます（シャドーイング）。`mut` とは違い、型を変えることもできます（`let input = input.trim();` のように）。\n\n## 表示の書き方\n\n```rust\nlet fruits = vec![\"りんご\", \"バナナ\"];\nprintln!(\"{:?} {}\", fruits, fruits.len());   // [\"りんご\", \"バナナ\"] 2\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `{}` | 人向けの表示（Display） |\n| `{:?}` | 開発者向けの表示（Debug）。リストや構造体の中身を見るとき |\n| `{name}` | 変数をその場に |\n| `{:.2}` | 小数点以下 2 桁 |\n\n`{:?}` は Python の `repr()` に近いです。\n\n## cargo：Rust の道具箱\n\n```bash\ncargo new myapp      # プロジェクトを作る（Cargo.toml と src/main.rs ができる）\ncargo run            # コンパイルして実行\ncargo build --release   # 速い実行ファイルを作る（--release で最適化）\ncargo test           # テスト\ncargo add serde      # ライブラリ（クレート）を追加\ncargo clippy         # よくない書き方を指摘してくれる\n```\n\n| ファイル | 意味 | 似ているもの |\n|---|---|---|\n| `Cargo.toml` | プロジェクトの名前と使うライブラリ | `pyproject.toml` / `package.json` |\n| `Cargo.lock` | 実際に使うバージョン（ロックファイル） | `uv.lock` / `package-lock.json` |\n| `src/main.rs` | 実行するプログラムの入口 | |\n| `src/lib.rs` | ライブラリの入口 | |\n\nRust のライブラリは **クレート**（crate）と呼ばれ、crates.io で公開されています。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方 |\n|---|---|\n| `let mut v = Vec::new();` | 後で中身を変える空の Vec |\n| `let x: u32 = s.parse().unwrap();` | 文字列を数に変換（unwrap はレッスン 3・4） |\n| `fn main() -> Result<(), Box<dyn Error>>` | main もエラーを返せる形（レッスン 4） |\n| `#[derive(Debug)]` | `{:?}` で表示できるようにする印（レッスン 3） |\n| `n as f64` / `len as u32` | 型の変換。大きい型から小さい型への `as` は、はみ出した分が切られるので注意 |\n| `cargo build --release` | 本番用の速い実行ファイル。`target/release/` にできる |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Rust で `let count = 1;` の後に `count += 2;` と書くと？",
+        "choices": [
+         "count が 3 になる",
+         "コンパイルエラー（変えられない変数に入れ直そうとした）",
+         "警告が出るが count は 3 になる"
+        ],
+        "answer": 1,
+        "explain": "Rust の変数は最初は変えられません。変えたいなら `let mut count = 1;` と mut を付けます。エラーの help: もそう提案していました。"
+       },
+       {
+        "question": "`println!` の `!` は何を表す？",
+        "choices": [
+         "関数ではなく、マクロであること",
+         "強調して表示すること",
+         "エラーが起きたら止まること"
+        ],
+        "answer": 0,
+        "explain": "`!` が付くのはマクロです。println!・format!・vec! などがよく出てきます。"
+       },
+       {
+        "question": "Rust のコンパイルエラーが出たとき、まず見るとよいところは？",
+        "choices": [
+         "エラーの番号だけ",
+         "どの行かを示す `-->` と、直し方を提案する `help:`",
+         "最後の行の `aborting due to ...`"
+        ],
+        "answer": 1,
+        "explain": "Rust のエラーは、場所と原因に線を引いて説明し、help: で直し方まで提案してくれます。"
+       }
+      ]
+     ],
+     "id": "01-let-mut"
+    },
+    {
+     "title": "所有権と借用 ― Rust だけの考え方",
+     "level": 1,
+     "minutes": 22,
+     "concepts": [
+      "memory",
+      "variables",
+      "functions"
+     ],
+     "summary": "値には持ち主が 1 人だけいる（所有権）。代入や関数に渡すと持ち主が移る（ムーブ）、& で借りる、&mut で書き換えのために借りる、clone で複製する。3 つの代表的なコンパイルエラーを実際に起こして読む。",
+     "body": "## このレッスンのゴール\n\n- 所有権・ムーブ・借用（`&`）・可変の借用（`&mut`）の意味を説明できる\n- `borrow of moved value` などの代表的なエラーを読み、直し方が分かる\n- AI の Rust のコードに `&`・`.clone()`・`&mut` が多い理由が分かる\n\n## なぜ所有権があるのか\n\nプログラムは、使い終わったメモリを片付けなければいけません（コンピュータの基礎コースの「メモリ」）。\n\n| 言語 | 片付け方 |\n|---|---|\n| Python・Go・JavaScript | **ガベージコレクタ**（GC）が、使われなくなったものを自動で探して片付ける。便利だが、ときどき処理が一瞬止まる |\n| C・C++ | **人が自分で片付ける**（C 言語コースの `free`）。速いが、片付け忘れや二重の片付けがバグや脆弱性になる |\n| **Rust** | **持ち主（所有者）が使い終わったら、自動で片付ける**。誰が持ち主かは、コンパイラが確かめる |\n\nRust は「GC 無しで速い」と「人が間違えない」を、**所有権のルールをコンパイラが確かめる** ことで両立しています。\n\n## ルール 1：持ち主は 1 人。代入すると移る（ムーブ）\n\n```rust\nfn main() {\n    let a = String::from(\"りんご\");\n    let b = a;\n    println!(\"{a}\");\n    println!(\"{b}\");\n}\n```\n\n```text\nerror[E0382]: borrow of moved value: `a`\n --> r2.rs:4:16\n  |\n2 |     let a = String::from(\"りんご\");\n  |         - move occurs because `a` has type `String`, which does not implement the `Copy` trait\n3 |     let b = a;\n  |             - value moved here\n4 |     println!(\"{a}\");\n  |                ^ value borrowed here after move\n  |\nhelp: consider cloning the value if the performance cost is acceptable\n  |\n3 |     let b = a.clone();\n  |              ++++++++\n```\n\n`let b = a;` で、「りんご」の **持ち主が a から b に移りました**（**ムーブ**）。もう a は空っぽなので、使うとエラーです。\n\nPython では `b = a` で **2 つの名前が同じものを指す** だけでした。Rust では **持ち主が引っ越す** と考えます。\n\n```text\nPython：  a ──┐\n          b ──┴→ \"りんご\"     （2 人で共有）\n\nRust：    a     （空っぽ）\n          b ───→ \"りんご\"     （持ち主は b だけ）\n```\n\n### コピーされる型もある\n\n```rust\nlet n = 5;\nlet m = n;\nprintln!(\"数はコピー: {n} {m}\");   // 数はコピー: 5 5\n```\n\n整数・小数・bool などの **小さくて単純な型** は、代入すると **コピー** されるので、両方使えます。エラーの文の `does not implement the Copy trait`（Copy できない型です）は、この違いのことです。String や Vec は大きくなりうるので、勝手にはコピーされません。\n\n## 関数に渡しても移る\n\n```rust\nfn take(s: String) { println!(\"{s}\"); }\n\nfn main() {\n    let a = String::from(\"りんご\");\n    take(a);\n    println!(\"{a}\");\n}\n```\n\n```text\nerror[E0382]: borrow of moved value: `a`\n...\n4 |     take(a);\n  |          - value moved here\n5 |     println!(\"{a}\");\n  |                ^ value borrowed here after move\n  |\nnote: consider changing this parameter type in function `take` to borrow instead if owning the value isn't necessary\n```\n\n関数に渡すと、**持ち主が関数の引数に移ります**。関数が終わると、そこで片付けられます。`note:` は「持ち主になる必要が無いなら、**借りる** 形にしたら？」と提案しています。\n\n## ルール 2：借りる（&）\n\n```rust\nfn print_len(s: &String) {\n    println!(\"{s} は {} バイト\", s.len());\n}\n\nlet a = String::from(\"りんご\");\nprint_len(&a);\nprintln!(\"まだ使える: {a}\");\n```\n\n```text\nりんご は 9 バイト\nまだ使える: りんご\n```\n\n`&a` は「a を **貸す**」、引数の `&String` は「String を **借りる**」という意味です（**借用**）。借りただけなので、関数が終わっても持ち主は a のまま。その後も a を使えます。\n\n（「りんご」が 9 バイトなのは、UTF-8 で日本語 1 文字が 3 バイトだからです。コンピュータの基礎コースの「文字コード」）\n\n### &str と String\n\n| 型 | 意味 | よく使う場面 |\n|---|---|---|\n| `String` | 文字列を **持っている**（変えられる、伸ばせる） | 作った文字列を返す・構造体にしまう |\n| `&str` | 文字列を **借りている**（見るだけ） | **関数の引数**（`fn greet(name: &str)`） |\n\n`\"りんご\"` のように直接書いた文字列は `&str`、`String::from(\"りんご\")` や `\"りんご\".to_string()` で `String` になります。**関数の引数は `&str` で受けるのが定番** です（`String` も `&str` も渡せるので）。\n\n## ルール 3：書き換えのために借りる（&mut）\n\n```rust\nfn add_tax_label(s: &mut String) {\n    s.push_str(\"（税込）\");\n}\n\nlet mut label = String::from(\"120 円\");\nadd_tax_label(&mut label);\nprintln!(\"{label}\");   // 120 円（税込）\n```\n\n`&mut` は「**書き換えてよい**」という約束で貸すことです。貸す側の変数にも `mut` が必要です。\n\n### 書き換え中は、他の人は見られない\n\n```rust\nlet mut v = vec![1, 2, 3];\nlet first = &v[0];        // v を見るために借りている\nv.push(4);                // v を書き換えるために借りようとした\nprintln!(\"{first}\");\n```\n\n```text\nerror[E0502]: cannot borrow `v` as mutable because it is also borrowed as immutable\n3 |     let first = &v[0];\n  |                  - immutable borrow occurs here\n4 |     v.push(4);\n  |     ^^^^^^^^^ mutable borrow occurs here\n5 |     println!(\"{first}\");\n  |                ----- immutable borrow later used here\n```\n\n借用のルールは、**「見るだけの貸し出しは何人にでも」か「書き換えの貸し出しは 1 人だけ」のどちらか** です。同時にはできません。\n\nこれはただの意地悪ではありません。`v.push(4)` で Vec の中身が足りなくなると、Rust は **データを別の広い場所に引っ越す** ことがあります。そうすると、`first` が指していた古い場所はもう無効です。C や C++ では、この「消えた場所を指したまま使う」バグが実際によく起き、セキュリティの穴にもなってきました。**Rust はそれをコンパイルの時点で止めた** わけです。\n\n## clone：複製する\n\n```rust\nlet a = String::from(\"りんご\");\nlet b = a.clone();\nprintln!(\"{a} / {b}\");   // りんご / りんご\n```\n\n`.clone()` は **中身ごと複製** します。持ち主が 2 人になるので、両方使えます。ただし、大きなデータだと時間とメモリを使います。\n\n## まとめ\n\n| 書き方 | 意味 | 元の変数は |\n|---|---|---|\n| `let b = a;` / `take(a)` | **ムーブ**：持ち主が移る | 使えなくなる（Copy な型を除く） |\n| `&a` | **借用**：見るために貸す | 使える。何人にでも貸せる |\n| `&mut a` | **可変の借用**：書き換えのために貸す | 貸している間は、他の人は使えない |\n| `a.clone()` | **複製** | 使える（別物になる） |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `.clone()` があちこちに | コンパイルエラーを消すために付けていることが多い。動くが、大きなデータなら無駄が多いかも |\n| `fn f(s: &str)` / `fn f(items: &[T])` | 借りて見るだけの引数（定番の良い形） |\n| `fn f(s: String)` | 持ち主ごと受け取る。呼んだ側はその後 s を使えない |\n| `&mut self` | 自分の中身を変えるメソッド（レッスン 3） |\n| `'a`（`fn f<'a>(x: &'a str) -> &'a str`） | **ライフタイム**：借りたものがいつまで有効か。返す値が「引数と同じだけ有効」という意味 |\n| `Rc<T>` / `Arc<T>` | 持ち主を複数人にする特別な入れ物（Arc はスレッドの間で共有するとき） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`let a = String::from(\"x\"); let b = a; println!(\"{a}\");` がエラーになる理由は？",
+        "choices": [
+         "String は表示できないから",
+         "`let b = a;` で持ち主が b に移り（ムーブ）、a はもう使えないから",
+         "a と b が同じ名前だから"
+        ],
+        "answer": 1,
+        "explain": "String は代入すると持ち主が移ります。両方使いたいなら `let b = a.clone();`、見るだけなら `let b = &a;` にします。"
+       },
+       {
+        "question": "関数の引数を `fn show(s: String)` ではなく `fn show(s: &str)` にする利点は？",
+        "choices": [
+         "借りるだけなので、呼んだ側がその後も文字列を使い続けられる",
+         "文字列を書き換えられる",
+         "処理が必ず 2 倍速くなる"
+        ],
+        "answer": 0,
+        "explain": "String で受けると持ち主が関数に移ります。見るだけなら借りる `&str` にするのが定番です。"
+       },
+       {
+        "question": "`let first = &v[0]; v.push(4); println!(\"{first}\");` がエラーになるのはなぜ？",
+        "choices": [
+         "v が空だから",
+         "push は使えないから",
+         "v を見るために借りている間に、書き換えのために借りようとしたから"
+        ],
+        "answer": 2,
+        "explain": "見るための借用と書き換えのための借用は同時にできません。push で中身が引っ越すと first が無効になりうるので、コンパイラが止めています。"
+       }
+      ]
+     ],
+     "id": "02-ownership"
+    },
+    {
+     "title": "構造体・enum・match ― 型で状態を表す",
+     "level": 2,
+     "minutes": 20,
+     "concepts": [
+      "classes",
+      "types",
+      "conditionals"
+     ],
+     "summary": "struct と impl（&self・&mut self）、データを持てる enum、すべての場合を書かないとコンパイルできない match、null の代わりの Option と unwrap の危険。",
+     "body": "## このレッスンのゴール\n\n- `struct` と `impl` のメソッド（`&self`・`&mut self`）を読める\n- データを持てる `enum` と、`match` での分け方を読める\n- `Option<T>`・`Some`・`None`・`unwrap` の意味と危険が分かる\n\n## 構造体と impl\n\n```rust\n#[derive(Debug)]\nstruct Product {\n    name: String,\n    price: u32,\n}\n\nimpl Product {\n    fn new(name: &str, price: u32) -> Self {\n        Product { name: name.to_string(), price }\n    }\n    fn with_tax(&self) -> u32 {\n        self.price * 110 / 100\n    }\n    fn discount(&mut self, yen: u32) {\n        self.price -= yen;\n    }\n}\n\nlet mut apple = Product::new(\"りんご\", 120);\nprintln!(\"{} {}\", apple.name, apple.with_tax());   // りんご 132\napple.discount(20);\nprintln!(\"{:?}\", apple);                            // Product { name: \"りんご\", price: 100 }\n```\n\n| 部分 | 意味 | Python で言うと |\n|---|---|---|\n| `struct Product { ... }` | データの形 | `@dataclass class Product:` |\n| `impl Product { ... }` | Product のメソッドをまとめて書く場所 | クラスの中の `def` |\n| `fn new(...) -> Self` | 作るための関数（`Self` は Product のこと）。`new` という名前は習慣 | `__init__` |\n| `Product::new(...)` | `::` で呼ぶ（self を取らない関数） | `Product(...)` |\n| `&self` | 自分を **見るだけ** のメソッド | `def with_tax(self):` |\n| `&mut self` | 自分を **書き換える** メソッド | `def discount(self, yen):` |\n| `#[derive(Debug)]` | `{:?}` で表示できるようにする（自動で作る） | `__repr__` を自動で |\n\n`&self` と `&mut self` は、レッスン 2 の借用そのものです。Go の「値のレシーバーか、ポインタのレシーバーか」（Go コースのレッスン 3）と似た区別を、**書き換えるかどうか** で書き分けます。`discount` を呼ぶには、`apple` に `mut` が必要です。\n\n`Product { name: ..., price }` の `price` だけの書き方は、`price: price` の省略です。\n\n## enum：どれか 1 つの状態\n\n```rust\n#[derive(Debug)]\nenum Status {\n    Paid,\n    Shipped { tracking: String },\n    Cancelled(String),\n}\n```\n\n注文の状態は「支払い済み」「発送済み」「キャンセル」の **どれか 1 つ** です。Rust の enum は、**それぞれの状態がデータを持てる** のが強みです。\n\n| 状態 | 持っているデータ |\n|---|---|\n| `Paid` | 無し |\n| `Shipped { tracking }` | 追跡番号 |\n| `Cancelled(String)` | 理由 |\n\nPython で表すと、状態ごとにクラスを作る感じです。データベースなら `status` の列と、状態によって NULL だったりそうでなかったりする列が並ぶところを、**「発送済みなら必ず追跡番号がある」** と型で決められます。\n\n## match：すべての場合を分ける\n\n```rust\nfn describe(s: &Status) -> String {\n    match s {\n        Status::Paid => \"支払い済み\".to_string(),\n        Status::Shipped { tracking } => format!(\"発送済み（追跡番号 {tracking}）\"),\n        Status::Cancelled(reason) => format!(\"キャンセル：{reason}\"),\n    }\n}\n```\n\n```text\n支払い済み\n発送済み（追跡番号 AB123）\nキャンセル：在庫切れ\n```\n\n`match` は、値の形で分けて、**中のデータを取り出しながら** 処理します（`tracking`・`reason`）。Python 3.10 の `match` 文とほぼ同じ考え方です。\n\n### 書き忘れるとコンパイルできない\n\n```rust\nenum Status { Paid, Shipped, Cancelled }\nfn label(s: Status) -> &'static str {\n    match s {\n        Status::Paid => \"支払い済み\",\n        Status::Shipped => \"発送済み\",\n    }\n}\n```\n\n```text\nerror[E0004]: non-exhaustive patterns: `Status::Cancelled` not covered\n --> r3b.rs:3:11\n  |\n3 |     match s {\n  |           ^ pattern `Status::Cancelled` not covered\n...\nhelp: ensure that all possible cases are being handled by adding a match arm with a wildcard pattern or an explicit pattern as shown\n  |\n5 ~         Status::Shipped => \"発送済み\",\n6 ~         Status::Cancelled => todo!(),\n```\n\n**`Cancelled` の場合を書き忘れたので、コンパイルできません**。後から新しい状態（`Returned` など）を足したときも、**処理を書き忘れた場所を全部コンパイラが教えてくれます**。Python の `if / elif` では、書き忘れても気づけません。\n\n`_ =>` と書けば「それ以外全部」になります（ただし、新しい状態の追加に気づけなくなる）。\n\n```rust\nlet size = match n { 0 => \"ゼロ\", 1..=9 => \"1 桁\", _ => \"それ以上\" };   // n = 7 → 1 桁\n```\n\n`match` は **値を返せる** ので、このように変数に入れられます。`1..=9` は 1 以上 9 以下です。\n\n## Option：null の代わり\n\nRust には **`null`（None）が普通の値として存在しません**。「無いかもしれない」値は、`Option` という enum で表します。\n\n```rust\nenum Option<T> {    // 標準ライブラリにある（書かなくてよい）\n    Some(T),        // 値がある\n    None,           // 無い\n}\n\nfn find(name: &str) -> Option<u32> {\n    match name {\n        \"りんご\" => Some(120),\n        _ => None,\n    }\n}\n```\n\n`Option<u32>` は「u32 があるかもしれないし、無いかもしれない」という型です。\n\n```rust\nlet p: u32 = find(\"りんご\");\n```\n\n```text\nerror[E0308]: mismatched types\n3 |     let p: u32 = find(\"りんご\");\n  |            ---   ^^^^^^^^^^^^^^ expected `u32`, found `Option<u32>`\n```\n\n**`Option<u32>` は `u32` ではない** ので、そのままでは数として使えません。「無いとき」の処理を書かないと、先に進めない仕組みです。Python で `None` のまま計算して `TypeError` になる、というバグがコンパイルの時点で防がれます。\n\n### 取り出し方\n\n```rust\nmatch find(\"ぶどう\") {\n    Some(p) => println!(\"{p} 円\"),\n    None => println!(\"見つかりません\"),       // 見つかりません\n}\n\nif let Some(p) = find(\"りんご\") {\n    println!(\"if let: {p} 円\");               // if let: 120 円\n}\n\nprintln!(\"{}\", find(\"ぶどう\").unwrap_or(0));  // 0\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `match` | Some と None を両方書く |\n| `if let Some(p) = ...` | Some のときだけ処理する |\n| `.unwrap_or(0)` | None なら 0（Python の `x if x is not None else 0`） |\n| `.unwrap()` | 中身を取り出す。**None なら panic（停止）** |\n| `.expect(\"理由\")` | unwrap と同じだが、止まるときにメッセージを出す |\n\n### ⚠️ unwrap\n\n```rust\nlet p = find(\"ぶどう\").unwrap();\n```\n\n```text\nthread 'main' panicked at r3d.rs:3:28:\ncalled `Option::unwrap()` on a `None` value\n```\n\n`unwrap()` は「**絶対にある** と分かっているから、無い場合は考えない」という書き方で、無ければプログラムが止まります。試し書きや、本当にありえないことが分かっている場所以外では、`match`・`if let`・`unwrap_or`・`?`（次のレッスン）を使います。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `.unwrap()` がたくさん | ⚠️ 失敗すると止まる。特に入力・ファイル・ネットワークの値に使っていないか |\n| `.expect(\"config must exist\")` | 止まる理由が書いてある unwrap。起動時の設定などには OK |\n| `match ... { _ => {} }` | 「それ以外は何もしない」。新しい状態の追加に気づけなくなる |\n| `#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]` | よく使う機能を自動で付ける（表示・複製・比較・JSON の読み書き） |\n| `Option<&User>` | 「ユーザーへの借用があるかもしれない」 |\n| `if let Some(x) = map.get(&key)` | マップにあれば（Go の `v, ok := m[key]`） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`impl Product { fn discount(&mut self, yen: u32) { ... } }` の `&mut self` の意味は？",
+        "choices": [
+         "このメソッドは自分（Product）の中身を書き換える",
+         "このメソッドは Product を新しく作る",
+         "このメソッドは Product を見るだけ"
+        ],
+        "answer": 0,
+        "explain": "`&self` は見るだけ、`&mut self` は書き換える、です。呼ぶ側の変数にも mut が必要です。"
+       },
+       {
+        "question": "enum の `match` で、場合を 1 つ書き忘れたらどうなる？",
+        "choices": [
+         "その場合は何もしない",
+         "実行したときにエラー",
+         "コンパイルエラーになり、書き忘れた場合を教えてくれる"
+        ],
+        "answer": 2,
+        "explain": "Rust の match はすべての場合を書く必要があります。状態を足したときも、処理を忘れた場所が全部見つかります。"
+       },
+       {
+        "question": "`find(\"ぶどう\").unwrap()` で、find が None を返したら？",
+        "choices": [
+         "0 が返る",
+         "panic してプログラムが止まる",
+         "None がそのまま返る"
+        ],
+        "answer": 1,
+        "explain": "unwrap は None に対して呼ぶと止まります。`unwrap_or(0)` や `match` で None の場合を処理します。"
+       }
+      ]
+     ],
+     "id": "03-struct-enum-match"
+    },
+    {
+     "title": "Result と ? 演算子 ― 失敗を型で返す",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "errors",
+      "types",
+      "functions"
+     ],
+     "summary": "成功（Ok）か失敗（Err）かを表す Result、失敗したらその場で返す ? 演算子、map_err と自分のエラー型、main で ? を使う形。Go の if err != nil や Python の例外との比較。",
+     "body": "## このレッスンのゴール\n\n- `Result<T, E>`・`Ok`・`Err` の意味を説明できる\n- `?` 演算子が何をしているかを、Go の `if err != nil` と比べて説明できる\n- `map_err`・自分で作ったエラーの enum・`Box<dyn Error>` を読める\n\n## Result：成功か失敗か\n\n```rust\nuse std::num::ParseIntError;\n\nfn parse_price(s: &str) -> Result<u32, ParseIntError> {\n    let n = s.trim().parse::<u32>()?;\n    Ok(n)\n}\n\nprintln!(\"{:?}\", parse_price(\"120\"));    // Ok(120)\nprintln!(\"{:?}\", parse_price(\"12a\"));    // Err(ParseIntError { kind: InvalidDigit })\n```\n\n`Result` は、レッスン 3 の `Option` の仲間の enum です。\n\n```rust\nenum Result<T, E> {\n    Ok(T),     // 成功。値は T 型\n    Err(E),    // 失敗。エラーは E 型\n}\n```\n\n`Result<u32, ParseIntError>` は「**成功なら u32、失敗なら ParseIntError**」という型です。\n\n| 言語 | 失敗の伝え方 |\n|---|---|\n| Python | 例外を `raise`。`try / except` で受け止める |\n| Go | 戻り値の最後に `error`。`if err != nil` で確かめる（Go コースのレッスン 4） |\n| Rust | 戻り値を `Result` にする。`match` や `?` で扱う |\n\nGo と同じく **失敗も戻り値** ですが、Rust では「成功の値」と「エラー」が **1 つの Result にまとまっている** ので、エラーを確かめずに成功の値だけ使う、ということが **型の上でできません**（Option と同じ）。\n\n## 取り出し方\n\n```rust\nmatch parse_price(\"abc\") {\n    Ok(n) => println!(\"{n} 円\"),\n    Err(e) => println!(\"数ではありません: {e}\"),\n}\n// 数ではありません: invalid digit found in string\n\nlet n = parse_price(\"80\").unwrap_or(0);   // 80\nlet m = parse_price(\"??\").unwrap_or(0);   // 0\n```\n\n`unwrap()`・`expect()`・`unwrap_or()` は、Option と同じように使えます（`unwrap()` は Err なら panic）。\n\n## ? 演算子：失敗したら、すぐ返す\n\n```rust\nlet n = s.trim().parse::<u32>()?;\n```\n\nこの行の最後の **`?`** が、Rust のエラー処理の主役です。\n\n| parse の結果 | `?` がすること |\n|---|---|\n| `Ok(120)` | 中の `120` を取り出して、n に入れる |\n| `Err(e)` | **その場で関数を終わり、`Err(e)` を呼んだ人に返す** |\n\nGo で書くと、こうです。\n\n```go\nn, err := strconv.Atoi(strings.TrimSpace(s))\nif err != nil {\n\treturn 0, err\n}\n```\n\n**Go の `if err != nil { return ..., err }` の 3 行が、Rust では `?` の 1 文字** になります。\n\n### ? を続けて使う\n\n```rust\nfn total(inputs: &[&str]) -> Result<u32, ParseIntError> {\n    let mut sum = 0;\n    for s in inputs {\n        sum += parse_price(s)?;\n    }\n    Ok(sum)\n}\n\nprintln!(\"{:?}\", total(&[\"120\", \"90\", \"200\"]));   // Ok(410)\nprintln!(\"{:?}\", total(&[\"120\", \"x\", \"200\"]));    // Err(ParseIntError { kind: InvalidDigit })\n```\n\n2 つ目は、`\"x\"` のところで `?` が Err を返したので、`\"200\"` は足されずに終わっています。Python の例外が「途中で飛び出して、呼んだ人に伝わる」のと同じ動きを、**戻り値で、しかも `?` という目印付きで** 書いています。どこで失敗しうるかが `?` を探せば分かります。\n\n### ? は Result を返す関数の中だけ\n\n```rust\nfn main() {\n    let n: u32 = \"12a\".parse()?;\n    println!(\"{n}\");\n}\n```\n\n```text\nerror[E0277]: the `?` operator can only be used in a function that returns `Result` or `Option` (or another type that implements `FromResidual`)\n...\nhelp: consider adding return type\n  |\n1 ~ fn main() -> Result<(), Box<dyn std::error::Error>> {\n2 |     let n: u32 = \"12a\".parse()?;\n3 |     println!(\"{n}\");\n4 +     Ok(())\n```\n\n`?` は「Err を **返す**」ので、Result を返す関数の中でしか使えません。`help:` は、**main も Result を返す形にすればよい** と教えてくれています。\n\n```rust\nfn main() -> Result<(), Box<dyn std::error::Error>> {\n    let n: u32 = \"12a\".parse()?;\n    println!(\"{n}\");\n    Ok(())\n}\n```\n\n`()` は「値無し」（Python の None を返す関数）、`Box<dyn std::error::Error>` は「**どんな種類のエラーでもよい**」という型です。AI の Rust のコードの main は、よくこの形になっています。\n\n## 自分のエラー型を作る\n\nファイルの読み込みの失敗と、「中身が空」という自分のエラーを、1 つの型にまとめます。\n\n```rust\n#[derive(Debug)]\nenum ConfigError {\n    Io(std::io::Error),\n    Empty,\n}\n\nfn load(path: &str) -> Result<String, ConfigError> {\n    let text = fs::read_to_string(path).map_err(ConfigError::Io)?;\n    if text.trim().is_empty() {\n        return Err(ConfigError::Empty);\n    }\n    Ok(text)\n}\n\nprintln!(\"{:?}\", load(\"config.toml\"));\n// Err(Io(Os { code: 2, kind: NotFound, message: \"No such file or directory\" }))\nprintln!(\"{:?}\", load(\"empty.toml\"));    // 空白だけのファイル\n// Err(Empty)\n```\n\n| 部分 | 意味 |\n|---|---|\n| `enum ConfigError { Io(...), Empty }` | このモジュールで起きる失敗の種類の一覧（レッスン 3 の enum） |\n| `.map_err(ConfigError::Io)` | 読み込みのエラー（`std::io::Error`）を、`ConfigError::Io` に包み直す |\n| `?` | 包み直した Err なら、そこで返す |\n| `return Err(ConfigError::Empty)` | 自分で失敗を返す |\n\nGo の `fmt.Errorf(\"...: %w\", err)`、Python の `raise ConfigError(...) from e` と同じことです。呼んだ側は `match` で `ConfigError::Io(e)` と `ConfigError::Empty` を分けて処理できます。\n\n実際のプロジェクトでは、このエラー型を簡単に作るための **`thiserror`**、何でも包める **`anyhow`** というクレートがよく使われます。AI のコードで `anyhow::Result<T>` や `#[derive(thiserror::Error)]` を見たら、この話です。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `let x = something()?;` | 失敗したら呼んだ人に返す。成功なら中身を x に |\n| `.unwrap()` / `.expect(...)` | ⚠️ 失敗したら止まる。ライブラリの中や、Web サーバーのリクエストの処理では避ける |\n| `fn main() -> anyhow::Result<()>` | main でも `?` を使える形 |\n| `.map_err(|e| MyError::Db(e))?` | エラーを自分の種類に包んで返す |\n| `.ok_or(MyError::NotFound)?` | Option を Result に変える（None なら NotFound で返す） |\n| `let _ = do_something();` | ⚠️ Result を捨てている（Go の `_` と同じ危険）。Rust はふつう、使わない Result に警告を出す |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`let n = s.parse::<u32>()?;` で、parse が `Err(e)` を返したら？",
+        "choices": [
+         "n に 0 が入って先に進む",
+         "その場で関数を終わり、`Err(e)` を呼んだ人に返す",
+         "panic して止まる"
+        ],
+        "answer": 1,
+        "explain": "`?` は Ok なら中身を取り出し、Err ならすぐに返します。Go の `if err != nil { return ..., err }` に当たります。"
+       },
+       {
+        "question": "`fn main() { let x = f()?; }` がコンパイルエラーになる理由は？",
+        "choices": [
+         "f が存在しないから",
+         "`?` は Err を返す書き方なので、Result（か Option）を返す関数の中でしか使えないから",
+         "main では関数を呼べないから"
+        ],
+        "answer": 1,
+        "explain": "main を `fn main() -> Result<(), Box<dyn std::error::Error>>` にすれば `?` が使えます。エラーの help: もそう提案していました。"
+       },
+       {
+        "question": "Rust の Result と Python の例外の、大きな違いは？",
+        "choices": [
+         "Rust は失敗しうることが戻り値の型に書かれ、確かめずに成功の値を使えない",
+         "Rust はエラーを無視して先に進む",
+         "Python の例外のほうが、必ず速い"
+        ],
+        "answer": 0,
+        "explain": "Result<u32, E> は u32 として使えないので、Err の場合を何らかの形で扱う必要があります。どこで失敗しうるかが型と `?` で分かります。"
+       }
+      ]
+     ],
+     "id": "04-result"
+    },
+    {
+     "title": "トレイトとジェネリクス ― 共通の振る舞い",
+     "level": 3,
+     "minutes": 18,
+     "concepts": [
+      "generics",
+      "classes",
+      "types"
+     ],
+     "summary": "「このメソッドを持つ」という約束のトレイト、impl Trait for 型、デフォルトのメソッド、Display で表示を決める、&impl Trait と <T: Trait> で「その約束を守る型なら何でも」受け取る、dyn と Box、derive。",
+     "body": "## このレッスンのゴール\n\n- `trait` と `impl トレイト for 型` を読める\n- `&impl Shape`・`<T: PartialOrd>`・`Box<dyn Shape>` が何を意味するか分かる\n- `#[derive(...)]` で何が自動で用意されるか分かる\n\n## トレイト：「このメソッドを持つ」という約束\n\n```rust\ntrait Shape {\n    fn area(&self) -> f64;\n    fn describe(&self) -> String {\n        format!(\"面積 {:.2}\", self.area())\n    }\n}\n\nstruct Rect { w: f64, h: f64 }\nstruct Circle { r: f64 }\n\nimpl Shape for Rect {\n    fn area(&self) -> f64 { self.w * self.h }\n}\nimpl Shape for Circle {\n    fn area(&self) -> f64 { 3.14 * self.r * self.r }\n    fn describe(&self) -> String { format!(\"円（半径 {}）\", self.r) }\n}\n```\n\n| 部分 | 意味 |\n|---|---|\n| `trait Shape { fn area(&self) -> f64; }` | 「Shape なら `area` を持っている」という約束。中身は書かない（`;`） |\n| `fn describe(&self) -> String { ... }` | 中身付きで書くと **デフォルト** の実装。書き直さなければこれが使われる |\n| `impl Shape for Rect { ... }` | 「Rect は Shape の約束を守ります」と宣言して、中身を書く |\n\nGo のインターフェース（Go コースのレッスン 3）と同じ考え方ですが、Rust では **`impl Shape for Rect` と明示的に書く** のが違いです。Python なら `abc.ABC` の抽象クラスや `typing.Protocol` に近いものです。\n\n## トレイトを持つものなら何でも受け取る\n\n```rust\nfn print_area(s: &impl Shape) {\n    println!(\"{}\", s.describe());\n}\n\nprint_area(&Rect { w: 2.0, h: 3.0 });   // 面積 6.00\nprint_area(&Circle { r: 1.0 });         // 円（半径 1）\n```\n\n`&impl Shape` は「**Shape の約束を守る型なら何でも**（を借りる）」という引数です。Rect は describe を書いていないのでデフォルトの「面積 6.00」、Circle は自分で書いた「円（半径 1）」になりました。\n\n### 違う型をまとめて入れる：Box<dyn Shape>\n\n```rust\nlet shapes: Vec<Box<dyn Shape>> = vec![\n    Box::new(Rect { w: 1.0, h: 1.0 }),\n    Box::new(Circle { r: 2.0 }),\n];\nlet sum: f64 = shapes.iter().map(|s| s.area()).sum();\nprintln!(\"合計 {sum:.2}\");   // 合計 13.56\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `dyn Shape` | 「中身の型は実行するまで分からないが、Shape ではある」 |\n| `Box<...>` | データを別の場所（ヒープ）に置いて、その場所を持つ入れ物。大きさの違う Rect と Circle を、同じ大きさの「箱」として Vec に並べられる |\n\nPython の `shapes = [Rect(...), Circle(...)]` は何も考えずに書けますが、Rust は **大きさが決まったもの** しか Vec に並べられないので、`Box<dyn ...>` で包みます。AI のコードの `Box<dyn std::error::Error>`（レッスン 4）も、「どんなエラーでもよい箱」という同じ書き方です。\n\n## 標準のトレイト\n\n```rust\nuse std::fmt;\n\nstruct Product { name: String, price: u32 }\n\nimpl fmt::Display for Product {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        write!(f, \"{}（{} 円）\", self.name, self.price)\n    }\n}\n\nprintln!(\"{}\", Product { name: \"りんご\".into(), price: 120 });   // りんご（120 円）\n```\n\n`Display` トレイトを実装すると、`{}` での表示を決められます（Python の `__str__`、Go の `String()`）。\n\n| トレイト | できるようになること | Python で言うと |\n|---|---|---|\n| `Display` | `{}` で表示 | `__str__` |\n| `Debug` | `{:?}` で表示 | `__repr__` |\n| `Clone` | `.clone()` で複製 | `copy.deepcopy` |\n| `PartialEq` | `==` で比べる | `__eq__` |\n| `PartialOrd` | `<` `>` で比べる | `__lt__` など |\n| `Iterator` | `for` で回せる・`.map()` などが使える（レッスン 6） | `__iter__` / `__next__` |\n| `From` / `Into` | 型を変換する（`\"x\".into()` で String に） | — |\n\n### derive：よくあるものは自動で\n\n```rust\n#[derive(Debug, Clone, PartialEq)]\nstruct Point { x: i32, y: i32 }\n\nlet p = Point { x: 1, y: 2 };\nlet q = p.clone();\nprintln!(\"{:?} {}\", q, p == q);   // Point { x: 1, y: 2 } true\n```\n\n`#[derive(...)]` に書いたトレイトは、**中身を自動で書いてくれます**。Python の `@dataclass` が `__init__`・`__repr__`・`__eq__` を自動で作るのと同じ感覚です。JSON を扱う `serde` クレートの `Serialize`・`Deserialize` も、ここに書いて使います。\n\n## ジェネリクス：型を後から決める\n\n```rust\nfn largest<T: PartialOrd + Copy>(items: &[T]) -> T {\n    let mut max = items[0];\n    for &x in items {\n        if x > max { max = x; }\n    }\n    max\n}\n\nprintln!(\"{} {}\", largest(&[3, 9, 2]), largest(&[1.5, 0.2]));   // 9 1.5\n```\n\n| 部分 | 意味 |\n|---|---|\n| `<T>` | 型を **T という名前で後から決める**（ジェネリクス）。整数の配列なら T は整数、小数なら小数 |\n| `T: PartialOrd + Copy` | ただし T は「`>` で比べられて（PartialOrd）、コピーできる（Copy）」型に限る（**トレイト境界**） |\n| `&[T]` | T のスライス（配列の一部を借りたもの） |\n\nTypeScript のジェネリクス（TypeScript コースのレッスン 6）、Python の `def largest[T](items: list[T]) -> T:` と同じ考え方です。Rust では **「T に何ができるか」をトレイトで書かないと、`>` すら使えない** のが特徴です。`T: PartialOrd` を消して試すと、`` error[E0369]: binary operation `>` cannot be applied to type `T` ``（T に `>` は使えない）というエラーになりました。\n\n長くなるときは、`where` で後ろに書きます。\n\n```rust\nfn summarize<T>(items: &[T]) -> String\nwhere\n    T: Display + Clone,\n{ ... }\n```\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方 |\n|---|---|\n| `impl Display for MyError` | エラーの表示の仕方を決めている |\n| `fn handle(req: impl Into<String>)` | String に変換できるものなら何でも（`&str` も `String` も渡せる） |\n| `Box<dyn Fn(i32) -> i32>` | 「i32 を受け取って i32 を返す関数」を入れた箱（コールバック） |\n| `#[derive(Serialize, Deserialize)]` | serde で JSON などに変換できるようにする |\n| `impl<T: Display> Summary for Vec<T>` | 「Display できる T の Vec なら、Summary を持つ」 |\n| `async fn` / `#[tokio::main]` | 非同期の関数。tokio という実行のしくみの上で動く（Python の asyncio に当たる） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`impl Shape for Circle { ... }` の意味は？",
+        "choices": [
+         "Circle が Shape トレイトの約束（必要なメソッド）を守ることを宣言し、その中身を書いている",
+         "Circle を Shape から継承している",
+         "Shape という新しい型を作っている"
+        ],
+        "answer": 0,
+        "explain": "Rust ではトレイトの実装を `impl トレイト for 型` と明示的に書きます。Go と違い、自動では当てはまりません。"
+       },
+       {
+        "question": "`fn print_area(s: &impl Shape)` が受け取れるのは？",
+        "choices": [
+         "Shape という名前の型だけ",
+         "Shape トレイトを実装した型なら何でも（を借りたもの）",
+         "どんな型でも"
+        ],
+        "answer": 1,
+        "explain": "impl Shape は「Shape の約束を守る型なら何でも」です。Rect も Circle も渡せます。"
+       },
+       {
+        "question": "`fn largest<T: PartialOrd + Copy>(items: &[T]) -> T` の `T: PartialOrd` が必要な理由は？",
+        "choices": [
+         "T を表示するため",
+         "関数の中で `x > max` と比べるので、T が比べられる型だと保証する必要があるから",
+         "T を JSON にするため"
+        ],
+        "answer": 1,
+        "explain": "Rust のジェネリクスは、T に何ができるかをトレイトで書かないと、その操作を使えません。"
+       }
+      ]
+     ],
+     "id": "05-traits-generics"
+    },
+    {
+     "title": "Vec・HashMap とイテレータ ― AI の Rust を読む",
+     "level": 3,
+     "minutes": 18,
+     "concepts": [
+      "collections",
+      "higher_order",
+      "reading"
+     ],
+     "summary": "Vec と HashMap、entry().or_insert() で数える定番の形、iter().filter().map().collect() のイテレータの鎖、クロージャ |x|。Python の内包表記と並べて読む。",
+     "body": "## このレッスンのゴール\n\n- `Vec`・`HashMap` の基本の操作を読める\n- `.iter().filter(...).map(...).collect()` の鎖を、左から順に説明できる\n- クロージャ `|x| ...` と、`&&p` のような借用の記号に慣れる\n\n## Vec と HashMap\n\n| Rust | Python |\n|---|---|\n| `let mut v = Vec::new();` / `vec![1, 2, 3]` | `v = []` / `[1, 2, 3]` |\n| `v.push(4)` | `v.append(4)` |\n| `v.len()` / `v[0]` | `len(v)` / `v[0]` |\n| `v.get(10)` → `Option` | （範囲外は `IndexError`） |\n| `HashMap::new()` | `{}` |\n| `m.insert(k, v)` | `m[k] = v` |\n| `m.get(&k)` → `Option<&V>` | `m.get(k)` |\n\n```rust\nuse std::collections::HashMap;\n\nlet mut stock: HashMap<&str, u32> = HashMap::new();\nstock.insert(\"りんご\", 10);\n*stock.entry(\"りんご\").or_insert(0) += 5;\n*stock.entry(\"バナナ\").or_insert(0) += 3;\nprintln!(\"{:?} {:?}\", stock.get(\"りんご\"), stock.get(\"ぶどう\"));\n// Some(15) None\n```\n\n`m.get` は **Option** を返します（レッスン 3）。無いキーは `None` で、Go のように 0 になったり、Python のように例外になったりしません。\n\n### entry().or_insert()：数える定番\n\n```rust\n*stock.entry(\"バナナ\").or_insert(0) += 3;\n```\n\n| 部分 | 意味 |\n|---|---|\n| `.entry(\"バナナ\")` | 「バナナ」の場所を用意して |\n| `.or_insert(0)` | まだ無ければ 0 を入れる。その値への **書き換えのための借用**（`&mut u32`）を返す |\n| `*... += 3` | 借りた先の値（`*` で中身）に 3 を足す |\n\nPython の `stock[\"バナナ\"] = stock.get(\"バナナ\", 0) + 3`、`collections.defaultdict(int)` に当たります。単語を数えるときの形です。\n\n```rust\nlet mut counts: HashMap<&str, usize> = HashMap::new();\nfor w in \"a b a c b a\".split_whitespace() {\n    *counts.entry(w).or_insert(0) += 1;\n}\nlet mut v: Vec<_> = counts.into_iter().collect();\nv.sort_by(|a, b| b.1.cmp(&a.1));\nprintln!(\"{v:?}\");   // [(\"a\", 3), (\"b\", 2), (\"c\", 1)]\n```\n\nシェルコースの `sort | uniq -c | sort -rn`、SQL の `GROUP BY ... ORDER BY COUNT(*) DESC` と同じことを Rust で書いた形です。`b.1.cmp(&a.1)` は「タプルの 2 つ目（数）を、b と a の順で比べる」＝ 大きい順です。\n\n## イテレータの鎖\n\n```rust\nlet prices = vec![120, 90, 200, 1200, 250, 180];\n\nlet cheap: Vec<u32> = prices.iter().filter(|&&p| p < 200).cloned().collect();\nlet with_tax: Vec<u32> = prices.iter().map(|p| p * 110 / 100).collect();\nlet total: u32 = prices.iter().sum();\n\nprintln!(\"{cheap:?}\");      // [120, 90, 180]\nprintln!(\"{with_tax:?}\");   // [132, 99, 220, 1320, 275, 198]\nprintln!(\"{total}\");        // 2040\n```\n\nPython の内包表記と並べると、こうです。\n\n```python\ncheap = [p for p in prices if p < 200]\nwith_tax = [p * 110 // 100 for p in prices]\ntotal = sum(prices)\n```\n\n| 部分 | 意味 |\n|---|---|\n| `.iter()` | 1 つずつ取り出す **イテレータ** を作る（中身は借りる＝ `&u32`） |\n| `.filter(条件)` | 条件に合うものだけ通す |\n| `.map(変換)` | 1 つずつ変換する |\n| `.cloned()` | 借りたもの（`&u32`）を、値（`u32`）に複製する |\n| `.collect()` | 集めて Vec などにする。**何に集めるかは、左の型（`Vec<u32>`）で決まる** |\n| `.sum()` / `.count()` / `.max()` | 合計・数・最大 |\n\nJavaScript の `prices.filter(p => p < 200).map(...)`（JavaScript コースのレッスン 5）と、ほぼ同じ形です。違いは、Rust のイテレータは **`.collect()` や `.sum()` を呼ぶまで何もしない**（怠惰）ことで、途中で Vec を何個も作らないので速く動きます。\n\n### クロージャ |x|\n\n```rust\n|p| p * 110 / 100          // p を受け取って p * 110 / 100 を返す\n|a, b| b.1.cmp(&a.1)       // 2 つ受け取る\n|x| { let y = x + 1; y * 2 }   // 複数行なら { } で\n```\n\n`|引数| 本体` は **クロージャ**（その場で作る小さな関数）です。Python の `lambda p: p * 110 // 100`、JavaScript の `p => p * 110 / 100` に当たります。\n\n### &&p の読み方\n\n```rust\nprices.iter().filter(|&&p| p < 200)\n```\n\n`.iter()` は要素を **借りて**（`&u32`）渡し、`.filter` はさらにそれを **借りて**（`&&u32`）条件に渡します。`|&&p|` は「2 重に借りたものを、`&&` を外して p という値で受け取る」という書き方です。`|p| **p < 200` と書いても同じです。\n\n読むときは、**`&` は「借りたもの」の印なので、意味を考えるときは無視してよい** と思って大丈夫です。AI のコードで `&` の数が合わずにコンパイルできないときは、エラーの `help:` が直し方を教えてくれます。\n\n## よく出てくるイテレータの書き方\n\n```rust\nfor (i, n) in names.iter().enumerate() {\n    println!(\"{i}: {n}\");          // 0: りんご / 1: バナナ / 2: 牛乳\n}\n\nlet first_big = prices.iter().find(|&&p| p > 1000);\nprintln!(\"{first_big:?}\");         // Some(1200)\n\nlet s: String = names.iter().map(|n| n.to_string()).collect::<Vec<_>>().join(\"、\");\nprintln!(\"{s}\");                   // りんご、バナナ、牛乳\n```\n\n| Rust | Python |\n|---|---|\n| `.iter().enumerate()` | `enumerate(...)` |\n| `.find(条件)` → `Option` | `next((x for x in ... if 条件), None)` |\n| `.any(条件)` / `.all(条件)` | `any(...)` / `all(...)` |\n| `.zip(other)` | `zip(...)` |\n| `.collect::<Vec<_>>()` | `list(...)`（`::<>` は「何に集めるか」をその場で書く。ターボフィッシュと呼ばれる） |\n| `.join(\"、\")` | `\"、\".join(...)` |\n| `.into_iter()` | 借りずに、中身ごと取り出す（元の Vec は使えなくなる。レッスン 2 のムーブ） |\n\n## AI の Rust を読むときのまとめ\n\nこのコースで学んだ記号を、1 行の中で読む練習です。\n\n```rust\nlet users: Vec<User> = rows.iter().filter_map(|r| User::try_from(r).ok()).collect();\n```\n\n| 部分 | 読み方 |\n|---|---|\n| `rows.iter()` | rows を 1 つずつ借りて |\n| `User::try_from(r)` | User に変換してみる（`Result` が返る。レッスン 4） |\n| `.ok()` | Result を Option に（Err なら None） |\n| `.filter_map(...)` | Some のものだけ中身を取り出して通す（変換に失敗した行は捨てる） |\n| `.collect()` | `Vec<User>` に集める |\n\n「変換できた行だけを User の一覧にする」と読めれば十分です。⚠️ ただし、**変換に失敗した行を黙って捨てている** ので、それでよいのかは確認ポイントです（失敗を知りたいなら `collect::<Result<Vec<_>, _>>()?` で、1 つでも失敗したらエラーにできる）。\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`prices.iter().map(|p| p * 2).collect::<Vec<_>>()` を Python で書くと？",
+        "choices": [
+         "`[p * 2 for p in prices]`",
+         "`sum(p * 2 for p in prices)`",
+         "`prices * 2`"
+        ],
+        "answer": 0,
+        "explain": "map で 1 つずつ 2 倍にして、collect で Vec に集めています。"
+       },
+       {
+        "question": "`*counts.entry(w).or_insert(0) += 1;` は何をしている？",
+        "choices": [
+         "counts を 0 で初期化している",
+         "w がまだ無ければ 0 を入れ、その値に 1 を足す（数を数える）",
+         "w を counts から削除している"
+        ],
+        "answer": 1,
+        "explain": "entry().or_insert(0) で「無ければ 0」の場所を用意し、その値に 1 を足します。Python の `counts[w] = counts.get(w, 0) + 1` です。"
+       },
+       {
+        "question": "`rows.iter().filter_map(|r| parse(r).ok()).collect()` の確認ポイントは？",
+        "choices": [
+         "filter_map は遅いので使ってはいけない",
+         "変換に失敗した行を、エラーにせず黙って捨てているので、それで問題ないか",
+         "ok() は panic するので危ない"
+        ],
+        "answer": 1,
+        "explain": "`.ok()` は Err を None にし、filter_map が None を捨てます。失敗を知る必要があるなら、Result のまま集めてエラーにします。"
+       }
+      ]
+     ],
+     "id": "06-iterators-collections"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "PHP",
