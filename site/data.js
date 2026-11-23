@@ -5844,17 +5844,253 @@ window.SITE_DATA = {
    "icon": "💎",
    "order": 97,
    "category": "language",
-   "status": "planned",
-   "description": "日本生まれの言語。Ruby on Rails の Web アプリで使われる。",
-   "outline": [
-    "変数とメソッド",
-    "ブロックと each",
-    "シンボルとハッシュ",
-    "クラス",
-    "Rails のコードを読む"
-   ],
+   "description": "日本生まれの言語。Ruby on Rails の Web アプリで使われる。変数とメソッド（すべてがオブジェクト・? と ! のメソッド・0 も真）、ブロックと each、シンボルとハッシュ（:name と \"name\" は別のキー）、クラスとモジュール、最後に Rails のコードを読む。Ruby 3.3 で実行して確かめたもの。",
+   "levels": {
+    "1": "入門：変数・メソッド・ブロック",
+    "2": "基礎：ハッシュとクラス",
+    "3": "実践：Rails を読む"
+   },
    "id": "97-ruby",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "変数とメソッド ― すべてがオブジェクト",
+     "level": 1,
+     "minutes": 16,
+     "concepts": [
+      "variables",
+      "functions",
+      "types",
+      "conditionals"
+     ],
+     "summary": "Ruby の書き方（def・end・#{}・puts と p）、最後の式が戻り値、かっこを省略できる呼び出し、すべてがオブジェクト（120.class）、? と ! で終わるメソッド、nil と false 以外は全部真（0 も \"\" も真）、unless・case・&.。",
+     "body": "## このレッスンのゴール\n\n- `def ... end`・`\"#{...}\"`・`puts`・`p` を読める\n- かっこの省略と「最後の式が戻り値」に慣れる\n- 真偽の決まり（`nil` と `false` 以外は真）と、`?`・`!` で終わるメソッドの意味が分かる\n\n## Ruby とは\n\n**Ruby** は、まつもとゆきひろ（Matz）さんが作った **日本生まれの言語** です。「プログラマーが楽しく書けること」を大事にしていて、英語の文のように読めるコードが書けます。**Ruby on Rails**（レッスン 5）という Web アプリのフレームワークで有名で、GitHub・Shopify・クックパッドなどが Rails で作られてきました。\n\n## 最初のプログラム\n\n```ruby\ndef greet(name)\n  \"こんにちは、#{name} さん\"\nend\n\nprice = 120\ncount = 3\nputs greet(\"Ryo\")\nputs \"合計 #{price * count} 円\"\nputs 'シングル: #{price}'\n```\n\n```text\nこんにちは、Ryo さん\n合計 360 円\nシングル: #{price}\n```\n\n（このコースの出力は、すべて Ruby 3.3 で実際に実行したものです）\n\n| Ruby | 意味 | Python で言うと |\n|---|---|---|\n| `def greet(name) ... end` | メソッドの定義。`end` で終わる | `def greet(name):`（インデント） |\n| `\"...#{name}...\"` | 埋め込み（ダブルクォートだけ） | `f\"...{name}...\"` |\n| `'...#{price}...'` | そのまま（シングル） | `\"...{price}...\"` |\n| `puts x` | 表示して改行 | `print(x)` |\n| `# ...` | コメント | `# ...` |\n\n### 最後の式が戻り値\n\n`greet` に `return` がありません。Ruby では、**メソッドの最後に評価された式が、自動で戻り値** になります（Rust の「最後の行の `;` 無し」と同じ考え方）。`return` も書けますが、途中で抜けるとき以外はあまり書きません。\n\n```ruby\ndef add(a, b = 1) = a + b     # 1 行で書く形（Ruby 3 から）\nputs add(2), add(2, 3)         # 3 と 5\n```\n\n### かっこの省略\n\n```ruby\nputs greet(\"Ryo\")     # かっこあり\nputs greet \"Ryo\"      # かっこなし（同じ意味）\nputs 7 / 2, 7 / 2.0   # puts(7 / 2, 7 / 2.0)\n```\n\nRuby は、メソッドを呼ぶときの **かっこを省略できます**。`puts \"...\"` も、実は `puts(\"...\")` というメソッドの呼び出しです。Rails のコード（レッスン 5）が英語の文のように見えるのは、このためです。\n\n### puts と p\n\n```ruby\np \"p は型が分かる形で表示\", 120, nil\n```\n\n```text\n\"p は型が分かる形で表示\"\n120\nnil\n```\n\n| | 表示 | Python で言うと |\n|---|---|---|\n| `puts x` | 人が読む形（文字列の `\"` は付かない、nil は空行） | `print(x)` |\n| `p x` | **開発者が読む形**（`\"` が付く、nil は `nil`） | `print(repr(x))` |\n\nデバッグで値を確かめるときは `p` が便利です。（この教材の環境で最初に実行したとき、`p` の日本語が `は...` のように表示されました。Java コースのレッスン 1 と同じく、環境の文字コードの設定が UTF-8 になっていなかったためです）\n\n## すべてがオブジェクト\n\n```ruby\nputs 120.class, \"abc\".class, nil.class, 3.14.class   # Integer String NilClass Float\nputs 5.times.to_a.inspect                             # [0, 1, 2, 3, 4]\nputs \"ruby\".upcase.reverse                            # YBUR\nputs -5.abs                                           # 5\nputs [3, 1, 2].sort.first                             # 1\n```\n\nRuby では、**数も nil も、すべてがオブジェクト** で、メソッドを持っています。`120.class` で型が分かり、`5.times` のように **数にメソッドを呼べます**。Python の `len(x)` のような関数ではなく、**`x.length` のように、何でも `.` でメソッドを呼ぶ** のが Ruby の流儀です。\n\n```ruby\nputs 7 / 2, 7 / 2.0, 7 % 2, 2**100\n# 3 / 3.5 / 1 / 1267650600228229401496703205376\n```\n\n整数どうしの割り算は切り捨て（Python の `//`）、整数はいくらでも大きくなる（Python と同じ）です。\n\n## ? と ! で終わるメソッド\n\n```ruby\nname = \"Ryo\"\nputs name.empty?, name.include?(\"y\"), name.length   # false / true / 3\n\ns = \"abc\"\ns2 = s.upcase     # 新しい文字列を返す。s はそのまま\ns.upcase!         # s そのものを書き換える\nputs s2, s        # ABC / ABC\n```\n\n| 名前の終わり | 意味（習慣） | 例 |\n|---|---|---|\n| `?` | **真偽を返す**（質問） | `empty?`・`include?`・`nil?`・`even?` |\n| `!` | **注意が必要**：多くは「そのものを書き換える」 | `upcase!`・`sort!`・`save!`（失敗したら例外。レッスン 5） |\n| どちらも無し | 新しい値を返す（元は変えない） | `upcase`・`sort` |\n\nPython の `sorted(x)`（新しいリスト）と `x.sort()`（そのものを並べ替え）の区別を、Ruby は **名前の `!`** で表します。\n\n## 真偽：nil と false だけが偽\n\n```ruby\ndef check(x)\n  if x then \"真\" else \"偽\" end\nend\nputs [0, \"\", [], nil, false].map { |v| \"#{v.inspect}=#{check(v)}\" }.join(\" \")\n```\n\n```text\n0=真 \"\"=真 []=真 nil=偽 false=偽\n```\n\n**⚠️ Ruby では、`0` も空文字 `\"\"` も空の配列 `[]` も「真」です**。偽になるのは `nil` と `false` だけです。Python では `0`・`\"\"`・`[]` は偽なので、正反対です。\n\n```python\nif items:          # Python：空なら偽\n```\n\n```ruby\nif items.any?      # Ruby：空かどうかは any? / empty? で\n```\n\nPython の癖で `if count` と書くと、count が 0 でも実行されてしまいます。\n\n## 条件の書き方\n\n```ruby\nputs \"大人\" if 20 >= 18           # 後ろに if（1 行で書ける）\nputs \"子ども\" unless 20 >= 18     # unless は「〜でなければ」\n\nlabel = case age\n        when 0..12 then \"子ども\"\n        when 13..19 then \"10 代\"\n        else \"大人\"\n        end\n```\n\n| Ruby | Python |\n|---|---|\n| `x if 条件` | `if 条件: x` |\n| `unless 条件` | `if not 条件:` |\n| `case ... when 0..12` | `match` / `if 0 <= age <= 12` |\n| `elsif` | `elif` |\n\n`case` も **値を返す** ので、変数に入れられます。`0..12` は 0 以上 12 以下の範囲です。\n\n## nil の扱い\n\n```ruby\nx = nil\nputs x&.length.inspect     # nil（x が nil なら、エラーにせず nil）\nputs (x || \"default\")      # default（nil なら右）\n\nnil.upcase\n# undefined method `upcase' for nil  （NoMethodError）\n```\n\n| 書き方 | 意味 | 他の言語では |\n|---|---|---|\n| `x&.length` | x が nil なら nil、そうでなければ `x.length` | JavaScript・PHP の `?.` |\n| `x \\|\\| \"default\"` | x が nil（か false）なら右 | Python の `x or \"default\"` |\n| `x ||= \"default\"` | x が nil なら入れる | |\n\nnil のメソッドを呼ぶと `NoMethodError` です（Java の NullPointerException、Python の `AttributeError: 'NoneType'` に当たる）。Ruby のエラーでいちばんよく見るものです。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `if user.present?` / `blank?` | Rails の便利なメソッド。`blank?` は nil・空文字・空の配列で真（Python の真偽に近い） |\n| `if count` | ⚠️ 0 でも真。`count > 0` / `count.positive?` |\n| `items.sort!` | items そのものを並べ替える |\n| `return unless user` | user が nil なら抜ける（よくある書き出し） |\n| `name&.strip` | nil なら nil |\n| `puts` だけで `p` が無いデバッグ | nil や空文字が見分けにくい。`p` を使う |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Ruby で `if 0 then \"真\" else \"偽\" end` の結果は？",
+        "choices": [
+         "\"真\"（Ruby では nil と false 以外は全部真）",
+         "\"偽\"（0 は偽）",
+         "エラー"
+        ],
+        "answer": 0,
+        "explain": "Ruby で偽になるのは nil と false だけです。Python とは逆なので注意します。"
+       },
+       {
+        "question": "`s.upcase` と `s.upcase!` の違いは？",
+        "choices": [
+         "同じ",
+         "upcase は新しい文字列を返し、upcase! は s そのものを書き換える",
+         "upcase! は大文字にした後に「！」を付ける"
+        ],
+        "answer": 1,
+        "explain": "`!` で終わるメソッドは、多くの場合そのものを書き換えます（注意が必要、という印）。"
+       },
+       {
+        "question": "Ruby のメソッドで `return` が無いとき、戻り値は？",
+        "choices": [
+         "nil",
+         "最後に評価された式の値",
+         "エラー"
+        ],
+        "answer": 1,
+        "explain": "Ruby は最後の式の値を自動で返します。`def greet(name) \"こんにちは、#{name}\" end` は、その文字列を返します。"
+       }
+      ]
+     ],
+     "id": "01-variables-methods"
+    },
+    {
+     "title": "ブロックと each ― do |x| ... end を読む",
+     "level": 1,
+     "minutes": 16,
+     "concepts": [
+      "loops",
+      "higher_order",
+      "functions"
+     ],
+     "summary": "Ruby の繰り返しは for ではなく each とブロック。{ |p| ... } と do ... end、map・select・find・sum・reduce、&:even? の省略形、yield でブロックを呼ぶメソッド、File.open のブロックで自動で閉じる、ラムダ。",
+     "body": "## このレッスンのゴール\n\n- `each { |p| ... }` と `do |p| ... end` のブロックを読める\n- `map`・`select`・`find`・`reduce` などを、Python の内包表記と対応させて読める\n- `yield` とブロックを受け取るメソッド（`File.open do ... end`）の仕組みが分かる\n\n## each とブロック\n\n```ruby\nprices = [120, 90, 200, 1200, 250, 180]\n\nprices.each { |p| print p, \" \" }\n# 120 90 200 1200 250 180\n\nprices.each_with_index do |p, i|\n  puts \"#{i}: #{p}\" if i < 2\nend\n# 0: 120\n# 1: 90\n```\n\nRuby では、繰り返しに `for` をほとんど使いません。配列の **`each` メソッドに「1 つずつやること」を渡す** のが Ruby の書き方です。\n\n| 部分 | 意味 |\n|---|---|\n| `{ \\|p\\| ... }` | **ブロック**：メソッドに渡す「ひとまとまりの処理」。`\\|p\\|` が受け取る引数 |\n| `do \\|p, i\\| ... end` | 同じブロックの、複数行の書き方 |\n| `each_with_index` | 要素と番号を渡す（Python の `enumerate`） |\n\n`{ }` は 1 行、`do ... end` は複数行、と使い分けるのが習慣です。JavaScript の `prices.forEach(p => ...)` と同じ形で、`|p|` が `p =>` に当たります。\n\n## 変換・絞り込み・集計\n\n```ruby\np prices.map { |p| p * 110 / 100 }          # [132, 99, 220, 1320, 275, 198]\np prices.select { |p| p < 200 }             # [120, 90, 180]\np prices.sum, prices.max                    # 2040 / 1200\np prices.sort.reverse.first(3)              # [1200, 250, 200]\np prices.find { |p| p > 1000 }              # 1200\np prices.count { |p| p >= 200 }             # 3\np prices.reduce(0) { |sum, p| sum + p }     # 2040\n```\n\n| Ruby | Python | JavaScript |\n|---|---|---|\n| `map { \\|p\\| ... }` | `[... for p in prices]` | `.map(p => ...)` |\n| `select { \\|p\\| ... }`（`filter` も同じ） | `[p for p in prices if ...]` | `.filter(...)` |\n| `reject { \\|p\\| ... }` | `[p for p in prices if not ...]` | |\n| `find { \\|p\\| ... }` | `next((p for p in prices if ...), None)` | `.find(...)` |\n| `count { \\|p\\| ... }` | `sum(1 for p in prices if ...)` | |\n| `sum` / `max` / `min` | `sum()` / `max()` / `min()` | |\n| `reduce(0) { \\|sum, p\\| ... }` | `functools.reduce(...)` | `.reduce(...)` |\n| `first(3)` / `last` | `[:3]` / `[-1]` | `.slice(0, 3)` |\n\n`prices.sort.reverse.first(3)` のように、**メソッドを `.` でつなげて、左から順に読む** のは、Java の Stream（Java コースのレッスン 5）・Rust のイテレータと同じです。\n\n### &:メソッド名 の省略形\n\n```ruby\np %w[りんご バナナ 牛乳].map(&:length)    # [3, 3, 2]\n```\n\n`map(&:length)` は `map { |x| x.length }` の省略形です。「各要素の length メソッドを呼んで」。`%w[りんご バナナ 牛乳]` は、スペースで区切った文字列の配列（`[\"りんご\", \"バナナ\", \"牛乳\"]`）の短い書き方です。Java の `Product::name`（メソッド参照）と同じ考え方です。\n\n## 数で繰り返す\n\n```ruby\n3.times { |i| print i, \" \" }       # 0 1 2\n1.upto(3) { |i| print i, \" \" }     # 1 2 3\n```\n\n`3.times` は、**数のメソッドにブロックを渡して** 3 回繰り返しています。Python の `for i in range(3):` です。「数もオブジェクト」（レッスン 1）だからこう書けます。\n\n## yield：ブロックを受け取るメソッド\n\nブロックは、自分で作ったメソッドにも渡せます。\n\n```ruby\ndef twice\n  yield 1\n  yield 2\nend\n\ntwice { |n| puts \"ブロックが呼ばれた: #{n}\" }\n# ブロックが呼ばれた: 1\n# ブロックが呼ばれた: 2\n```\n\n`yield` は「**渡されたブロックを、ここで呼ぶ**」という意味です。`yield 1` で、ブロックの `|n|` に 1 が入ります。`each` も、中でこうやって要素を 1 つずつ yield しています。\n\n### 前後に処理をはさむ\n\n```ruby\ndef with_log(label)\n  puts \"開始: #{label}\"\n  result = yield\n  puts \"終わり: #{label}\"\n  result\nend\n\nr = with_log(\"計算\") { 2 + 3 }\n# 開始: 計算\n# 終わり: 計算\np r   # 5\n```\n\n**「前の処理 → ブロックの中身 → 後の処理」** という形を、メソッドにまとめられます。Python のデコレーターや `with` 文に近い使い方です。\n\n### File.open のブロック：自動で閉じる\n\n```ruby\nFile.open(\"memo.txt\") do |f|\n  f.each_line { |line| print \"行: \", line }\nend\n# 行: a\n# 行: b\n```\n\n`File.open` にブロックを渡すと、**ブロックが終わったときに、ファイルを自動で閉じてくれます**（例外が起きても）。これがまさに上の「前後に処理をはさむ」形で、Python の `with open(...) as f:`、Go の `defer`、C++ の RAII、Java の try-with-resources と同じ役目です。\n\nデータベースのトランザクション（`ActiveRecord::Base.transaction do ... end`）など、Ruby では **「後片付けが必要なもの」はブロックで書く** のが定番です。\n\n## ラムダ：ブロックを値として持つ\n\n```ruby\nsquare = ->(x) { x * x }\np square.call(4), square.(5), [1, 2, 3].map(&square)   # 16 / 25 / [1, 4, 9]\n```\n\nブロックはそのままでは変数に入れられませんが、**ラムダ**（`->(x) { ... }`）にすると、値として持ち回せます。Python の `lambda x: x * x` です。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方 |\n|---|---|\n| `users.each do \\|user\\| ... end` | users を 1 人ずつ |\n| `users.map(&:email)` | 全員の email の配列 |\n| `orders.select(&:paid?).sum(&:total)` | 支払い済みの注文の合計 |\n| `items.each_slice(100) { \\|batch\\| ... }` | 100 個ずつに分けて処理 |\n| `ActiveRecord::Base.transaction do ... end` | ブロックの中をトランザクションに（レッスン 5） |\n| `for x in items` | 動くが、Ruby らしくない書き方。each が普通 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`prices.select { |p| p < 200 }` を Python で書くと？",
+        "choices": [
+         "`[p for p in prices if p < 200]`",
+         "`[p < 200 for p in prices]`",
+         "`sum(p for p in prices if p < 200)`"
+        ],
+        "answer": 0,
+        "explain": "select はブロックが真を返す要素だけを集めます（filter と同じ）。"
+       },
+       {
+        "question": "`users.map(&:name)` は何の省略形？",
+        "choices": [
+         "`users.map { |u| :name }`",
+         "`users.map { |u| u.name }`",
+         "`users.name`"
+        ],
+        "answer": 1,
+        "explain": "`&:メソッド名` は「各要素のそのメソッドを呼ぶ」ブロックの省略形です。"
+       },
+       {
+        "question": "`File.open(\"a.txt\") do |f| ... end` のようにブロックで開く利点は？",
+        "choices": [
+         "ファイルを速く読める",
+         "ブロックが終わると（例外が起きても）、ファイルを自動で閉じてくれる",
+         "ファイルが無ければ自動で作ってくれる"
+        ],
+        "answer": 1,
+        "explain": "ブロックの前後に処理をはさむ仕組みで、Python の with 文に当たります。"
+       }
+      ]
+     ],
+     "id": "02-blocks-each"
+    },
+    {
+     "title": "シンボルとハッシュ ― :name と \"name\" は別物",
+     "level": 2,
+     "minutes": 16,
+     "concepts": [
+      "collections",
+      "strings",
+      "data_formats"
+     ],
+     "summary": "名前に使う :symbol と文字列の違い、ハッシュ { name: \"Ryo\" } の 2 つの書き方。シンボルのキーと文字列のキーは別なので、JSON から読んだハッシュを user[:name] で読むと nil になる罠。fetch・Hash.new(0)・dig・キーワード引数。",
+     "body": "## このレッスンのゴール\n\n- シンボル（`:name`）が何で、文字列とどう違うか説明できる\n- ハッシュの 2 つの書き方（`name: \"Ryo\"` と `\"name\" => \"Hana\"`）を読める\n- シンボルのキーと文字列のキーの食い違いで `nil` になるバグに気づける\n\n## シンボル\n\n```ruby\np :name.class, \"name\".class                        # Symbol / String\np :name.object_id == :name.object_id               # true\np \"name\".object_id == \"name\".object_id             # false\n```\n\n`:name` のように `:` で始まるものを **シンボル** と呼びます。文字列に似ていますが、\n\n| | シンボル `:name` | 文字列 `\"name\"` |\n|---|---|---|\n| 使い道 | **名前・ラベル**（ハッシュのキー、オプションの名前） | **データ**（利用者の名前、文章） |\n| 同じものは | **いつも同じ 1 つのオブジェクト**（`object_id` が同じ） | 書くたびに別のオブジェクト |\n| 変えられるか | 変えられない | 変えられる |\n\nPython には直接当たるものはありませんが、**「名前として使う、変えない文字列」** だと思えば大丈夫です。Rails のコードは、シンボルだらけです（レッスン 5）。\n\n## ハッシュ\n\n```ruby\nuser = { name: \"Ryo\", age: 30 }\np user                  # {:name=>\"Ryo\", :age=>30}\np user[:name]           # \"Ryo\"\n```\n\nRuby の辞書を **ハッシュ**（Hash）と呼びます。`{ name: \"Ryo\" }` は、**シンボル `:name` をキーにした** ハッシュの短い書き方です。表示すると `:name=>` となっていることから分かります。\n\n```ruby\njson_like = { \"name\" => \"Hana\" }\np json_like[\"name\"]     # \"Hana\"\n```\n\n`=>`（ハッシュロケット）を使うと、**文字列など何でもキーにできます**。\n\n| 書き方 | キー | Python で言うと |\n|---|---|---|\n| `{ name: \"Ryo\" }` | シンボル `:name` | — |\n| `{ \"name\" => \"Ryo\" }` | 文字列 `\"name\"` | `{\"name\": \"Ryo\"}` |\n| `{ :name => \"Ryo\" }` | シンボル `:name`（古い書き方） | — |\n\n## ⚠️ シンボルのキーと文字列のキーは別\n\n```ruby\nuser = { name: \"Ryo\", age: 30 }\np user[:name], user[\"name\"]          # \"Ryo\" / nil\n\njson_like = { \"name\" => \"Hana\" }\np json_like[\"name\"], json_like[:name]   # \"Hana\" / nil\n```\n\n**`:name` と `\"name\"` は違うキー** なので、間違えると **エラーにならずに nil** が返ります。これが Ruby でいちばんよく見るバグの 1 つです。\n\n特に気をつけるのが **JSON** です。\n\n```ruby\nrequire \"json\"\ndata = JSON.parse('{\"name\": \"Ken\", \"tags\": [\"a\"]}')\np data              # {\"name\"=>\"Ken\", \"tags\"=>[\"a\"]}\np data[\"name\"]      # \"Ken\"\np data[:name]       # nil    ← 文字列のキーになっている！\n```\n\n`JSON.parse` は、初期設定で **文字列のキー** のハッシュを返します。コードの他の部分がシンボルのキー（`data[:name]`）で書かれていると、nil になって、後で `NoMethodError: undefined method ... for nil`（レッスン 1）として現れます。\n\n```ruby\ndata2 = JSON.parse('{\"name\": \"Ken\"}', symbolize_names: true)\np data2[:name]      # \"Ken\"\n```\n\n`symbolize_names: true` を付けると、シンボルのキーで返してくれます。Rails では、`params[:name]` と `params[\"name\"]` のどちらでも読める特別なハッシュ（`HashWithIndifferentAccess`）が使われているので、この問題は起きにくくなっています。\n\n## ハッシュの便利な操作\n\n### 無いキーのとき\n\n```ruby\np user.fetch(:age), user.fetch(:email, \"なし\")    # 30 / \"なし\"\nuser.fetch(:email)\n# KeyError: key not found: :email\n```\n\n| 書き方 | 無いキーのとき | Python で言うと |\n|---|---|---|\n| `h[:email]` | **nil**（エラーにならない） | `h.get(\"email\")` |\n| `h.fetch(:email)` | **KeyError** | `h[\"email\"]` |\n| `h.fetch(:email, \"なし\")` | \"なし\" | `h.get(\"email\", \"なし\")` |\n| `h.dig(:address, :city)` | 途中が無くても nil | `h.get(\"address\", {}).get(\"city\")` |\n| `h.key?(:name)` | true / false | `\"name\" in h` |\n\n**必ずあるはずのキーは `fetch`** で読むと、打ち間違いや食い違いにすぐ気づけます。\n\n### 数える\n\n```ruby\nstock = Hash.new(0)\n%w[りんご バナナ りんご].each { |f| stock[f] += 1 }\np stock      # {\"りんご\"=>2, \"バナナ\"=>1}\n```\n\n`Hash.new(0)` は「無いキーを読んだら 0」のハッシュです。Python の `defaultdict(int)`、Go の「無ければゼロ値」と同じで、数を数える定番の形です。\n\n### 回す・変換する\n\n```ruby\nuser.each { |k, v| puts \"#{k} => #{v}\" }\n# name => Ryo\n# age => 30\n\np user.map { |k, v| [k, v.to_s] }.to_h          # {:name=>\"Ryo\", :age=>\"30\"}\np user.select { |k, v| v.is_a?(Integer) }       # {:age=>30}\np user.to_json                                  # \"{\\\"name\\\":\\\"Ryo\\\",\\\"age\\\":30}\"\n```\n\nハッシュにも、レッスン 2 の `each`・`map`・`select` が使えます。`to_json` で JSON にすると、シンボルのキーは文字列（`\"name\"`）になります。\n\n## キーワード引数\n\n```ruby\ndef create_user(name:, age: 20, **opts)\n  \"#{name} #{age} #{opts}\"\nend\n\np create_user(name: \"Mio\", city: \"東京\")    # \"Mio 20 {:city=>\\\"東京\\\"}\"\n```\n\n| 書き方 | 意味 | Python で言うと |\n|---|---|---|\n| `name:` | 必須のキーワード引数 | `def f(*, name):` |\n| `age: 20` | 省略できるキーワード引数 | `age=20` |\n| `**opts` | 残りのキーワード引数を全部ハッシュで | `**kwargs` |\n| `create_user(name: \"Mio\")` | 呼ぶとき | `create_user(name=\"Mio\")` |\n\nRails のメソッド（`validates :title, presence: true` など。レッスン 5）は、このキーワード引数とシンボルでできています。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `JSON.parse(body)[:name]` | ⚠️ 文字列のキーなので nil。`[\"name\"]` か `symbolize_names: true` |\n| `h[:key]` で必ずあるはずのもの | 無いと nil のまま進む。`fetch` だと早く気づける |\n| `params[:user][:email]` | Rails のパラメータ。user が無いと nil に `[:email]` で NoMethodError |\n| `params.dig(:user, :email)` | 途中が無くても nil |\n| `render json: { status: \"ok\" }` | Rails で JSON を返す（シンボルのキーは JSON では文字列になる） |\n| `options = { force: true }` | シンボルをオプションの名前に使う定番 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`user = { name: \"Ryo\" }` のとき、`user[\"name\"]` の結果は？",
+        "choices": [
+         "\"Ryo\"",
+         "nil（キーはシンボル :name で、文字列 \"name\" とは別だから）",
+         "エラー"
+        ],
+        "answer": 1,
+        "explain": "`name: \"Ryo\"` はシンボルのキーです。文字列のキーで読むと見つからず、エラーにならずに nil が返ります。"
+       },
+       {
+        "question": "`data = JSON.parse('{\"id\": 1}')` の後、id を読む正しい書き方は？",
+        "choices": [
+         "`data[\"id\"]`",
+         "`data[:id]`",
+         "`data.id`"
+        ],
+        "answer": 0,
+        "explain": "JSON.parse は初期設定で文字列のキーのハッシュを返します。シンボルで読みたいなら `symbolize_names: true` を付けます。"
+       },
+       {
+        "question": "必ずあるはずのキーを読むとき、`h[:email]` より `h.fetch(:email)` がよい理由は？",
+        "choices": [
+         "速いから",
+         "無いときに nil で進まず、KeyError で止まるので、間違いにすぐ気づけるから",
+         "自動でキーを作ってくれるから"
+        ],
+        "answer": 1,
+        "explain": "`[]` は無いキーで nil を返すので、問題が後で別の場所に現れます。fetch なら、その場で分かります。"
+       }
+      ]
+     ],
+     "id": "03-symbols-hashes"
+    },
+    {
+     "title": "クラスとモジュール ― @ と attr_accessor",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "classes",
+      "modules",
+      "errors"
+     ],
+     "summary": "initialize と @インスタンス変数、attr_reader・attr_accessor、self.クラスメソッド、継承と super、モジュールの include（ミックスイン）と Comparable、raise・rescue・ensure、既存のクラスに後からメソッドを足すモンキーパッチ。",
+     "body": "## このレッスンのゴール\n\n- `class`・`initialize`・`@name`・`attr_reader` を読める\n- 継承（`<`・`super`）と、モジュールの `include` の違いが分かる\n- `raise`・`rescue`・`ensure` と、モンキーパッチの意味が分かる\n\n## クラス\n\n```ruby\nclass Product\n  attr_reader :name\n  attr_accessor :stock\n\n  def initialize(name, base_price, stock: 0)\n    @name = name\n    @base_price = base_price\n    @stock = stock\n  end\n\n  def price\n    @base_price * 110 / 100\n  end\n\n  def discount!(yen)\n    raise ArgumentError, \"値引きが大きすぎます: #{yen}\" if yen > @base_price\n    @base_price -= yen\n    self\n  end\n\n  def to_s\n    \"#{@name}（#{price} 円）\"\n  end\n\n  def self.free(name)\n    new(name, 0)\n  end\nend\n```\n\n```ruby\napple = Product.new(\"りんご\", 120, stock: 5)\nputs apple.name, apple.price       # りんご / 132\napple.stock += 1\nputs apple.stock                   # 6\napple.discount!(20)\nputs apple                         # りんご（110 円）\nputs Product.free(\"試供品\")         # 試供品（0 円）\n```\n\n| Ruby | 意味 | Python で言うと |\n|---|---|---|\n| `Product.new(...)` | 作る | `Product(...)` |\n| `def initialize(...)` | コンストラクタ | `def __init__(self, ...)` |\n| `@name` | **インスタンス変数**（オブジェクトが持つデータ） | `self.name` |\n| `attr_reader :name` | `name` を **読む** メソッドを自動で作る | `@property` |\n| `attr_accessor :stock` | `stock` を **読み書きする** メソッドを自動で作る | 普通の属性 |\n| `def price` | メソッド（`self` を書かない） | `def price(self):` |\n| `price`（メソッドの中で） | 自分のメソッドを呼ぶ（`self.price` の省略） | `self.price()` |\n| `def self.free(name)` | **クラスメソッド**（`Product.free` で呼ぶ） | `@classmethod` |\n| `def to_s` | 表示の仕方（`puts apple`） | `__str__` |\n\n`attr_reader :name` の `:name` は、レッスン 3 の **シンボル** です。「name という名前の読むメソッドを作って」と、名前をシンボルで渡しています。\n\n### @ の変数は外から見えない\n\n```ruby\napple.name = \"みかん\"\n# NoMethodError: undefined method `name=' for an instance of Product\n```\n\n`attr_reader` は読むメソッドしか作らないので、`name=`（書くメソッド）はありません。Ruby の `@` の変数は、**メソッドを通してしか外から触れません**。`apple.stock += 1` ができたのは、`attr_accessor` が `stock=` も作っていたからです（`apple.stock = apple.stock + 1` は、実は `stock=` というメソッドの呼び出し）。\n\n## 継承\n\n```ruby\nclass SetProduct < Product\n  def price\n    super - 50\n  end\nend\n\nset = SetProduct.new(\"詰め合わせ\", 1000)\nputs set                        # 詰め合わせ（1050 円）\nputs set.is_a?(Product)         # true\n```\n\n| Ruby | Python |\n|---|---|\n| `class SetProduct < Product` | `class SetProduct(Product):` |\n| `super` | `super().price()`（同じ名前のメソッドを、引数もそのまま呼ぶ） |\n| `is_a?(Product)` | `isinstance(set, Product)` |\n\n## モジュール：機能を混ぜる\n\n```ruby\nmodule Priceable\n  def label\n    \"#{price} 円\"\n  end\nend\n\nclass Product\n  include Priceable\n  include Comparable\n\n  def <=>(other)\n    price <=> other.price\n  end\n  ...\nend\n\nputs apple.label                                   # 110 円\nputs [Product.new(\"牛乳\", 200), apple].min          # りんご（110 円）\nputs apple < set                                   # true\np SetProduct.ancestors.take(4)                     # [SetProduct, Product, Comparable, Priceable]\n```\n\n**モジュール** は、メソッドの集まりです。`include` すると、そのクラスに **メソッドを混ぜ込めます**（**ミックスイン**）。\n\n| | 継承（`<`） | モジュール（`include`） |\n|---|---|---|\n| 数 | 親は 1 つだけ | 何個でも |\n| 意味 | 「〜の一種」（詰め合わせは商品の一種） | 「〜の機能を持つ」（値段の表示ができる） |\n| 似ているもの | Java の `extends` | Java の interface の default メソッド、Rust の trait のデフォルト |\n\n`Comparable` は Ruby の標準のモジュールで、**`<=>`（宇宙船演算子。PHP コースのレッスン 3）を 1 つ書くだけで、`<`・`>`・`==`・`min`・`max`・`sort` が全部使えるようになります**。`ancestors` を見ると、メソッドを探す順番（自分 → 親 → 混ぜたモジュール）が分かります。\n\n## 例外\n\n```ruby\nbegin\n  apple.discount!(9999)\nrescue ArgumentError => e\n  puts \"ArgumentError: #{e.message}\"\nensure\n  puts \"ensure は必ず実行\"\nend\n# ArgumentError: 値引きが大きすぎます: 9999\n# ensure は必ず実行\n```\n\n| Ruby | Python |\n|---|---|\n| `begin ... end` | `try:` |\n| `rescue ArgumentError => e` | `except ValueError as e:` |\n| `ensure` | `finally:` |\n| `raise ArgumentError, \"...\"` | `raise ValueError(\"...\")` |\n| `e.message` | `str(e)` |\n\nメソッド全体を `begin` の代わりにできるので、`def foo ... rescue ... end` と書くこともあります。\n\n## モンキーパッチ：既存のクラスにメソッドを足す\n\n```ruby\nclass String\n  def shout = upcase + \"！\"\nend\n\nputs \"hello\".shout       # HELLO！\n```\n\nRuby では、**標準の String クラスにも、後からメソッドを足せます**（クラスは閉じていない、オープンクラス）。これを **モンキーパッチ** と呼びます。Rails の `3.days.ago`・`\"\".blank?` などは、この仕組みで標準のクラスにメソッドを足したものです。\n\n⚠️ 便利ですが、**同じ名前のメソッドを別のライブラリも足していると、上書きし合って動きが変わる** という危険があります。自分のコードで標準のクラスを書き換えるのは、なるべく避けます。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `attr_accessor :name, :email` | 読み書きできる属性を一度に作る |\n| `def initialize(name:, email:)` | キーワード引数のコンストラクタ（レッスン 3） |\n| `class User < ApplicationRecord` | Rails のモデル（レッスン 5） |\n| `include Comparable` / `include Enumerable` | 比べる・each から map などを使えるようにする |\n| `rescue => e`（種類を書かない） | StandardError を全部受け止める。広すぎないか |\n| `rescue Exception` | ⚠️ Ctrl+C なども受け止めてしまう。普通は StandardError |\n| `class String` / `class Integer` を開いている | モンキーパッチ。影響範囲に注意 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`attr_reader :name` は何をする？",
+        "choices": [
+         "name を読むメソッド（`obj.name`）を自動で作る",
+         "name を書くメソッドを作る",
+         "name というシンボルを作るだけ"
+        ],
+        "answer": 0,
+        "explain": "attr_reader は読む、attr_writer は書く、attr_accessor は両方のメソッドを作ります。"
+       },
+       {
+        "question": "`class SetProduct < Product` の `<` の意味は？",
+        "choices": [
+         "SetProduct のほうが小さい",
+         "SetProduct は Product を継承する",
+         "Product を SetProduct に混ぜる"
+        ],
+        "answer": 1,
+        "explain": "Ruby の継承は `<` で書きます。モジュールを混ぜるのは include です。"
+       },
+       {
+        "question": "Ruby の `begin ... rescue ... ensure ... end` の ensure は、Python の何に当たる？",
+        "choices": [
+         "except",
+         "else",
+         "finally"
+        ],
+        "answer": 2,
+        "explain": "ensure は例外が起きても起きなくても必ず実行されます。"
+       }
+      ]
+     ],
+     "id": "04-classes-modules"
+    },
+    {
+     "title": "Rails のコードを読む ― 規約と ActiveRecord",
+     "level": 3,
+     "minutes": 20,
+     "concepts": [
+      "backend",
+      "database",
+      "reading",
+      "security"
+     ],
+     "summary": "Ruby on Rails の「規約で決まっている」作り。routes.rb の resources、コントローラーと before_action、ActiveRecord のモデル（has_many・validates・where・find）、Strong Parameters、ERB のビュー、マイグレーション。N+1 と includes、セキュリティの確認ポイント。",
+     "body": "## このレッスンのゴール\n\n- Rails のフォルダと「規約」（名前で自動でつながる仕組み）が分かる\n- ActiveRecord のモデルとクエリ（`where`・`find`・`has_many`・`validates`）を読める\n- Strong Parameters・`includes`（N+1）・エスケープなど、確認ポイントが分かる\n\nこのレッスンのコードは、Rails の書き方の説明のための抜粋です（Rails のアプリをここでは動かしていません）。書き方は Rails 7〜8 の形です。\n\n## Rails の考え方：設定より規約\n\n**Ruby on Rails** は、「**決まった名前と場所に置けば、設定を書かなくても自動でつながる**」（Convention over Configuration）という考え方のフレームワークです。\n\n```text\napp/\n├── models/task.rb                 Task モデル    ↔ tasks テーブル（複数形）\n├── controllers/tasks_controller.rb TasksController（複数形）\n└── views/tasks/index.html.erb      TasksController の index の画面\nconfig/routes.rb                    URL → コントローラー\ndb/migrate/2026..._create_tasks.rb  テーブルの変更履歴\n```\n\n**Task（単数）というモデルは、tasks（複数）というテーブルと自動でつながる**、のように、名前のルールで全部が結びついています。最初は「どこで設定しているのか分からない」と感じますが、**規約を知っていれば、どのファイルを見ればよいかがすぐ分かる** のが Rails の強みです。\n\n## ルート\n\n```ruby\n# config/routes.rb\nRails.application.routes.draw do\n  resources :tasks, only: [:index, :show, :create, :destroy]\nend\n```\n\n`resources :tasks` の 1 行で、こんな対応が作られます。\n\n| HTTP | URL | コントローラーのメソッド |\n|---|---|---|\n| GET | `/tasks` | `index`（一覧） |\n| GET | `/tasks/:id` | `show`（1 件） |\n| POST | `/tasks` | `create`（作る） |\n| DELETE | `/tasks/:id` | `destroy`（消す） |\n\n（`only:` を外すと、new・edit・update も足した 7 つが作られます）バックエンドコースのレッスン 4 の REST の形が、そのまま規約になっています。`:tasks` はレッスン 3 のシンボルです。\n\n## モデル：ActiveRecord\n\n```ruby\n# app/models/task.rb\nclass Task < ApplicationRecord\n  belongs_to :user\n  validates :title, presence: true, length: { maximum: 200 }\n  scope :undone, -> { where(done: false) }\nend\n\n# app/models/user.rb\nclass User < ApplicationRecord\n  has_many :tasks, dependent: :destroy\nend\n```\n\n| 書き方 | 意味 | データベース設計のコースでは |\n|---|---|---|\n| `class Task < ApplicationRecord` | tasks テーブルのモデル。列は書かなくても、テーブルから自動で読む | |\n| `belongs_to :user` | タスクは 1 人のユーザーに属する（`tasks.user_id`） | 1 対多の「多」の側 |\n| `has_many :tasks` | ユーザーはたくさんのタスクを持つ | 1 対多の「1」の側 |\n| `dependent: :destroy` | ユーザーを消したら、タスクも消す | `ON DELETE CASCADE` |\n| `validates :title, presence: true, length: { maximum: 200 }` | 必須・200 文字まで | 制約・バリデーション |\n| `scope :undone, -> { where(done: false) }` | よく使う絞り込みに名前を付ける（レッスン 2 のラムダ） | |\n\n`validates :title, presence: true, ...` は、レッスン 1 の「かっこの省略」とレッスン 3 の「シンボルとキーワード引数」で、`validates(:title, presence: true, length: { maximum: 200 })` というメソッドの呼び出しです。英語の文のように読めるのは、この組み合わせのおかげです。\n\n### クエリ\n\n```ruby\nTask.where(user_id: current_user.id, done: false).order(created_at: :desc).limit(20)\ncurrent_user.tasks.undone\nTask.find(params[:id])                   # 見つからなければ例外 → 404\nTask.find_by(title: \"牛乳\")              # 見つからなければ nil\ntask.update!(done: true)                 # 失敗したら例外（! の意味。レッスン 1）\n```\n\n| ActiveRecord | SQL |\n|---|---|\n| `Task.where(done: false)` | `SELECT * FROM tasks WHERE done = FALSE` |\n| `.order(created_at: :desc)` | `ORDER BY created_at DESC` |\n| `.limit(20)` | `LIMIT 20` |\n| `current_user.tasks` | `WHERE user_id = ?`（has_many から） |\n| `Task.find(5)` | `WHERE id = 5 LIMIT 1` |\n\n値はプレースホルダで渡されるので安全です（SQL コース・セキュリティのコース）。⚠️ ただし、文字列で条件を書くと危険です。\n\n```ruby\nTask.where(\"title = '#{params[:q]}'\")      # ⚠️ SQL インジェクション\nTask.where(\"title = ?\", params[:q])        # ✅ ? で渡す\nTask.where(title: params[:q])              # ✅ ハッシュで渡す\n```\n\n### N+1 と includes\n\n```ruby\n# ⚠️ ユーザー 100 人なら、SQL が 101 回\nUser.all.each { |u| puts u.tasks.count }\n\n# ✅ まとめて読み込む\nUser.includes(:tasks).each { |u| puts u.tasks.size }\n```\n\nデータベース設計のコースのレッスン 6 の **N+1** は、Rails でもそのまま起きます。`includes(:tasks)` は、SQLAlchemy の `selectinload`、Prisma の `include` に当たります。\n\n## コントローラー\n\n```ruby\n# app/controllers/tasks_controller.rb\nclass TasksController < ApplicationController\n  before_action :authenticate_user!\n  before_action :set_task, only: [:show, :destroy]\n\n  def index\n    @tasks = current_user.tasks.order(created_at: :desc)\n  end\n\n  def show\n  end\n\n  def create\n    @task = current_user.tasks.build(task_params)\n    if @task.save\n      redirect_to @task, notice: \"追加しました\"\n    else\n      render :new, status: :unprocessable_entity\n    end\n  end\n\n  def destroy\n    @task.destroy\n    redirect_to tasks_path\n  end\n\n  private\n\n  def set_task\n    @task = current_user.tasks.find(params[:id])\n  end\n\n  def task_params\n    params.require(:task).permit(:title)\n  end\nend\n```\n\n| 部分 | 意味 |\n|---|---|\n| `before_action :authenticate_user!` | どのメソッドの前にも、ログインしているか確かめる（Devise というライブラリ） |\n| `before_action :set_task, only: [...]` | show と destroy の前に set_task を呼ぶ |\n| `@tasks = ...` | **`@` の変数は、そのままビュー（画面）で使える**（規約） |\n| `def show` が空 | 何も書かなくても、`views/tasks/show.html.erb` が自動で表示される（規約） |\n| `current_user.tasks.find(params[:id])` | ✅ **自分のタスクの中から** 探す。他人の id なら見つからず 404（IDOR 対策） |\n| `params.require(:task).permit(:title)` | **Strong Parameters**：受け取ってよいのは title だけ |\n| `redirect_to` / `render` | PRG パターン（PHP コースのレッスン 4）／失敗したらフォームをもう一度 |\n\n### Strong Parameters\n\n`params.require(:task).permit(:title)` は、**「送られてきたパラメータのうち、task の title だけを通す」** という許可リストです。`user_id` や `admin` を勝手に送られても無視されます。セキュリティのコースの **マスアサインメント** の対策が、フレームワークの決まりになっています（Laravel の `$fillable`、Spring の DTO と同じ役目）。\n\n## ビュー：ERB\n\n```erb\n<%# app/views/tasks/index.html.erb %>\n<h1>タスク</h1>\n<ul>\n  <% @tasks.each do |task| %>\n    <li><%= link_to task.title, task %></li>\n  <% end %>\n</ul>\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `<% ... %>` | Ruby を実行する（表示しない） |\n| `<%= ... %>` | 実行して **表示する**（**自動でエスケープ** される） |\n| `<%== ... %>` / `raw(...)` / `.html_safe` | ⚠️ エスケープ **しない** |\n| `link_to task.title, task` | `<a href=\"/tasks/5\">タイトル</a>` を作る（規約で URL が決まる） |\n\nRails は、`<%= %>` で表示するものを **自動でエスケープ** します（XSS 対策。Laravel の `{{ }}` と同じ）。危ないのは `raw` や `html_safe` を使ったところです。フォームを作る `form_with` は、CSRF のトークンも自動で入れてくれます。\n\n## マイグレーション\n\n```ruby\n# db/migrate/20261123000000_create_tasks.rb\nclass CreateTasks < ActiveRecord::Migration[8.0]\n  def change\n    create_table :tasks do |t|\n      t.references :user, null: false, foreign_key: true\n      t.string :title, null: false, limit: 200\n      t.boolean :done, null: false, default: false\n      t.timestamps\n    end\n  end\nend\n```\n\n`create_table :tasks do |t| ... end` は、レッスン 2 の **ブロック** です。`t.references :user` は `user_id` の列と外部キーとインデックスを、`t.timestamps` は `created_at`・`updated_at` を作ります。`bin/rails db:migrate` で実行します（バックエンドコースのレッスン 8）。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `Task.find(params[:id])`（current_user を通していない） | ⚠️ IDOR。`current_user.tasks.find(...)` か、権限の確認（Pundit などのライブラリ） |\n| `params.permit!` / `Task.create(params[:task])` | ⚠️ 何でも通す。マスアサインメント |\n| `where(\"... #{params[:x]} ...\")` | ⚠️ SQL インジェクション |\n| `<%= raw @comment.body %>` / `.html_safe` | ⚠️ XSS。中身が外から来るなら `sanitize` |\n| ループの中で `task.user.name` | ⚠️ N+1。`includes(:user)` |\n| `skip_before_action :verify_authenticity_token` | ⚠️ CSRF の確認を外している（API なら別の認証があるか） |\n| `bin/rails db:migrate` / `bin/rails console` | マイグレーションの実行／アプリの中で Ruby を試す画面 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Rails で `class Task < ApplicationRecord` と書くと、どのテーブルとつながる？",
+        "choices": [
+         "task",
+         "tasks（モデル名の複数形）",
+         "Task"
+        ],
+        "answer": 1,
+        "explain": "Rails は規約で、単数のモデル名と複数のテーブル名を自動で結びつけます。"
+       },
+       {
+        "question": "`params.require(:task).permit(:title)` の目的は？",
+        "choices": [
+         "送られてきたパラメータのうち、title だけを受け取るようにする（マスアサインメント対策）",
+         "title を必須にする",
+         "title を JSON に変換する"
+        ],
+        "answer": 0,
+        "explain": "Strong Parameters は受け取ってよい項目の許可リストです。user_id などを勝手に送られても無視されます。"
+       },
+       {
+        "question": "`current_user.tasks.find(params[:id])` と `Task.find(params[:id])` の違いは？",
+        "choices": [
+         "同じ",
+         "前者は自分のタスクの中からだけ探すので、他人のタスクの id を指定されても見つからない",
+         "前者のほうが SQL インジェクションに弱い"
+        ],
+        "answer": 1,
+        "explain": "自分のタスクの中から探すことで、URL の id を変えて他人のデータを見られる IDOR を防いでいます。"
+       }
+      ]
+     ],
+     "id": "05-rails"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "ターミナルと Git をくわしく",

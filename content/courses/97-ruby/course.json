@@ -3,13 +3,10 @@
  "icon": "💎",
  "order": 97,
  "category": "language",
- "status": "planned",
- "description": "日本生まれの言語。Ruby on Rails の Web アプリで使われる。",
- "outline": [
-  "変数とメソッド",
-  "ブロックと each",
-  "シンボルとハッシュ",
-  "クラス",
-  "Rails のコードを読む"
- ]
+ "description": "日本生まれの言語。Ruby on Rails の Web アプリで使われる。変数とメソッド（すべてがオブジェクト・? と ! のメソッド・0 も真）、ブロックと each、シンボルとハッシュ（:name と \"name\" は別のキー）、クラスとモジュール、最後に Rails のコードを読む。Ruby 3.3 で実行して確かめたもの。",
+ "levels": {
+  "1": "入門：変数・メソッド・ブロック",
+  "2": "基礎：ハッシュとクラス",
+  "3": "実践：Rails を読む"
+ }
 }
