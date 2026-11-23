@@ -3,13 +3,10 @@
  "icon": "☕",
  "order": 91,
  "category": "language",
- "status": "planned",
- "description": "銀行や企業の業務システム、Android で使われる言語。型をしっかり書く。",
- "outline": [
-  "クラスと main メソッド",
-  "静的型と変数宣言",
-  "クラス・インターフェース",
-  "例外処理",
-  "コレクションと Stream"
- ]
+ "description": "銀行や企業の業務システム、Android で使われる言語。クラスと main、静的型と == / equals の違い、クラス・インターフェース・record、検査例外と try-with-resources、コレクションと Stream、最後に Spring Boot のコードを読む。Java 21 で実行して確かめたもの。",
+ "levels": {
+  "1": "入門：形と型",
+  "2": "基礎：クラスと例外",
+  "3": "実践：Stream と Spring"
+ }
 }

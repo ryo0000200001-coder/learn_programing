@@ -4991,17 +4991,298 @@ window.SITE_DATA = {
    "icon": "☕",
    "order": 91,
    "category": "language",
-   "status": "planned",
-   "description": "銀行や企業の業務システム、Android で使われる言語。型をしっかり書く。",
-   "outline": [
-    "クラスと main メソッド",
-    "静的型と変数宣言",
-    "クラス・インターフェース",
-    "例外処理",
-    "コレクションと Stream"
-   ],
+   "description": "銀行や企業の業務システム、Android で使われる言語。クラスと main、静的型と == / equals の違い、クラス・インターフェース・record、検査例外と try-with-resources、コレクションと Stream、最後に Spring Boot のコードを読む。Java 21 で実行して確かめたもの。",
+   "levels": {
+    "1": "入門：形と型",
+    "2": "基礎：クラスと例外",
+    "3": "実践：Stream と Spring"
+   },
    "id": "91-java",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "クラスと main メソッド ― Java のプログラムの形",
+     "level": 1,
+     "minutes": 15,
+     "concepts": [
+      "basics",
+      "classes",
+      "tooling"
+     ],
+     "summary": "public static void main(String[] args) の 1 語ずつの意味、ファイル名とクラス名の関係、javac でコンパイルして java で実行する流れ、System.out.println と printf、文字列の + の落とし穴、日本語が ??? になるとき。",
+     "body": "## このレッスンのゴール\n\n- `public class Hello` と `public static void main(String[] args)` を 1 語ずつ説明できる\n- `javac` と `java` の役割の違いが分かる\n- Java のコンパイルエラーの読み方が分かる\n\n## Java とは\n\n**Java** は、銀行・保険・役所などの **大きな業務システム** や、Android のアプリ（今は Kotlin が主流）で長く使われてきた言語です。**型をしっかり書く**、**すべてをクラスの中に書く** のが特徴で、コードは長めですが、大人数で長く保守するのに向いています。\n\n## 最初のプログラム\n\n```java\nimport java.util.List;\n\npublic class Hello {\n    static String greet(String name) {\n        return \"こんにちは、\" + name + \" さん\";\n    }\n\n    public static void main(String[] args) {\n        System.out.println(greet(\"Ryo\"));\n        int price = 120;\n        int count = 3;\n        System.out.println(\"合計 \" + price * count + \" 円\");\n        System.out.printf(\"%s は %d 歳です%n\", \"Hana\", 30);\n        var fruits = List.of(\"りんご\", \"バナナ\");\n        System.out.println(fruits + \" \" + fruits.size());\n    }\n}\n```\n\n```text\nこんにちは、Ryo さん\n合計 360 円\nHana は 30 歳です\n[りんご, バナナ] 2\n```\n\n（このコースの出力とエラーは、すべて Java 21 で実際にコンパイル・実行したものです）\n\n### public static void main(String[] args)\n\nJava の入口は、この呪文のような 1 行です。1 語ずつ見ます。\n\n| 部分 | 意味 |\n|---|---|\n| `public` | どこからでも呼べる（Java の実行の仕組みが外から呼ぶので） |\n| `static` | クラスのインスタンス（`new` で作るもの。レッスン 3）を作らずに呼べる |\n| `void` | 何も返さない（Python の `-> None`） |\n| `main` | 入口の名前。**必ず main** |\n| `String[] args` | コマンドラインの引数（`java Hello a b` なら 2 つ）。Python の `sys.argv[1:]` |\n\nPython の `if __name__ == \"__main__\":` に当たる部分を、Java では **クラスの中のメソッド** として書きます。Java では、関数も変数も、**すべてどこかのクラスの中** に書く決まりです。\n\n| Java | Python で言うと |\n|---|---|\n| `public class Hello { ... }` | ファイル全体（モジュール） |\n| `static String greet(String name)` | `def greet(name: str) -> str:` |\n| `System.out.println(x)` | `print(x)` |\n| `System.out.printf(\"%s %d%n\", ...)` | `print(\"%s %d\" % (...))`（`%n` は改行） |\n| `{ }` と `;` | インデントと改行の代わり |\n| `// ...` / `/* ... */` | コメント |\n\n### ⚠️ ファイル名＝クラス名\n\n`public class Hello` は、**`Hello.java` というファイル** に書かないとコンパイルできません。大文字・小文字も同じにします。Java のファイルの名前がいつも大文字で始まるのはこのためです。\n\n## コンパイルして実行する\n\n```bash\njavac Hello.java      # コンパイル → Hello.class ができる\njava Hello a b        # 実行（.class は付けない）\njava Hello.java       # 1 ファイルだけなら、コンパイルと実行を一度に（Java 11 から）\n```\n\n| 道具 | 意味 |\n|---|---|\n| `javac` | Java のコンパイラ。`.java` を **バイトコード**（`.class`）に変換 |\n| `java` | **JVM**（Java 仮想マシン）でバイトコードを実行 |\n| Maven（`pom.xml`）・Gradle（`build.gradle`） | ライブラリの管理とビルド（Python の pip ＋ pyproject、JavaScript の npm に当たる） |\n\nJava のプログラムは、Windows・Mac・Linux のどこでも **同じ `.class` が JVM の上で動く** のが特徴です（「一度書けばどこでも動く」）。Go や Rust のように OS ごとの実行ファイルを作るのとは違い、動かす側に Java（JVM）が必要です。\n\n## コンパイルエラーの読み方\n\n```java\nint price = 120\n```\n\n```text\nBad.java:3: error: ';' expected\n        int price = 120\n                       ^\n1 error\n```\n\n| 部分 | 意味 |\n|---|---|\n| `Bad.java:3:` | ファイル名と行 |\n| `';' expected` | 「ここに `;` が必要」 |\n| `^` | その場所 |\n\nJava のエラーは、Rust ほど親切な提案はしませんが、**場所と理由** ははっきり書かれます。`cannot find symbol`（名前が見つからない＝打ち間違いか import 忘れ）、`incompatible types`（型が合わない）もよく見ます。\n\n## 文字列の + の落とし穴\n\n```java\nSystem.out.println(\"合計 \" + price * count + \" 円\");   // 合計 360 円\nSystem.out.println(\"合計 \" + price + count + \" 円\");   // 合計 1203 円\n```\n\n`+` は左から順に計算されます。2 つ目は `\"合計 \" + 120` で **文字列 \"合計 120\" になってから**、`+ 3` で \"合計 1203\" になりました。数どうしを先に計算したいときは、`*` のように先に計算される演算子にするか、かっこで囲みます（`\"合計 \" + (price + count)`）。JavaScript でも同じことが起きます。\n\n## ⚠️ 日本語が ??? になる\n\nこの教材を作っている環境で最初に実行したとき、こう表示されました。\n\n```text\n??????Ryo ??\n?? 360 ?\n```\n\nJava は、画面に書き出すときの文字コードを **OS の設定**（ロケール）に合わせます。その環境の設定が日本語に対応していなかったため、日本語が `?` に置き換えられていました（設定を UTF-8 にしたら直りました）。Windows の古いコマンドプロンプトでも同じことが起きます。コンピュータの基礎コースの「文字化け」の仲間で、`java -Dstdout.encoding=UTF-8 Hello` のように指定して直すこともできます。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方 |\n|---|---|\n| `package com.example.shop;` | このクラスの住所。フォルダの `com/example/shop/` に対応 |\n| `import java.util.*;` | java.util の中のクラスを全部使えるように |\n| `src/main/java/...` と `src/test/java/...` | Maven・Gradle の決まったフォルダの形（本体とテスト） |\n| `pom.xml` / `build.gradle` | 使うライブラリ（依存関係）の一覧 |\n| `./mvnw spring-boot:run` / `./gradlew build` | プロジェクトに同梱されたビルドの道具を実行 |\n| `@Override` などの `@` | アノテーション（レッスン 3・6） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`public static void main(String[] args)` の `String[] args` は何？",
+        "choices": [
+         "main が返す値",
+         "プログラムを実行するときに渡されたコマンドラインの引数",
+         "クラスの名前の一覧"
+        ],
+        "answer": 1,
+        "explain": "`java Hello a b` なら args は `[\"a\", \"b\"]` の 2 つです。Python の `sys.argv[1:]` に当たります。"
+       },
+       {
+        "question": "`public class Shop` を書くファイルの名前は？",
+        "choices": [
+         "`Shop.java`",
+         "`shop.java`",
+         "何でもよい"
+        ],
+        "answer": 0,
+        "explain": "public なクラスの名前と、ファイル名は大文字・小文字まで同じにする必要があります。"
+       },
+       {
+        "question": "`int a = 1, b = 2;` のとき、`\"答え \" + a + b` の結果は？",
+        "choices": [
+         "答え 3",
+         "答え 12",
+         "エラー"
+        ],
+        "answer": 1,
+        "explain": "左から順に計算され、\"答え \" + 1 で文字列 \"答え 1\" になってから 2 がつながります。足し算を先にするなら `\"答え \" + (a + b)` です。"
+       }
+      ]
+     ],
+     "id": "01-class-main"
+    },
+    {
+     "title": "静的型と変数 ― int と Integer、== と equals",
+     "level": 1,
+     "minutes": 18,
+     "concepts": [
+      "types",
+      "variables",
+      "operators"
+     ],
+     "summary": "int・double・String・boolean の宣言と var、整数のあふれ、プリミティブ型とラッパー型（int と Integer）、そして Java 最大の落とし穴「文字列を == で比べてはいけない」と NullPointerException を実際の結果で。",
+     "body": "## このレッスンのゴール\n\n- `int price = 120;` や `var` での変数の宣言を読める\n- 整数があふれる・整数の割り算が切り捨てになることが分かる\n- 文字列を `==` ではなく `equals` で比べる理由を、実際の結果で説明できる\n\n## 変数の宣言\n\n```java\nint price = 120;\ndouble rate = 0.1;\nString name = \"Ryo\";\nboolean isOpen = true;\nchar c = 'あ';\nvar fruits = List.of(\"りんご\", \"バナナ\");   // 型は右から推論される（Java 10 から）\nfinal int TAX = 10;                          // final は変えられない（定数）\n```\n\n**型を先に書く** のが Java の形です（C 言語と同じ。Go や Rust は後ろ）。`var` を使うと、型を書かずに右の値から決めてもらえます。\n\n| 型 | 中身 | Python で言うと |\n|---|---|---|\n| `int` | 整数（約 ±21 億まで） | `int` |\n| `long` | 大きな整数 | `int` |\n| `double` | 小数 | `float` |\n| `boolean` | `true` / `false` | `bool` |\n| `char` | 1 文字（シングルクォート `'あ'`） | — |\n| `String` | 文字列（ダブルクォート `\"...\"`） | `str` |\n\n## 計算の落とし穴\n\n```java\nSystem.out.println(7 / 2 + \" \" + 7 / 2.0 + \" \" + 7 % 2);   // 3 3.5 1\ndouble withTax = 120 * (1 + 0.1);\nSystem.out.println(withTax);                                // 132.0\n\nint big = Integer.MAX_VALUE;\nSystem.out.println(big + 1);                                // -2147483648\nlong l = 3_000_000_000L;\nSystem.out.println(l);                                      // 3000000000\n```\n\n| 結果 | 理由 |\n|---|---|\n| `7 / 2` が 3 | 整数どうしの割り算は切り捨て（Go・C・SQLite と同じ） |\n| `big + 1` が **マイナス** | int の上限（約 21 億）を超えると、**エラーにならずに反対側に回り込む**（オーバーフロー） |\n| `3_000_000_000L` | 大きな数は `long` で、末尾に `L`。`_` は読みやすくするための区切り |\n\n⚠️ オーバーフローはエラーにならないので気づきにくいバグです。売上の合計やミリ秒の時刻など、大きくなりうる数は `long` にします（Python の int には上限が無いので、起きません）。\n\n## プリミティブ型とラッパー型\n\nJava の型には 2 種類あります。\n\n| | プリミティブ型 | 参照型（オブジェクト） |\n|---|---|---|\n| 例 | `int`・`double`・`boolean`・`char` | `String`・`Integer`・`List`・自分で作ったクラス |\n| 名前 | **小文字** で始まる | **大文字** で始まる |\n| 中身 | 値そのもの | **値が置いてある場所への参照**（Go のポインタに近い） |\n| null | 入れられない | 入れられる（何も指していない） |\n\n`int` には、オブジェクト版の **`Integer`** があります（ラッパー型）。`List<int>` とは書けず、`List<Integer>` と書く必要があるので、Java のコードでは両方が混ざって出てきます。\n\n## ⚠️ == と equals\n\nJava を書く人が必ず一度はハマる、いちばん有名な落とし穴です。\n\n```java\nString a = \"りんご\";\nString b = \"りんご\";\nString c = new String(\"りんご\");\nString d = new StringBuilder(\"りん\").append(\"ご\").toString();\n\nSystem.out.println((a == b) + \" \" + (a == c) + \" \" + (a == d));   // true false false\nSystem.out.println(a.equals(c) + \" \" + a.equals(d));              // true true\n```\n\n**中身はどれも「りんご」なのに、`==` では false になるものがあります**。\n\n| 比べ方 | 何を比べるか |\n|---|---|\n| `==` | 参照型では **同じオブジェクト（同じ場所）か** |\n| `.equals(...)` | **中身が同じか** |\n\n`a` と `b` は、Java が同じ文字列を使い回したので、たまたま同じ場所でした。`c` と `d` は別に作られた文字列なので、場所が違います。**ユーザーの入力や、データベースから読んだ文字列は、たいてい別の場所** にあるので、`==` で比べると「同じパスワードなのに一致しない」のようなバグになります。\n\n**文字列（と、すべてのオブジェクト）は `equals` で比べる**。これが Java の鉄則です。\n\nPython の `==` は中身を比べ、`is` が場所を比べます。Java では **`==` が Python の `is`** に当たる、と覚えると分かりやすいです。\n\n### Integer でも起きる\n\n```java\nInteger x = 127, y = 127, p = 128, q = 128;\nSystem.out.println((x == y) + \" \" + (p == q) + \" \" + p.equals(q));   // true false true\n```\n\n127 までは Java が同じオブジェクトを使い回すので `==` が true、128 からは別のオブジェクトになって false でした。**テストで小さな数だけ試すと気づけない** ので、たちが悪いバグです。\n\n## null と NullPointerException\n\n```java\nString n = null;\nSystem.out.println(\"りんご\".equals(n));   // false\nSystem.out.println(n.equals(\"りんご\"));\n```\n\n```text\nException in thread \"main\" java.lang.NullPointerException: Cannot invoke \"String.equals(Object)\" because \"n\" is null\n\tat Eq.main(Eq.java:13)\n```\n\n参照型の変数には `null`（何も指していない）を入れられます。**null のままメソッドを呼ぶと、NullPointerException**（よく NPE と略される）で止まります。Java のプログラムでいちばんよく見る例外です。\n\nエラーの文が「n が null だから `String.equals` を呼べない」と、**どの変数が null だったか** まで教えてくれています（Java 14 から）。`at Eq.main(Eq.java:13)` が場所です。\n\n| 防ぎ方 | 例 |\n|---|---|\n| 定数の側から equals を呼ぶ | `\"りんご\".equals(n)`（n が null でも false で済む） |\n| null かどうかを確かめる | `if (n != null && n.equals(...))` |\n| `Objects.equals(a, b)` | どちらが null でも安全に比べる |\n| `Optional` を使う | レッスン 4 |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `if (name == \"admin\")` / `if (status == otherStatus)`（文字列） | ⚠️ equals に |\n| `Integer` どうしを `==` | ⚠️ 128 以上で false になる |\n| `int total` で売上の合計 | 大きくなりうるなら `long`（オーバーフロー） |\n| `input.equals(\"yes\")` で input が null かも | ⚠️ `\"yes\".equals(input)` の順に |\n| `var x = ...` | 型は右から決まる（型が無いわけではない） |\n| `final` | 再代入できない（Rust の let、JavaScript の const） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Java で、2 つの文字列の中身が同じか確かめる正しい書き方は？",
+        "choices": [
+         "`a == b`",
+         "`a.equals(b)`",
+         "`a = b`"
+        ],
+        "answer": 1,
+        "explain": "`==` は同じオブジェクト（同じ場所）かを比べます。中身を比べるのは equals です。実際に、中身が同じでも `==` が false になる例がありました。"
+       },
+       {
+        "question": "`int big = Integer.MAX_VALUE; big + 1` の結果は？",
+        "choices": [
+         "エラーで止まる",
+         "2147483648",
+         "-2147483648（オーバーフローして反対側に回り込む）"
+        ],
+        "answer": 2,
+        "explain": "int の上限を超えると、エラーにならずにマイナスになります。大きくなりうる数は long を使います。"
+       },
+       {
+        "question": "`String s = null; s.length();` を実行すると？",
+        "choices": [
+         "NullPointerException で止まる",
+         "0 が返る",
+         "null が返る"
+        ],
+        "answer": 0,
+        "explain": "null の変数のメソッドを呼ぶと NullPointerException です。エラーの文には、どの変数が null だったかも表示されます。"
+       }
+      ]
+     ],
+     "id": "02-types-equals"
+    },
+    {
+     "title": "クラス・インターフェース・record",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "classes",
+      "types",
+      "generics"
+     ],
+     "summary": "フィールドとコンストラクタと this、private と getter、@Override、extends と super、interface と default メソッド、データを入れるだけの record（Java 16 から）。Python の dataclass との比較。",
+     "body": "## このレッスンのゴール\n\n- クラスのフィールド・コンストラクタ・メソッド・`this` を読める\n- `private` と getter、`@Override`、`extends`・`implements` の意味が分かる\n- `record` が何を自動で用意してくれるか説明できる\n\n## クラスの例\n\n```java\ninterface HasPrice {\n    int price();\n    default String label() { return price() + \" 円\"; }\n}\n\nclass Product implements HasPrice {\n    private final String name;\n    private int basePrice;\n\n    Product(String name, int basePrice) {\n        this.name = name;\n        this.basePrice = basePrice;\n    }\n\n    public String getName() { return name; }\n\n    @Override\n    public int price() { return basePrice * 110 / 100; }\n\n    void discount(int yen) {\n        if (yen > basePrice) throw new IllegalArgumentException(\"値引きが大きすぎます: \" + yen);\n        basePrice -= yen;\n    }\n\n    @Override\n    public String toString() { return name + \"（\" + price() + \" 円）\"; }\n}\n```\n\n```java\nProduct apple = new Product(\"りんご\", 120);\nSystem.out.println(apple.getName() + \" \" + apple.price() + \" \" + apple.label());   // りんご 132 132 円\napple.discount(20);\nSystem.out.println(apple);                                                         // りんご（110 円）\n```\n\n| 部分 | 意味 | Python で言うと |\n|---|---|---|\n| `private final String name;` | **フィールド**（オブジェクトが持つデータ）。private で外から見えず、final で変えられない | `self._name`（ただし本当に見えない） |\n| `Product(String name, int basePrice) { ... }` | **コンストラクタ**。クラスと同じ名前で、戻り値の型を書かない | `__init__` |\n| `this.name = name;` | 自分のフィールドに、引数の値を入れる | `self.name = name` |\n| `new Product(...)` | 作る | `Product(...)` |\n| `public String getName()` | **getter**。private のフィールドを読むためのメソッド | `@property` |\n| `@Override` | 「親やインターフェースのメソッドを上書きしています」という印。名前を打ち間違えるとコンパイルエラーにしてくれる | — |\n| `toString()` | 表示の仕方（`println(apple)` で使われる） | `__str__` |\n| `throw new IllegalArgumentException(...)` | 例外を投げる（レッスン 4） | `raise ValueError(...)` |\n\n### private と getter\n\n```java\nSystem.out.println(p.basePrice);\n```\n\n```text\nPriv.java:2: error: basePrice has private access in Product\n```\n\nPHP（PHP コースのレッスン 3）と同じく、private は **コンパイルエラー** になります。Java では、フィールドを private にして、必要なものだけ `getName()` のような getter で読めるようにする（**カプセル化**）のが定番です。AI の Java のコードに `getXxx()` / `setXxx()` がたくさん並んでいるのはこのためです。\n\n## 継承\n\n```java\nclass Set extends Product {\n    Set(String name, int basePrice) { super(name, basePrice); }\n\n    @Override\n    public int price() { return super.price() - 50; }\n}\n```\n\n| 部分 | 意味 | Python で言うと |\n|---|---|---|\n| `class Set extends Product` | Product を継承 | `class Set(Product):` |\n| `super(name, basePrice)` | 親のコンストラクタを呼ぶ | `super().__init__(...)` |\n| `super.price()` | 親のメソッドを呼ぶ | `super().price()` |\n\nJava のクラスは、**親を 1 つしか持てません**（多重継承できない）。その代わりに、インターフェースを何個でも実装できます。\n\n## インターフェース\n\n```java\ninterface HasPrice {\n    int price();                                         // 中身の無いメソッド：必ず実装する\n    default String label() { return price() + \" 円\"; }   // default：中身付き。実装しなくてよい\n}\n```\n\n```java\nList<HasPrice> items = new ArrayList<>();\nitems.add(apple);\nitems.add(new Set(\"詰め合わせ\", 1000));\nfor (HasPrice item : items) {\n    System.out.println(item + \" / \" + item.getClass().getSimpleName());\n}\n// りんご（110 円） / Product\n// 詰め合わせ（1050 円） / Set\n```\n\n`List<HasPrice>` には、HasPrice を実装したものなら何でも入れられます。Rust のトレイト（Rust コースのレッスン 5）の `Vec<Box<dyn Shape>>` と同じ考え方で、Java は最初からこれが普通にできます。\n\n| 言語 | 「このメソッドを持つ」の約束 | 宣言の仕方 |\n|---|---|---|\n| Java | `interface` | `implements HasPrice`（明示） |\n| Go | `interface` | 書かない（メソッドがあれば自動） |\n| Rust | `trait` | `impl Shape for Rect`（明示） |\n| Python | `Protocol` / 抽象クラス | 書かなくてもよい（ダックタイピング） |\n\n## record：データを入れるだけのクラス\n\n```java\nrecord Point(int x, int y) {\n    double distance() { return Math.sqrt(x * x + y * y); }\n}\n\nPoint p = new Point(3, 4);\nSystem.out.println(p + \" \" + p.x() + \" \" + p.distance() + \" \" + p.equals(new Point(3, 4)));\n// Point[x=3, y=4] 3 5.0 true\n```\n\n`record`（Java 16 から）は、1 行書くだけで、**コンストラクタ・getter（`x()`）・`toString`・`equals`・`hashCode` を自動で作ってくれます**。中身は変えられません。\n\nPython の `@dataclass(frozen=True)`、Rust の `#[derive(Debug, Clone, PartialEq)]` とほぼ同じです。前のレッスンの「equals で比べる」も、record なら中身で比べてくれます（`p.equals(new Point(3, 4))` が true）。\n\n昔の Java では、同じことをするのに 30 行くらい（フィールド・コンストラクタ・getter・equals・hashCode・toString）書いていました。AI のコードや古いコードで、**Lombok** の `@Data`・`@Getter` というアノテーションを見たら、それを自動で作るためのライブラリです。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方 |\n|---|---|\n| `private final UserRepository repository;` ＋ コンストラクタで受け取る | 必要な部品を外から受け取る（依存性注入。レッスン 6） |\n| `getName()` / `setName(...)` が並ぶ | getter・setter。private のフィールドを読み書きする窓口 |\n| `@Data` / `@Getter` / `@Builder`（Lombok） | getter などを自動で作る |\n| `public record UserDto(String name, String email) {}` | API で受け渡すデータの形（DTO） |\n| `abstract class` | 一部のメソッドの中身を子に任せる親クラス（そのままでは new できない） |\n| `equals` を上書きしているのに `hashCode` を上書きしていない | ⚠️ HashMap などで正しく動かない。両方そろえる（record なら自動） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Java のクラスで、コンストラクタの見分け方は？",
+        "choices": [
+         "クラスと同じ名前で、戻り値の型が書かれていないメソッド",
+         "`__init__` という名前のメソッド",
+         "`constructor` というキーワードで始まるもの"
+        ],
+        "answer": 0,
+        "explain": "`Product(String name, int price) { ... }` のように、クラス名と同じで戻り値の型が無いものがコンストラクタです。"
+       },
+       {
+        "question": "`@Override` を付ける主な理由は？",
+        "choices": [
+         "メソッドを速くするため",
+         "親やインターフェースのメソッドを上書きしていることを示し、名前の打ち間違いをコンパイルエラーにしてもらうため",
+         "メソッドを private にするため"
+        ],
+        "answer": 1,
+        "explain": "`@Override` を付けたのに上書きする元が無ければ、コンパイラが教えてくれます。"
+       },
+       {
+        "question": "`record Point(int x, int y) {}` が自動で用意してくれないものは？",
+        "choices": [
+         "`x()` と `y()` で値を読むメソッド",
+         "中身で比べる `equals`",
+         "x の値を後から変える `setX` メソッド"
+        ],
+        "answer": 2,
+        "explain": "record の中身は変えられません。コンストラクタ・読むメソッド・equals・hashCode・toString は自動で作られます。"
+       }
+      ]
+     ],
+     "id": "03-classes-interfaces"
+    },
+    {
+     "title": "例外処理 ― try・catch・throws と Optional",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "errors",
+      "io"
+     ],
+     "summary": "try・catch・finally、自分の例外クラス、Java だけの「検査例外」（throws を書かないとコンパイルできない）、try-with-resources での後片付け、スタックトレースの読み方、null の代わりの Optional と、Integer の null で起きる NPE。",
+     "body": "## このレッスンのゴール\n\n- `try / catch / finally` と `throw new ...` を読める\n- 検査例外と非検査例外の違い、`throws` の意味が分かる\n- `try (...)`（try-with-resources）と `Optional` を読める\n\n## try・catch・finally\n\n```java\ntry {\n    int n = Integer.parseInt(\"12a\");\n} catch (NumberFormatException e) {\n    System.out.println(\"数ではありません: \" + e.getMessage());\n}\n// 数ではありません: For input string: \"12a\"\n```\n\nPython の `try / except` とほぼ同じです。\n\n| Java | Python |\n|---|---|\n| `try { ... }` | `try:` |\n| `catch (NumberFormatException e) { ... }` | `except ValueError as e:` |\n| `finally { ... }` | `finally:` |\n| `throw new IllegalArgumentException(\"...\")` | `raise ValueError(\"...\")` |\n| `e.getMessage()` | `str(e)` |\n\nGo や Rust はエラーを **戻り値** で返しましたが、Java は Python と同じく **例外** で伝えます。\n\n## 自分の例外\n\n```java\nstatic class NotFoundException extends RuntimeException {\n    NotFoundException(String msg) { super(msg); }\n}\n\nstatic int findPrice(String name) {\n    Map<String, Integer> prices = Map.of(\"りんご\", 120);\n    Integer p = prices.get(name);\n    if (p == null) throw new NotFoundException(\"商品が見つかりません: \" + name);\n    return p;\n}\n\ntry {\n    findPrice(\"ぶどう\");\n} catch (NotFoundException e) {\n    System.out.println(\"→ 404: \" + e.getMessage());\n} finally {\n    System.out.println(\"finally は必ず実行\");\n}\n```\n\n```text\n→ 404: 商品が見つかりません: ぶどう\nfinally は必ず実行\n```\n\n`RuntimeException` を継承（レッスン 3）して、自分の種類の例外を作っています。Web のアプリでは、「NotFoundException なら 404」のように、種類で返事を変えるのに使います（レッスン 6）。\n\n## 検査例外：Java だけの決まり\n\n```java\nstatic String f() {\n    return new BufferedReader(new FileReader(\"x\")).readLine();\n}\n```\n\n```text\nChk.java:2: error: unreported exception FileNotFoundException; must be caught or declared to be thrown\nChk.java:2: error: unreported exception IOException; must be caught or declared to be thrown\n```\n\nファイルを読む処理は、**try / catch で受け止めるか、「この関数は例外を投げます」と宣言するか** しないと、**コンパイルできません**。「ファイルが無い」「読めない」は、ちゃんと考えておくべき失敗だから、というのが Java の考え方です。\n\n```java\nstatic String readFirstLine(String path) throws IOException {    // ← 宣言する\n    try (BufferedReader r = new BufferedReader(new FileReader(path))) {\n        return r.readLine();\n    }\n}\n```\n\n`throws IOException` は「この関数は IOException を投げることがあるので、**呼ぶ人が対応してね**」という宣言です。\n\n| | 検査例外（checked） | 非検査例外（unchecked） |\n|---|---|---|\n| 例 | `IOException`、`SQLException` | `RuntimeException` の仲間：`NullPointerException`、`IllegalArgumentException`、`NumberFormatException` |\n| 対応しないと | **コンパイルエラー** | コンパイルは通る（実行時に止まる） |\n| 意味 | 外の世界の事情で起きる、考えておくべき失敗 | プログラムのバグや、入力の間違い |\n\nPython にも Go にも Rust にも、この区別はありません。Go の「エラーを必ず戻り値で返す」、Rust の「Result を必ず扱う」と、目的は似ています。\n\n## try-with-resources：後片付けを自動で\n\n```java\ntry (BufferedReader r = new BufferedReader(new FileReader(path))) {\n    return r.readLine();\n}   // ← ここで r.close() が自動で呼ばれる（例外が起きても）\n```\n\n`try (...)` のかっこの中で開いたものは、**ブロックを抜けるときに自動で閉じられます**。Python の `with open(...) as f:`、Go の `defer f.Close()`、シェルの `trap` と同じ役割です。データベースの接続やファイルは、この形で開くのが今の Java の定番です。\n\n```java\ntry {\n    readFirstLine(\"config.toml\");\n} catch (IOException e) {\n    System.out.println(e.getClass().getSimpleName() + \": \" + e.getMessage());\n}\n// FileNotFoundException: config.toml (No such file or directory)\n```\n\n## スタックトレースの読み方\n\n```java\napple.discount(9999);\n```\n\n```text\nException in thread \"main\" java.lang.IllegalArgumentException: 値引きが大きすぎます: 9999\n\tat Product.discount(Shop.java:24)\n\tat Shop.main(Shop.java:56)\n```\n\n| 行 | 意味 |\n|---|---|\n| 1 行目 | **例外の種類とメッセージ**。まずここを読む |\n| `at Product.discount(Shop.java:24)` | 例外が起きた場所（Shop.java の 24 行目、Product の discount） |\n| `at Shop.main(Shop.java:56)` | それを呼んだ場所 |\n\n**上ほど、例外が起きた場所に近い** 順に並んでいます。Python のトレースバック（下ほど近い）と **逆** なので注意です（はじめてのコースの「エラーメッセージ」）。本物のアプリでは、ライブラリの行が何十行も続くので、**自分のパッケージ名（`com.example...`）の行を探す** のがコツです。\n\n## Optional：null の代わり\n\n```java\nstatic Optional<Integer> findPriceOpt(String name) {\n    return Optional.ofNullable(Map.of(\"りんご\", 120).get(name));\n}\n\nSystem.out.println(findPriceOpt(\"ぶどう\").orElse(0) + \" \" +\n                   findPriceOpt(\"りんご\").map(p -> p * 2).orElse(0));\n// 0 240\n```\n\n`Optional<Integer>` は「Integer があるかもしれないし、無いかもしれない」入れ物です。Rust の `Option`（Rust コースのレッスン 3）と同じ考え方を、Java 8 で取り入れたものです。\n\n| Java | Rust | 意味 |\n|---|---|---|\n| `Optional.of(x)` / `Optional.empty()` | `Some(x)` / `None` | ある／無い |\n| `.orElse(0)` | `.unwrap_or(0)` | 無ければ 0 |\n| `.map(p -> p * 2)` | `.map(\\|p\\| p * 2)` | あれば変換 |\n| `.orElseThrow()` | `.unwrap()` | 無ければ例外 |\n| `.isPresent()` | `.is_some()` | あるか |\n\n### ⚠️ Integer の null\n\n```java\nInteger missing = Map.of(\"りんご\", 120).get(\"ぶどう\");   // 無いので null\nint total = missing + 10;\n```\n\n```text\nException in thread \"main\" java.lang.NullPointerException: Cannot invoke \"java.lang.Integer.intValue()\" because \"missing\" is null\n```\n\n`Map.get` は、無いキーで **null** を返します。それを `int` として計算しようとして（Java が裏で `intValue()` を呼ぶ）、NPE になりました。コードの見た目には「メソッドを呼んでいる」部分が無いので、気づきにくい NPE です。`getOrDefault(\"ぶどう\", 0)` や Optional を使うと防げます。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `catch (Exception e) { }`（中が空） | ⚠️ 例外を握りつぶしている。失敗に気づけない |\n| `catch (Exception e) { e.printStackTrace(); }` | 表示だけして先に進む。続けて大丈夫か |\n| `throws Exception` が main やあちこちに | 検査例外を考えずに全部上に投げている |\n| `try (Connection c = ...; PreparedStatement s = ...)` | ✅ 2 つとも自動で閉じる |\n| `optional.get()` | ⚠️ 空なら例外。`orElse` などに |\n| `throw new RuntimeException(e)` | 検査例外を非検査例外に包み直している（よくある形） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`static String read(String path) throws IOException` の `throws IOException` の意味は？",
+        "choices": [
+         "この関数は IOException を絶対に投げない",
+         "この関数は IOException を投げることがあるので、呼ぶ側が対応する必要がある",
+         "IOException を自動で受け止める"
+        ],
+        "answer": 1,
+        "explain": "検査例外は、受け止めるか throws で宣言しないとコンパイルできません。throws を書くと、対応する責任が呼ぶ側に移ります。"
+       },
+       {
+        "question": "`try (BufferedReader r = new BufferedReader(...)) { ... }` の利点は？",
+        "choices": [
+         "ブロックを抜けるとき、例外が起きても r が自動で閉じられる",
+         "ファイルを速く読める",
+         "例外が起きなくなる"
+        ],
+        "answer": 0,
+        "explain": "try-with-resources は、Python の `with` に当たります。閉じ忘れを防ぎます。"
+       },
+       {
+        "question": "Java のスタックトレースで、例外が実際に起きた場所に近いのは？",
+        "choices": [
+         "上のほうの `at ...` の行",
+         "下のほうの `at ...` の行",
+         "最後の行"
+        ],
+        "answer": 0,
+        "explain": "Java は上ほど起きた場所に近い順です。Python のトレースバックとは逆なので注意します。"
+       }
+      ]
+     ],
+     "id": "04-exceptions"
+    },
+    {
+     "title": "コレクションと Stream",
+     "level": 3,
+     "minutes": 20,
+     "concepts": [
+      "collections",
+      "higher_order",
+      "generics"
+     ],
+     "summary": "List・Map とジェネリクス <String>、List.of は変更できない、ループの中で消すと起きること、Stream の filter・map・collect、groupingBy での集計、Comparator での並べ替え、メソッド参照 Product::name。SQL や Python と並べて読む。",
+     "body": "## このレッスンのゴール\n\n- `List<String>`・`Map<String, Integer>` とよく使う操作を読める\n- `.stream().filter(...).map(...).collect(...)` を左から順に説明できる\n- `Collectors.groupingBy` での集計と、`Product::name` のようなメソッド参照が分かる\n\n## List と Map\n\n```java\nList<String> fruits = new ArrayList<>(List.of(\"りんご\", \"バナナ\"));\nfruits.add(\"みかん\");\nSystem.out.println(fruits + \" \" + fruits.get(0) + \" \" + fruits.size() + \" \" + fruits.contains(\"バナナ\"));\n// [りんご, バナナ, みかん] りんご 3 true\n\nMap<String, Integer> stock = new HashMap<>();\nstock.put(\"りんご\", 10);\nstock.merge(\"りんご\", 5, Integer::sum);\nstock.merge(\"バナナ\", 3, Integer::sum);\nSystem.out.println(stock.get(\"りんご\") + \" \" + stock.get(\"ぶどう\") + \" \" + stock.getOrDefault(\"ぶどう\", 0));\n// 15 null 0\n```\n\n| Java | Python |\n|---|---|\n| `List<String> x = new ArrayList<>()` | `x: list[str] = []` |\n| `x.add(v)` / `x.get(0)` / `x.size()` | `x.append(v)` / `x[0]` / `len(x)` |\n| `Map<String, Integer> m = new HashMap<>()` | `m: dict[str, int] = {}` |\n| `m.put(k, v)` / `m.get(k)` | `m[k] = v` / `m.get(k)` |\n| `m.getOrDefault(k, 0)` | `m.get(k, 0)` |\n| `m.merge(k, 5, Integer::sum)` | `m[k] = m.get(k, 0) + 5`（数える定番。Rust の `entry().or_insert()`） |\n\n`<String>` の部分が **ジェネリクス**（TypeScript・Rust と同じ）で、「String を入れる List」という意味です。`new ArrayList<>()` の `<>` は、左から型を推論してもらう書き方です。\n\n`List`・`Map` はインターフェース（レッスン 3）、`ArrayList`・`HashMap` はその実装です。**左にインターフェース、右に実装** と書くのが定番です。\n\n### List.of は変更できない\n\n```java\nList<String> fixed = List.of(\"a\");\nfixed.add(\"b\");\n// UnsupportedOperationException\n```\n\n`List.of(...)`・`Map.of(...)` で作ったものは **中身を変えられません**（イミュータブル）。変えたいなら `new ArrayList<>(List.of(...))` で、変えられる List に入れ直します（上の fruits はこの形）。\n\n### ⚠️ ループの中で消す\n\n```java\nList<Integer> x = new ArrayList<>(List.of(1, 2, 3));\nfor (Integer n : x) { if (n == 1) x.remove(n); }\n// ConcurrentModificationException\n\nList<Integer> y = new ArrayList<>(List.of(1, 2, 3));\nfor (Integer n : y) { if (n == 2) y.remove(n); }\n// エラーなし。y は [1, 3]（3 は一度もループで見られていない）\n```\n\nfor で回している最中に List から消すと、**例外になることもあれば、エラーにならずに要素を飛ばしてしまうこともあります**（どちらも実際に起きた結果です）。消すときは `removeIf` を使います。\n\n```java\nnums.removeIf(n -> n == 3);\n```\n\nPython でもループ中に `list.remove` すると要素を飛ばすので、同じ注意が必要です。\n\n## Stream：データの流れ作業\n\nこのコースの商品のデータで試します（SQL コースと同じ 6 つの商品）。\n\n```java\nrecord Product(String name, String category, int price) {}\n\nList<String> cheap = products.stream()\n    .filter(p -> p.price() < 200)\n    .map(Product::name)\n    .collect(Collectors.toList());\nSystem.out.println(cheap);                         // [りんご, バナナ, クロワッサン]\n\nint total = products.stream().mapToInt(Product::price).sum();\nSystem.out.println(total);                         // 2040\n```\n\n| 部分 | 意味 | Python で言うと |\n|---|---|---|\n| `.stream()` | 流れ作業を始める | — |\n| `.filter(p -> p.price() < 200)` | 条件に合うものだけ | `if p.price < 200` |\n| `.map(Product::name)` | 1 つずつ変換 | `p.name for ...` |\n| `.collect(Collectors.toList())` / `.toList()` | List に集める | `[...]` |\n| `.mapToInt(...).sum()` | 数にして合計 | `sum(...)` |\n| `p -> p.price() < 200` | **ラムダ式**（その場の関数） | `lambda p: p.price < 200` |\n| `Product::name` | **メソッド参照**。`p -> p.name()` の短い書き方 | `attrgetter(\"name\")` |\n\nPython で書くと `[p.name for p in products if p.price < 200]`。JavaScript の `products.filter(...).map(...)`、Rust の `.iter().filter(...).map(...).collect()` と、**どの言語もほぼ同じ形** です。\n\n### groupingBy：グループごとに集計\n\n```java\nMap<String, Long> countByCat = products.stream()\n    .collect(Collectors.groupingBy(Product::category, TreeMap::new, Collectors.counting()));\nSystem.out.println(countByCat);    // {パン=2, 果物=2, 飲み物=2}\n\nMap<String, Double> avgByCat = products.stream()\n    .collect(Collectors.groupingBy(Product::category, TreeMap::new, Collectors.averagingInt(Product::price)));\nSystem.out.println(avgByCat);      // {パン=215.0, 果物=105.0, 飲み物=700.0}\n```\n\nSQL コースのレッスン 3 の結果と、まったく同じ数になっています。\n\n```sql\nSELECT category, COUNT(*), AVG(price) FROM products GROUP BY category;\n```\n\n| groupingBy の引数 | 意味 |\n|---|---|\n| `Product::category` | 何でグループに分けるか（`GROUP BY category`） |\n| `TreeMap::new` | 結果をキーの順に並べた Map にする（無ければ HashMap で順番はばらばら） |\n| `Collectors.counting()` / `averagingInt(...)` | グループごとに何を計算するか（`COUNT(*)` / `AVG(price)`） |\n\n### 並べ替え・最大\n\n```java\nOptional<Product> top = products.stream().max(Comparator.comparingInt(Product::price));\nSystem.out.println(top.map(Product::name).orElse(\"なし\"));    // コーヒー豆\n\nList<Product> sorted = products.stream()\n    .sorted(Comparator.comparing(Product::category)\n                      .thenComparing(Product::price, Comparator.reverseOrder()))\n    .toList();\n// 食パン クロワッサン りんご バナナ コーヒー豆 牛乳\n```\n\n`Comparator.comparing(...).thenComparing(..., reverseOrder())` は、SQL の `ORDER BY category, price DESC`（SQL コースのレッスン 2）と同じで、結果の順番も同じでした。`max` は空かもしれないので、レッスン 4 の Optional で返ってきます。\n\n```java\nString joined = products.stream().map(Product::name).limit(3).collect(Collectors.joining(\"、\"));\n// りんご、バナナ、牛乳\n```\n\n`limit(3)` は SQL の `LIMIT 3`、`joining(\"、\")` は Python の `\"、\".join(...)` です。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `.stream().filter(...).map(...).toList()` | 絞って変換して List に |\n| `Collectors.groupingBy(X::getY)` | Y ごとにまとめた Map |\n| `.forEach(System.out::println)` | 1 つずつ表示 |\n| `.findFirst().orElseThrow()` | 最初の 1 つ。無ければ例外 |\n| ループの中で `list.remove(...)` | ⚠️ 例外か、要素の飛ばし。`removeIf` に |\n| `List.of(...)` に `add` | ⚠️ UnsupportedOperationException |\n| `.parallelStream()` | 複数のスレッドで並行に処理。中で共有の変数を書き換えるとデータ競合（Go コースのレッスン 5） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`products.stream().filter(p -> p.price() < 200).map(Product::name).toList()` を Python で書くと？",
+        "choices": [
+         "`[p.name for p in products if p.price < 200]`",
+         "`[p for p in products if p.name < 200]`",
+         "`sum(p.price for p in products)`"
+        ],
+        "answer": 0,
+        "explain": "filter で値段が 200 未満のものに絞り、map で名前に変換して List に集めています。"
+       },
+       {
+        "question": "`Product::name` は何の短い書き方？",
+        "choices": [
+         "Product クラスの name というフィールドを直接読む",
+         "`p -> p.name()`（各要素の name メソッドを呼ぶラムダ式）",
+         "Product の静的な定数 name"
+        ],
+        "answer": 1,
+        "explain": "`クラス::メソッド` はメソッド参照で、ラムダ式を短く書いたものです。"
+       },
+       {
+        "question": "`Collectors.groupingBy(Product::category, Collectors.counting())` に当たる SQL は？",
+        "choices": [
+         "`SELECT category FROM products ORDER BY category`",
+         "`SELECT category, COUNT(*) FROM products GROUP BY category`",
+         "`SELECT COUNT(DISTINCT category) FROM products`"
+        ],
+        "answer": 1,
+        "explain": "category でグループに分け、グループごとの数を数えています。実際の結果も SQL コースと同じでした。"
+       }
+      ]
+     ],
+     "id": "05-collections-stream"
+    },
+    {
+     "title": "Spring Boot のコードを読む ― アノテーションだらけの API",
+     "level": 3,
+     "minutes": 18,
+     "concepts": [
+      "backend",
+      "http_api",
+      "reading",
+      "ai_coding"
+     ],
+     "summary": "Java の Web アプリで最もよく使われる Spring Boot。@RestController・@GetMapping・@PathVariable・@RequestBody・@Valid、サービスとリポジトリの層、依存性注入、JPA のエンティティ、例外を 404 にする仕組み。FastAPI と並べて読む。",
+     "body": "## このレッスンのゴール\n\n- `@RestController`・`@GetMapping` などのアノテーションが何をしているか説明できる\n- コントローラー・サービス・リポジトリの役割の違いが分かる\n- Spring Boot の API を、FastAPI のコードと対応させて読める\n\nこのレッスンのコードは、Spring Boot の書き方の説明のための抜粋です（Spring Boot のアプリをここでは動かしていません）。書き方は Spring Boot 3 の形です。\n\n## アノテーション：@ で始まる印\n\nSpring Boot のコードは、`@` で始まる **アノテーション** だらけです。\n\n```java\n@RestController\n@RequestMapping(\"/tasks\")\npublic class TaskController { ... }\n```\n\nアノテーションは、クラスやメソッドに付ける **「印」** です。それ自体は何もしませんが、Spring がアプリの起動時に印を探して、**「この印があるクラスは Web の窓口として登録しよう」** のように動きます。\n\nPython のデコレーター（`@app.get(\"/tasks\")`。Python コースのレッスン 13）と見た目も役割もよく似ています。\n\n## 全体のつながり\n\n```text\nリクエスト → TaskController（窓口）→ TaskService（業務の処理）→ TaskRepository（データベース）\n                    ↑ JSON にして返す        ↑ ルール・チェック         ↑ SQL は自動\n```\n\nバックエンドコースのレッスン 16 の「層に分ける」を、Spring は **決まった形** でやります。\n\n## エンティティ：テーブルの形\n\n```java\n@Entity\n@Table(name = \"tasks\")\npublic class Task {\n    @Id\n    @GeneratedValue(strategy = GenerationType.IDENTITY)\n    private Long id;\n\n    @Column(nullable = false, length = 200)\n    private String title;\n\n    private boolean done;\n\n    @ManyToOne(fetch = FetchType.LAZY)\n    private User owner;\n\n    // getter・setter は省略\n}\n```\n\n| アノテーション | 意味 | SQLAlchemy で言うと |\n|---|---|---|\n| `@Entity` / `@Table(name = \"tasks\")` | このクラスは tasks テーブル | `__tablename__ = \"tasks\"` |\n| `@Id` ＋ `@GeneratedValue(...)` | 主キー・自動の連番 | `mapped_column(primary_key=True)` |\n| `@Column(nullable = false, length = 200)` | NOT NULL・200 文字まで | `mapped_column(String(200), nullable=False)` |\n| `@ManyToOne(fetch = FetchType.LAZY)` | 多対 1（タスクの持ち主）。LAZY は使うときに読み込む | `relationship()`（遅延読み込み） |\n\nこれは **JPA**（Java のデータベースの ORM の決まり。中身は Hibernate）です。データベース設計のコースのレッスン 6 の「ORM の関係」と「N+1」が、そのまま当てはまります。\n\n## リポジトリ：SQL を書かない\n\n```java\npublic interface TaskRepository extends JpaRepository<Task, Long> {\n    List<Task> findByOwnerIdOrderByIdDesc(Long ownerId);\n    Optional<Task> findByIdAndOwnerId(Long id, Long ownerId);\n}\n```\n\n**インターフェースを書くだけで、中身は Spring が自動で作ります**。\n\n| メソッド | Spring が作る SQL（だいたい） |\n|---|---|\n| `findAll()`・`findById(id)`・`save(t)`・`deleteById(id)` | 最初から用意されている CRUD |\n| `findByOwnerIdOrderByIdDesc(ownerId)` | `SELECT ... WHERE owner_id = ? ORDER BY id DESC` |\n| `findByIdAndOwnerId(id, ownerId)` | `SELECT ... WHERE id = ? AND owner_id = ?` |\n\n**メソッドの名前から SQL を組み立てる** という、Spring Data の仕組みです。名前を読めば、どんな SQL か分かります。値はプレースホルダで渡されるので、SQL インジェクションの心配はありません（`@Query` で自分で SQL を書く場合は、`:name` のパラメータを使っているか確認）。\n\n## サービス：業務の処理\n\n```java\n@Service\npublic class TaskService {\n    private final TaskRepository repository;\n\n    public TaskService(TaskRepository repository) {\n        this.repository = repository;\n    }\n\n    public Task get(Long id, Long userId) {\n        return repository.findByIdAndOwnerId(id, userId)\n            .orElseThrow(() -> new TaskNotFoundException(id));\n    }\n\n    @Transactional\n    public Task create(String title, User owner) {\n        Task t = new Task();\n        t.setTitle(title);\n        t.setOwner(owner);\n        return repository.save(t);\n    }\n}\n```\n\n| 部分 | 意味 |\n|---|---|\n| `@Service` | 業務の処理をする部品として登録 |\n| コンストラクタで `TaskRepository` を受け取る | **依存性注入**：必要な部品を Spring が自動で渡してくれる（FastAPI の `Depends`） |\n| `findByIdAndOwnerId(...)` | ✅ **持ち主の確認**（IDOR を防ぐ。バックエンドコースのレッスン 9） |\n| `.orElseThrow(() -> new TaskNotFoundException(id))` | 無ければ例外（レッスン 4 の Optional） |\n| `@Transactional` | このメソッドの中の処理を **トランザクション** にする（データベース設計のコースのレッスン 5） |\n\n## コントローラー：Web の窓口\n\n```java\n@RestController\n@RequestMapping(\"/tasks\")\npublic class TaskController {\n    private final TaskService service;\n\n    public TaskController(TaskService service) {\n        this.service = service;\n    }\n\n    public record CreateTaskRequest(@NotBlank @Size(max = 200) String title) {}\n\n    @GetMapping(\"/{id}\")\n    public Task get(@PathVariable Long id, @AuthenticationPrincipal User user) {\n        return service.get(id, user.getId());\n    }\n\n    @PostMapping\n    @ResponseStatus(HttpStatus.CREATED)\n    public Task create(@Valid @RequestBody CreateTaskRequest req, @AuthenticationPrincipal User user) {\n        return service.create(req.title(), user);\n    }\n}\n```\n\nFastAPI で書くと、こうなります。\n\n```python\nclass CreateTaskRequest(BaseModel):\n    title: str = Field(min_length=1, max_length=200)\n\n@app.get(\"/tasks/{id}\")\ndef get(id: int, user: User = Depends(current_user)):\n    return service.get(id, user.id)\n\n@app.post(\"/tasks\", status_code=201)\ndef create(req: CreateTaskRequest, user: User = Depends(current_user)):\n    return service.create(req.title, user)\n```\n\n| Spring | FastAPI | 意味 |\n|---|---|---|\n| `@RestController` | （`app = FastAPI()`） | 返した値を JSON にする窓口 |\n| `@RequestMapping(\"/tasks\")` ＋ `@GetMapping(\"/{id}\")` | `@app.get(\"/tasks/{id}\")` | ルーティング |\n| `@PathVariable Long id` | `id: int` | パスの値 |\n| `@RequestBody CreateTaskRequest req` | `req: CreateTaskRequest` | 本文の JSON |\n| `@Valid` ＋ `@NotBlank @Size(max = 200)` | Pydantic の `Field(...)` | **バリデーション**。失敗したら自動で 400 |\n| `@AuthenticationPrincipal User user` | `Depends(current_user)` | ログイン中のユーザー |\n| `@ResponseStatus(HttpStatus.CREATED)` | `status_code=201` | 成功したときのステータス |\n\n**入力用の record（`CreateTaskRequest`）を、エンティティ（`Task`）とは別に作っている** のがポイントです。`@RequestBody Task task` とエンティティで直接受け取ると、`owner` や `id` まで外から書き込める **マスアサインメント** になります（セキュリティのコースのレッスン 5）。\n\n## 例外を 404 にする\n\n```java\n@ResponseStatus(HttpStatus.NOT_FOUND)\npublic class TaskNotFoundException extends RuntimeException {\n    public TaskNotFoundException(Long id) { super(\"タスクが見つかりません: \" + id); }\n}\n```\n\n例外のクラスに `@ResponseStatus(HttpStatus.NOT_FOUND)` を付けておくと、それが投げられたときに **Spring が 404 の返事にしてくれます**。まとめて変換したいときは `@RestControllerAdvice` ＋ `@ExceptionHandler` を使います。FastAPI の `raise HTTPException(404)` や `@app.exception_handler(...)` に当たります。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `@RequestBody Task task`（エンティティで直接受け取る） | ⚠️ マスアサインメント。入力用の DTO・record に |\n| `repository.findById(id)` だけで、持ち主を確かめていない | ⚠️ IDOR |\n| `@Query(\"SELECT ... WHERE name = '\" + name + \"'\")` / `createNativeQuery(\"...\" + x)` | ⚠️ SQL インジェクション。`:name` のパラメータに |\n| エンティティをそのまま JSON で返している（`password` 列がある） | ⚠️ パスワードのハッシュまで返る。返す用の DTO を作るか `@JsonIgnore` |\n| ループの中で `task.getOwner().getName()`（LAZY） | ⚠️ N+1（データベース設計のコースのレッスン 6）。`JOIN FETCH` や `@EntityGraph` |\n| `application.properties` / `application.yml` に `spring.datasource.password=...` | ⚠️ 秘密は環境変数から（`${DB_PASSWORD}`） |\n| `@Autowired` をフィールドに付けている | 古い書き方。コンストラクタで受け取る形が今の推奨 |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`@GetMapping(\"/{id}\") public Task get(@PathVariable Long id)` を FastAPI で書くと？",
+        "choices": [
+         "`@app.get(\"/{id}\")` の関数の引数 `id: int`",
+         "`@app.post(\"/{id}\")`",
+         "`request.json()[\"id\"]`"
+        ],
+        "answer": 0,
+        "explain": "`@GetMapping` は GET のルーティング、`@PathVariable` は URL のパスの値です。"
+       },
+       {
+        "question": "`interface TaskRepository extends JpaRepository<Task, Long> { Optional<Task> findByIdAndOwnerId(Long id, Long ownerId); }` の中身の SQL は？",
+        "choices": [
+         "自分で書く必要がある",
+         "メソッド名から Spring が `WHERE id = ? AND owner_id = ?` のような SQL を自動で作る",
+         "全件を読んでから Java で絞り込む"
+        ],
+        "answer": 1,
+        "explain": "Spring Data は、メソッド名を読んで SQL を組み立てます。値はプレースホルダで渡されます。"
+       },
+       {
+        "question": "コントローラーで `@RequestBody Task task`（エンティティ）を直接受け取るのが危ない理由は？",
+        "choices": [
+         "処理が遅くなるから",
+         "id や owner など、利用者に変えさせたくない項目まで外から書き込めてしまうから",
+         "JSON を受け取れないから"
+        ],
+        "answer": 1,
+        "explain": "入力用の record や DTO を作り、受け取る項目を決めておくのが、マスアサインメントの対策です。"
+       }
+      ]
+     ],
+     "id": "06-spring-boot"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "C 言語",
