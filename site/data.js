@@ -3795,19 +3795,347 @@ window.SITE_DATA = {
   },
   {
    "title": "シェル（Bash）",
-   "icon": "💻",
+   "icon": "🐚",
    "order": 60,
-   "status": "planned",
-   "description": "ターミナルのコマンド。AI が「これを実行して」と出してくるもの。",
-   "outline": [
-    "パスとディレクトリ",
-    "よく使うコマンド",
-    "パイプとリダイレクト",
-    "環境変数",
-    "危ないコマンドの見分け方"
-   ],
+   "description": "AI がよく出してくるシェルスクリプトを読めるようになる。スクリプトの形、変数と引用符、条件と終了コード、繰り返しと関数、パイプとテキスト処理、安全な書き方（set -euo pipefail・trap）、最後に実際のバックアップスクリプトを 1 行ずつ。すべて bash で実行して確かめたもの。",
+   "levels": {
+    "1": "入門：スクリプトの形",
+    "2": "基礎：分岐・繰り返し・パイプ",
+    "3": "実践：安全に読む・書く"
+   },
    "id": "60-shell",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "シェルスクリプトの第一歩 ― コマンドを並べたファイル",
+     "level": 1,
+     "minutes": 12,
+     "concepts": [
+      "tooling",
+      "basics"
+     ],
+     "summary": "シェルスクリプトは、ターミナルで打つコマンドを上から順に並べたファイル。1 行目の #!（シバン）、実行の権限、`./` を付けて動かす理由、コメントと echo。",
+     "body": "## このレッスンのゴール\n\n- シェルスクリプトが何で、Python のスクリプトとどこが似ているか説明できる\n- 1 行目の `#!/usr/bin/env bash` の意味が分かる\n- `Permission denied` が出たときに、何をすればよいか分かる\n\nターミナルと Git のコースで、コマンドを 1 つずつ打つ方法を学びました。このコースでは、**コマンドを並べたファイル（シェルスクリプト）** を読めるようになることを目指します。\n\n## シェルとシェルスクリプト\n\n**シェル** は、ターミナルに打った命令を読んで実行するプログラムです。いちばんよく使われるのが **Bash**（バッシュ）で、Linux の標準、Windows の Git Bash の中身もこれです（Mac の標準は zsh ですが、書き方はほとんど同じです）。\n\n**シェルスクリプト** は、そのコマンドを **上から順に並べたテキストファイル** です。拡張子は `.sh` にすることが多いです。\n\n```bash\n#!/usr/bin/env bash\n# あいさつするスクリプト\nname=\"Ryo\"\necho \"こんにちは、$name さん\"\necho \"今日は $(date +%Y-%m-%d) です\"\necho \"1 + 2 = $((1 + 2))\"\n```\n\n```text\nこんにちは、Ryo さん\n今日は 2026-11-23 です\n1 + 2 = 3\n```\n\n（このコースの出力は、すべて実際に bash 5.2 で実行したものです）\n\nPython で書くと、こうなります。\n\n```python\nfrom datetime import date\nname = \"Ryo\"\nprint(f\"こんにちは、{name} さん\")\nprint(f\"今日は {date.today()} です\")\nprint(f\"1 + 2 = {1 + 2}\")\n```\n\n| シェル | Python | 意味 |\n|---|---|---|\n| `name=\"Ryo\"` | `name = \"Ryo\"` | 変数に入れる（レッスン 2） |\n| `echo \"...$name...\"` | `print(f\"...{name}...\")` | 表示する |\n| `$(date +%Y-%m-%d)` | `date.today()` | **コマンドを実行して、その出力を文字として使う** |\n| `$((1 + 2))` | `1 + 2` | 計算 |\n| `# ...` | `# ...` | コメント |\n\nシェルは **「コマンドを動かすこと」が得意** で、計算や複雑なデータの処理は苦手です。ファイルのコピー・ツールの起動・インストール手順のような、**コマンドを順番に実行する作業** を自動化するのに使います。\n\n## 1 行目の `#!`（シバン）\n\n```bash\n#!/usr/bin/env bash\n```\n\n`#!` で始まる 1 行目を **シバン**（shebang）と呼びます。「このファイルは **bash で実行してね**」という指定です。\n\n| 書き方 | 意味 |\n|---|---|\n| `#!/usr/bin/env bash` | PATH から bash を探して使う（**おすすめ**。どこに bash が入っていても動く） |\n| `#!/bin/bash` | `/bin/bash` を使う（多くの Linux ではこれでも OK） |\n| `#!/bin/sh` | bash ではなく、もっと機能の少ない **sh** で動く。bash の書き方（`[[ ]]` など）が使えないことがある |\n| `#!/usr/bin/env python3` | Python のスクリプトにも同じ仕組みが使える |\n\n## 実行する\n\n```text\n$ ./hello.sh\nbash: ./hello.sh: Permission denied\n```\n\n作ったばかりのファイルには、**実行してよいという権限** が付いていません。`chmod +x` で付けます。\n\n```bash\nchmod +x hello.sh   # 実行の権限（x）を付ける\n./hello.sh          # 実行できるようになった\n```\n\n| 実行の仕方 | 意味 |\n|---|---|\n| `./hello.sh` | 権限を付けたファイルを直接実行。シバンのシェルで動く |\n| `bash hello.sh` | bash に「このファイルを読んで」と頼む。**権限が無くても動く** |\n| `hello.sh`（`./` 無し） | `command not found`。ターミナルは PATH の中しか探さない（ターミナルと Git のコースのレッスン 2）ので、「ここにあるファイル」と `./` で伝える |\n| `source hello.sh` / `. hello.sh` | **今のシェルの中で** 実行する。スクリプトで作った変数が、終わった後も残る（`.venv/bin/activate` などがこれ） |\n\n`ls -l` で `-rwxr-xr-x` のように `x` が見えたら、実行の権限が付いています。\n\n### Windows では\n\nGit Bash なら、`.sh` のファイルをそのまま `bash hello.sh` で動かせます。PowerShell は別のシェルなので、`.sh` は動きません（PowerShell 用のスクリプトは `.ps1`）。\n⚠️ Windows で作ったスクリプトを Linux で動かすと `$'\\r': command not found` が出ることがあります。改行コードが CRLF になっているためです（コンピュータの基礎コースのレッスン 3）。\n\n## AI のコードではこう出てくる\n\n```bash\n#!/usr/bin/env bash\nset -euo pipefail          # レッスン 6：失敗したら止まる、の設定\n\necho \"依存ライブラリをインストールします...\"\npip install -r requirements.txt\necho \"完了しました\"\n```\n\n| 見かけたら | 読み方 |\n|---|---|\n| `#!/usr/bin/env bash` | bash 用のスクリプト |\n| `#!/bin/sh` ＋ `[[ ... ]]` | ⚠️ sh では動かないことがある書き方。シバンを bash に |\n| `chmod +x scripts/*.sh` | scripts の中の .sh 全部に実行の権限を付ける |\n| `source .env` / `. ./venv/bin/activate` | 今のシェルに変数や設定を読み込む |\n| `bash <(curl -s https://...)` / `curl ... \\| bash` | ⚠️ ネットのスクリプトを中身を見ずに実行（ターミナルと Git のコースのレッスン 2） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`./deploy.sh` を実行したら `Permission denied` と出た。まずすることは？",
+        "choices": [
+         "パソコンを再起動する",
+         "`chmod +x deploy.sh` で実行の権限を付ける（または `bash deploy.sh` で実行する）",
+         "ファイルの拡張子を .py に変える"
+        ],
+        "answer": 1,
+        "explain": "作ったばかりのファイルには実行の権限がありません。`chmod +x` で付けるか、bash に読ませて実行します。"
+       },
+       {
+        "question": "スクリプトの 1 行目の `#!/usr/bin/env bash` の意味は？",
+        "choices": [
+         "コメントなので何の意味も無い",
+         "このファイルを bash で実行する、という指定",
+         "bash をインストールする命令"
+        ],
+        "answer": 1,
+        "explain": "`#!` で始まる 1 行目（シバン）は、ファイルを直接実行したときに使うプログラムを指定します。"
+       },
+       {
+        "question": "`echo \"今日は $(date +%Y-%m-%d) です\"` の `$(...)` は何をしている？",
+        "choices": [
+         "`$` という文字を表示している",
+         "かっこの中のコマンドを実行し、その出力をその場所に入れている",
+         "計算をしている"
+        ],
+        "answer": 1,
+        "explain": "`$(コマンド)` はコマンドの出力を文字として使う書き方です。計算は `$((1 + 2))` のように、かっこが 2 重になります。"
+       }
+      ]
+     ],
+     "id": "01-first-script"
+    },
+    {
+     "title": "変数と引用符 ― \"$var\" と書く理由",
+     "level": 1,
+     "minutes": 18,
+     "concepts": [
+      "variables",
+      "strings",
+      "tooling"
+     ],
+     "summary": "シェルの変数の作り方（= の前後にスペースを入れない）、ダブルクォートとシングルクォートの違い、引用符を付けないとスペースで分かれてしまう問題、export と環境変数、${...} の便利な書き方。",
+     "body": "## このレッスンのゴール\n\n- シェルの変数を作る・使う書き方を読める（`=` の前後にスペースを入れない理由も）\n- `\"...\"` と `'...'` の違いが分かる\n- **変数を `\"$var\"` と引用符で囲む理由** を、実際の例で説明できる\n\n## 変数を作る・使う\n\n```bash\nname=\"Ryo\"          # 作る：= の前後にスペースを入れない\necho \"$name\"        # 使う：前に $ を付ける\n```\n\n⚠️ Python の癖で `name = \"Ryo\"` と書くと、こうなります。\n\n```text\nbash: name: command not found\n```\n\nシェルは **スペースで区切って** 読むので、`name = \"Ryo\"` は「`name` というコマンドに、`=` と `Ryo` を渡して実行」と解釈されます。**`=` の前後にスペースを入れない** のがシェルの決まりです。\n\n### 変数名の区切り\n\n```bash\nname=\"Ryo\"\necho \"${name}san\"     # Ryosan\necho \"[$namesan]\"     # []   ← namesan という別の（空の）変数だと思われた\n```\n\n変数のすぐ後ろに文字が続くときは、`${name}` と波かっこで囲みます。⚠️ 存在しない変数を使っても **エラーにならず、空になる** のがシェルの怖いところです（レッスン 6 で防ぎ方を学びます）。\n\n## ダブルクォートとシングルクォート\n\n```bash\nname=\"Ryo\"\necho \"こんにちは、$name さん\"     # こんにちは、Ryo さん\necho 'こんにちは、$name さん'     # こんにちは、$name さん\n```\n\n| 引用符 | 中の `$name`・`$(...)` | 使いどころ |\n|---|---|---|\n| `\"...\"`（ダブル） | **置き換えられる** | ふつうはこちら。変数を使う文字列 |\n| `'...'`（シングル） | **そのまま**（置き換えない） | `$` などをそのまま書きたいとき（正規表現、他のプログラムに渡すコード） |\n\nPython で言うと、`\"...\"` は f 文字列 `f\"...{name}...\"`、`'...'` は普通の文字列 `\"...{name}...\"` に近いです。\n\n## 引用符を付けないとどうなるか\n\nいちばん大事なところです。名前にスペースが入ったファイルで試します。\n\n```bash\nf=\"my file.txt\"\n\nls $f\n# ls: cannot access 'my': No such file or directory\n# ls: cannot access 'file.txt': No such file or directory\n\nls \"$f\"\n# my file.txt\n```\n\n引用符の無い `$f` は、**中のスペースで 2 つに分かれて**、`ls my file.txt`（`my` と `file.txt` の 2 つ）として実行されました。これを **単語分割** と呼びます。\n\nPython で言うと、こんな違いです。\n\n```python\nf = \"my file.txt\"\nls(*f.split())   # $f    → ls(\"my\", \"file.txt\")\nls(f)            # \"$f\"  → ls(\"my file.txt\")\n```\n\nファイル名だけでなく、ユーザーの入力・パス・コマンドの出力など、**スペースが入るかもしれないものは全部** 同じ問題が起きます。\n\n**変数は、いつも `\"$var\"` とダブルクォートで囲む**。これがシェルスクリプトを読むときの最大のチェックポイントです。\n\n| 書き方 | 判定 |\n|---|---|\n| `cp $src $dest` | ⚠️ スペースを含むパスで壊れる |\n| `cp \"$src\" \"$dest\"` | ✅ |\n| `rm -rf $DIR/build` | ⚠️⚠️ スペースで分かれて、別の場所を消す可能性（レッスン 6） |\n| `if [ $x = \"y\" ]` | ⚠️ x が空だと `[: =: unary operator expected` というエラー（レッスン 3） |\n\n## コマンドの出力と計算\n\n```bash\ntoday=\"$(date +%Y-%m-%d)\"       # コマンドの出力を変数に\ncount=\"$(wc -l < notes.txt)\"    # ファイルの行数を変数に\ntotal=$((3 + 4 * 2))            # 計算（整数だけ）→ 11\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `$(コマンド)` | コマンドを実行して、出力を文字として使う |\n| `` `コマンド` ``（バッククォート） | 同じ意味の古い書き方 |\n| `$((式))` | 整数の計算。小数は扱えない（`$((7 / 2))` は 3） |\n\n## シェルの変数と環境変数\n\n```bash\nx=5\nbash -c 'echo \"子のシェル: [$x]\"'      # 子のシェル: []\nexport x\nbash -c 'echo \"export の後: [$x]\"'     # export の後: [5]\n```\n\n| | シェルの変数 | 環境変数 |\n|---|---|---|\n| 作り方 | `x=5` | `export x=5` |\n| 見える範囲 | **そのシェルの中だけ** | そのシェルから **起動したプログラムにも** 渡される |\n| 例 | スクリプトの中の作業用の値 | `PATH`、`HOME`、`DATABASE_URL`（公開とクラウドのコースのレッスン 4） |\n\nPython のプログラムから `os.environ[\"DATABASE_URL\"]` で読めるのは、**export された環境変数だけ** です。`.env` を読み込むのに `export $(cat .env | xargs)` のような書き方を見かけるのはこのためです（スペースや `#` を含む値で壊れるので、`set -a; source .env; set +a` の方が安全です）。\n\n1 つのコマンドにだけ渡したいときは、前に書きます。\n\n```bash\nAPP_ENV=production python main.py    # この 1 回だけ APP_ENV を渡す\n```\n\n## ${...} の便利な書き方\n\n```bash\necho \"${undefined:-default}\"          # default   （空なら代わりの値）\n\nname=\"photo.final.jpg\"\necho \"${#name}\"                       # 15        （文字数）\necho \"${name%.*}\"                     # photo.final （最後の . から後ろを消す）\necho \"${name##*.}\"                    # jpg       （最後の . まで消す ＝ 拡張子）\necho \"${name/final/old}\"              # photo.old.jpg （置き換え）\n```\n\n| 書き方 | 意味 | Python で言うと |\n|---|---|---|\n| `${x:-値}` | x が空なら「値」 | `x or \"値\"` |\n| `${x:?メッセージ}` | x が空ならエラーで止める（レッスン 6） | `if not x: raise ...` |\n| `${#x}` | 文字数 | `len(x)` |\n| `${x%.*}` | 後ろから最短で `.〜` を消す | `x.rsplit(\".\", 1)[0]` |\n| `${x##*.}` | 前から最長で `〜.` を消す | `x.rsplit(\".\", 1)[-1]` |\n| `${x/古/新}` | 最初の 1 つを置き換え | `x.replace(\"古\", \"新\", 1)` |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `VAR = value` | ⚠️ スペースがあるとコマンドとして実行される |\n| `$var` が引用符なしで使われている | ⚠️ スペースを含む値で壊れる。`\"$var\"` に |\n| `'$HOME/app'` | シングルクォートなので `$HOME` が置き換わらない。意図どおりか |\n| `PORT=\"${PORT:-8000}\"` | 環境変数 PORT が無ければ 8000（よくある形） |\n| `export $(cat .env \\| xargs)` | 値にスペースや `#` があると壊れる |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "シェルで変数を作る正しい書き方は？",
+        "choices": [
+         "`name = \"Ryo\"`",
+         "`name=\"Ryo\"`",
+         "`$name = \"Ryo\"`"
+        ],
+        "answer": 1,
+        "explain": "`=` の前後にスペースがあると、`name` というコマンドの実行だと解釈されます（`name: command not found`）。"
+       },
+       {
+        "question": "`f=\"my file.txt\"` のとき、`ls $f` が 2 つのエラーを出した理由は？",
+        "choices": [
+         "引用符が無いので、値がスペースで分かれて「my」と「file.txt」の 2 つとして渡されたから",
+         "ls はスペースを含むファイルを扱えないから",
+         "変数 f が空だから"
+        ],
+        "answer": 0,
+        "explain": "引用符の無い変数は単語分割されます。`ls \"$f\"` と書けば、1 つのファイル名として渡されます。"
+       },
+       {
+        "question": "`echo '$HOME'` の出力は？",
+        "choices": [
+         "ホームディレクトリのパス（`/home/ryo` など）",
+         "`$HOME` という文字そのまま",
+         "何も表示されない"
+        ],
+        "answer": 1,
+        "explain": "シングルクォートの中では変数が置き換えられません。置き換えたいならダブルクォート `\"$HOME\"` を使います。"
+       }
+      ]
+     ],
+     "id": "02-variables-quotes"
+    },
+    {
+     "title": "条件分岐と終了コード ― 成功と失敗をどう判定するか",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "conditionals",
+      "errors",
+      "tooling"
+     ],
+     "summary": "シェルの if は「コマンドが成功したか」で分かれる。終了コード（$?）、[ ] と [[ ]] の条件、ファイルがあるかの確認、&& と ||、case。数字の比べ方が Python と違うところも。",
+     "body": "## このレッスンのゴール\n\n- 終了コード（0 が成功）と `$?` の意味を説明できる\n- `if [ -f \"$file\" ]` などの条件を読める\n- `&&`・`||`・`case` を使った分岐を読める\n\n## 終了コード：コマンドの「結果の番号」\n\nどのコマンドも、終わるときに **終了コード**（0〜255 の数）を返します。\n\n| 終了コード | 意味 |\n|---|---|\n| **0** | **成功** |\n| 0 以外（1、2、127 …） | 失敗（番号の意味はコマンドごと。127 は「コマンドが見つからない」） |\n\n```bash\nls notes.txt > /dev/null\necho $?        # 0   ← 直前のコマンドの終了コード\n\nls nope 2> /dev/null\necho $?        # 2\n```\n\n`$?` は「直前のコマンドの終了コード」です。⚠️ Python の `True`（1）/`False`（0）と **逆** で、**0 が成功** なのに注意してください。\n\nPython のプログラムでは、`sys.exit(1)` で終了コードを返せます。例外で止まったときは 1 になります。CI（公開とクラウドのコースのレッスン 7）が ✅ / ❌ を判断しているのも、この終了コードです（`pytest` がテストの失敗で 0 以外を返す）。\n\n## if：コマンドが成功したら\n\n```bash\nif grep -q \"b\" notes.txt; then\n  echo \"見つかった\"\nelse\n  echo \"無い\"\nfi\n```\n\nシェルの `if` は、**後ろのコマンドを実行して、終了コードが 0 なら then の方** に進みます。`grep -q` は「見つかったら 0、見つからなければ 1」を返すだけのコマンドです。\n\n| 部分 | 意味 |\n|---|---|\n| `if コマンド; then` | コマンドが成功したら |\n| `elif コマンド; then` | Python の `elif` |\n| `else` | それ以外 |\n| `fi` | if の終わり（if を逆から書いたもの） |\n\nインデントは見やすさのためだけで、Python と違って意味はありません。\n\n## [ ]：条件を調べるコマンド\n\n```bash\nif [ -f \"$file\" ]; then\n```\n\n`[` は、実は **条件を調べて終了コードを返すコマンド** です（`test` という名前でもある）。だから `[` の後ろと `]` の前には **スペースが必要** です（`[-f \"$file\"]` はエラー）。\n\n### ファイルを調べる\n\n| 書き方 | 真になるとき |\n|---|---|\n| `[ -f \"$p\" ]` | ファイルがある |\n| `[ -d \"$p\" ]` | ディレクトリがある |\n| `[ -e \"$p\" ]` | 何かがある（ファイルでもディレクトリでも） |\n| `[ -x \"$p\" ]` | 実行できる |\n| `[ ! -f \"$p\" ]` | ファイルが **無い**（`!` は否定） |\n\n### 文字と数を比べる\n\n| 文字列 | 数 | 意味 |\n|---|---|---|\n| `[ \"$a\" = \"$b\" ]` | `[ \"$a\" -eq \"$b\" ]` | 等しい |\n| `[ \"$a\" != \"$b\" ]` | `[ \"$a\" -ne \"$b\" ]` | 等しくない |\n| `[ -z \"$a\" ]` | | 空 |\n| `[ -n \"$a\" ]` | | 空でない |\n| | `-lt` `-le` `-gt` `-ge` | `<` `<=` `>` `>=` |\n\n**数は `-gt` などの記号の英語**（greater than）で比べます。`<` `>` を使うと、**文字として** 比べることになります。\n\n```bash\n[ 3 -gt 10 ] && echo yes || echo no       # no（数として 3 > 10 は偽）\n[ \"10\" \\> \"9\" ] && echo \"10 > 9\" || echo \"10 < 9\"   # 10 < 9（文字として \"1\" < \"9\"）\n(( 10 > 9 )) && echo \"数: 10 > 9\"          # 数: 10 > 9（(( )) の中は数の比較）\n```\n\n### 引用符を忘れると\n\n```bash\nx=\"\"\n[ $x = \"y\" ]\n# bash: [: =: unary operator expected\n```\n\nx が空なので、`[ = \"y\" ]` として実行され、「`=` の左に何も無い」というエラーになりました。`[ \"$x\" = \"y\" ]` と書けば、`[ \"\" = \"y\" ]` になって正しく偽（終了コード 1）になります。**レッスン 2 の「変数は引用符で囲む」は、ここでも大事** です。\n\n### [[ ]]：bash の便利版\n\n```bash\n[[ \"abc\" == a* ]] && echo match     # match（パターンで比べられる）\n```\n\n`[[ ... ]]` は bash の書き方で、`&&`・`||` をそのまま中に書けたり、パターン（`a*`）や正規表現（`=~`）で比べられたりします。引用符の付け忘れにも強いです。ただし `#!/bin/sh` では使えないことがあります（レッスン 1）。\n\n## 実際のスクリプト\n\n```bash\n#!/usr/bin/env bash\nfile=\"$1\"                                   # 1 つ目の引数（レッスン 4）\nif [ -z \"$file\" ]; then\n  echo \"使い方: $0 ファイル名\" >&2          # >&2 はエラーの出力へ（レッスン 5）\n  exit 1\nfi\nif [ -f \"$file\" ]; then\n  echo \"$file はファイルです（$(wc -l < \"$file\") 行）\"\nelif [ -d \"$file\" ]; then\n  echo \"$file はディレクトリです\"\nelse\n  echo \"$file は見つかりません\" >&2\n  exit 2\nfi\n```\n\n```text\n$ ./check.sh\n使い方: ./check.sh ファイル名            （終了コード 1）\n$ ./check.sh notes.txt\nnotes.txt はファイルです（3 行）        （終了コード 0）\n$ ./check.sh .\n. はディレクトリです\n$ ./check.sh nothing\nnothing は見つかりません                （終了コード 2）\n```\n\n`exit 番号` で、スクリプト自身の終了コードを決めています。こうしておくと、このスクリプトを他のスクリプトや CI から使ったときに、成功・失敗が伝わります。\n\n## && と ||：短い分岐\n\n```bash\ngrep -q b notes.txt && echo found || echo missing     # found\nmkdir -p build && cd build                            # mkdir が成功したら cd\ncommand -v jq || echo \"jq がありません\"                # jq が無ければ表示\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `A && B` | A が **成功したら** B |\n| `A \\|\\| B` | A が **失敗したら** B |\n| `A && B \\|\\| C` | A が成功したら B、失敗したら C（⚠️ B が失敗しても C が動く。厳密には if と違う） |\n\n## case：値で分ける\n\n```bash\ncase \"$1\" in\n  start) echo \"開始します\" ;;\n  stop)  echo \"停止します\" ;;\n  *)     echo \"start か stop を指定してください\" ;;\nesac\n```\n\nPython の `match` 文に当たります。`*)` はどれにも当たらなかったとき（Python の `case _:`）、`;;` は 1 つの場合の終わり、`esac` は case を逆から書いたものです。`start|begin)` のように `|` で複数書けます。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `if [ $# -lt 1 ]; then echo \"usage: ...\"; exit 1; fi` | 引数が 1 つも無ければ使い方を出して終わる（定番の書き出し） |\n| `if ! command -v docker >/dev/null; then` | docker が入っていなければ |\n| `[ $x = \"y\" ]` | ⚠️ 引用符が無い。x が空だとエラー |\n| `[ \"$a\" > \"$b\" ]` | ⚠️ `>` はリダイレクト（レッスン 5）になり、`$b` という名前のファイルができてしまう。数なら `-gt` |\n| `cd dir \\|\\| exit 1` | cd に失敗したら止まる（レッスン 6） |\n| `exit 0` が最後にある | 成功で終わる（途中の失敗を隠していないか注意） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "シェルで「成功」を表す終了コードは？",
+        "choices": [
+         "0",
+         "1",
+         "-1"
+        ],
+        "answer": 0,
+        "explain": "0 が成功、0 以外が失敗です。Python の True(1)/False(0) と逆なので注意します。"
+       },
+       {
+        "question": "`[ 3 -gt 10 ]` と `[ \"3\" \\> \"10\" ]` の結果は？",
+        "choices": [
+         "どちらも偽",
+         "どちらも真",
+         "前は偽（数として比べる）、後は真（文字として \"3\" > \"1\" と比べる）"
+        ],
+        "answer": 2,
+        "explain": "`-gt` は数の比較、`>` は文字の比較です。数を比べるときは `-gt` などか、`(( ))` を使います。"
+       },
+       {
+        "question": "`mkdir -p build && cd build` の意味は？",
+        "choices": [
+         "mkdir と cd を同時に実行する",
+         "mkdir が成功したときだけ cd する",
+         "mkdir が失敗したときだけ cd する"
+        ],
+        "answer": 1,
+        "explain": "`&&` は「左が成功したら右」です。失敗したら右は実行されません。"
+       }
+      ]
+     ],
+     "id": "03-conditions-exit-codes"
+    },
+    {
+     "title": "繰り返し・関数・引数 ― for・while・\"$@\"",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "loops",
+      "functions",
+      "tooling"
+     ],
+     "summary": "for でリストやファイルを順に処理する、while read で 1 行ずつ読む、関数と local、スクリプトに渡された引数（$1・$#・\"$@\"）。\"$@\" を引用符で囲む理由を実際の出力で。",
+     "body": "## このレッスンのゴール\n\n- `for` と `while read` の繰り返しを読める\n- シェルの関数と `local` を読める\n- 引数の `$1`・`$#`・`\"$@\"` の意味が分かり、`\"$@\"` と `$@` の違いを説明できる\n\n## for：並んだものを順番に\n\n```bash\nfor name in Ryo Hana \"Ken Sato\"; do\n  echo \"こんにちは、${name} さん\"\ndone\n```\n\n```text\nこんにちは、Ryo さん\nこんにちは、Hana さん\nこんにちは、Ken Sato さん\n```\n\n| 部分 | 意味 | Python で言うと |\n|---|---|---|\n| `for name in A B C; do` | A・B・C を順番に name に入れて | `for name in [\"A\", \"B\", \"C\"]:` |\n| `done` | 繰り返しの終わり | （インデントの終わり） |\n\n並べたものは **スペースで区切られる** ので、`\"Ken Sato\"` のようにスペースを含むものは引用符で 1 つにまとめます。\n\n### ファイルを順番に\n\n```bash\nfor f in *.txt; do\n  echo \"txt: $f\"\ndone\n```\n\n```text\ntxt: my file.txt\ntxt: notes.txt\n```\n\n`*.txt` は「.txt で終わるファイル全部」に置き換わります（**グロブ**）。スペースを含む「my file.txt」も、ちゃんと 1 つとして扱われています。Python の `for f in Path(\".\").glob(\"*.txt\"):` です。\n\n⚠️ 当てはまるファイルが 1 つも無いと、`*.txt` という **文字そのもの** が 1 回だけ入ってきます。`[ -e \"$f\" ] || continue` で飛ばすコードをよく見るのはこのためです。\n\n⚠️ `for f in $(ls)` という書き方も見かけますが、**スペースを含むファイル名で分かれてしまう** ので、グロブ（`for f in *`）を使うのが正解です（レッスン 7 で実例を見ます）。\n\n### 数で繰り返す\n\n```bash\nfor i in 1 2 3; do echo \"$i\"; done\nfor i in $(seq 1 5); do echo \"$i\"; done        # 1〜5\nfor ((i = 0; i < 3; i++)); do echo \"$i\"; done   # C 言語風。0, 1, 2\n```\n\n## while read：1 行ずつ読む\n\n```bash\ni=0\nwhile read -r line; do\n  i=$((i + 1))\n  echo \"$i: $line\"\ndone < notes.txt\n```\n\n```text\n1: a\n2: b\n3: c\n```\n\n| 部分 | 意味 |\n|---|---|\n| `while コマンド; do ... done` | コマンドが成功している間くり返す |\n| `read -r line` | 1 行読んで line に入れる。読めなくなったら（ファイルの終わり）失敗 → 繰り返しが終わる |\n| `-r` | `\\` を特別扱いしない（付けておくのが定番） |\n| `done < notes.txt` | 繰り返し全体の入力を notes.txt にする（レッスン 5） |\n\nPython の `for line in open(\"notes.txt\"):` に当たります。コマンドの出力を 1 行ずつ処理するなら `コマンド | while read -r line; do ... done` と書きます。\n\n## 関数\n\n```bash\ngreet() {\n  local who=\"$1\"\n  echo \"こんにちは、${who} さん\"\n}\n\ngreet \"Ryo\"     # こんにちは、Ryo さん\n```\n\n| 部分 | 意味 | Python で言うと |\n|---|---|---|\n| `greet() { ... }` | 関数の定義 | `def greet(who):` |\n| `$1`, `$2` … | 関数に渡された 1 つ目、2 つ目の値 | 引数 |\n| `local who=...` | **この関数の中だけ** の変数 | 関数の中のローカル変数 |\n| `greet \"Ryo\"` | 呼び出し。**かっこも `,` も使わない** | `greet(\"Ryo\")` |\n\n⚠️ `local` を付けないと、関数の中で作った変数は **スクリプト全体で共有** されます（Python と逆）。同じ名前の変数を知らないうちに上書きする原因になります。\n\n関数の「戻り値」は、2 つの方法があります。\n\n| やりたいこと | 書き方 |\n|---|---|\n| 文字を返す | 関数の中で `echo` し、呼ぶ側で `result=\"$(greet Ryo)\"` と受け取る |\n| 成功・失敗を返す | `return 0` / `return 1`（終了コード。0〜255 の数だけ） |\n\n## スクリプトの引数\n\nスクリプトを実行するときに渡した値は、こう受け取ります。\n\n```bash\n./loop.sh start \"a b\"\n```\n\n| 書き方 | 中身 | Python で言うと |\n|---|---|---|\n| `$0` | スクリプトの名前（`./loop.sh`） | `sys.argv[0]` |\n| `$1` | 1 つ目（`start`） | `sys.argv[1]` |\n| `$2` | 2 つ目（`a b`） | `sys.argv[2]` |\n| `$#` | 引数の数（`2`） | `len(sys.argv) - 1` |\n| `\"$@\"` | 全部の引数（1 つずつ別々に） | `sys.argv[1:]` |\n\n### \"$@\" と $@ の違い\n\n```bash\nfor arg in \"$@\"; do echo \"[\\\"\\$@\\\"] $arg\"; done\nfor arg in $@;   do echo \"[\\$@] $arg\"; done\n```\n\n```text\n[\"$@\"] start\n[\"$@\"] a b          ← 「a b」が 1 つのまま\n[$@] start\n[$@] a              ← スペースで分かれてしまった\n[$@] b\n```\n\n引用符を付けた `\"$@\"` は、**渡されたとおりの区切りを守ります**。付けない `$@` は、レッスン 2 の単語分割が起きます。**引数をそのまま別のコマンドに渡すときは、必ず `\"$@\"`** です。\n\n```bash\n#!/usr/bin/env bash\n# 引数を全部そのまま pytest に渡すスクリプト\nexec python -m pytest \"$@\"\n```\n\n`$*` という似た書き方もありますが、引数を 1 つの文字列にまとめてしまうので、ほとんどの場合 `\"$@\"` が正解です。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `for f in $(ls *.csv)` | ⚠️ スペースを含むファイル名で壊れる。`for f in *.csv` |\n| `for f in *.log; do` の中に `[ -e \"$f\" ] \\|\\| continue` | ✅ ファイルが 1 つも無いときの対策 |\n| `cat file \\| while read line` | `-r` が無いと `\\` が消える。`while read -r line; do ... done < file` が定番 |\n| 関数の中で `local` を使っていない | ⚠️ スクリプト全体の変数を上書きしていないか |\n| `python app.py $@` | ⚠️ `\"$@\"` に |\n| `shift` | 引数を 1 つずらす（`$2` が `$1` になる）。オプションを順に読むときに使う |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`./run.sh \"hello world\" test` を実行したとき、スクリプトの中の `$#` と `$1` は？",
+        "choices": [
+         "`$#` は 3、`$1` は `hello`",
+         "`$#` は 2、`$1` は `hello world`",
+         "`$#` は 2、`$1` は `./run.sh`"
+        ],
+        "answer": 1,
+        "explain": "引用符で囲んだ「hello world」は 1 つの引数です。`$0` がスクリプト名、`$1` が 1 つ目の引数です。"
+       },
+       {
+        "question": "受け取った引数を、区切りを変えずにそのまま別のコマンドに渡す書き方は？",
+        "choices": [
+         "`$@`",
+         "`$*`",
+         "`\"$@\"`"
+        ],
+        "answer": 2,
+        "explain": "引用符を付けた `\"$@\"` だけが、元の引数の区切りを守ります。`$@` だとスペースで分かれます。"
+       },
+       {
+        "question": "関数の中の変数に `local` を付ける理由は？",
+        "choices": [
+         "処理が速くなるから",
+         "付けないと、スクリプト全体の同じ名前の変数を上書きしてしまうから",
+         "付けないと関数が動かないから"
+        ],
+        "answer": 1,
+        "explain": "シェルでは、関数の中の変数も初期設定ではスクリプト全体で共有されます。`local` でその関数の中だけにします。"
+       }
+      ]
+     ],
+     "id": "04-loops-functions"
+    },
+    {
+     "title": "パイプとテキスト処理 ― ログを 1 行で集計する",
+     "level": 2,
+     "minutes": 20,
+     "concepts": [
+      "io",
+      "strings",
+      "tooling"
+     ],
+     "summary": "標準出力と標準エラー、> と 2>&1 と /dev/null、パイプでつなぐ考え方。grep・cut・awk・sed・sort・uniq・wc・xargs・jq を、実際の Web サーバーのログを集計しながら読む。",
+     "body": "## このレッスンのゴール\n\n- 標準出力・標準エラーと、`>`・`2>`・`2>&1`・`/dev/null` の意味を説明できる\n- `|`（パイプ）でつないだ長いコマンドを、左から順に読める\n- `grep`・`awk`・`sort | uniq -c` などのテキスト処理の定番の形が分かる\n\nターミナルと Git のコースのレッスン 2 で、`|` と `>` を簡単に紹介しました。ここでは、AI がよく出してくる **1 行の集計コマンド** を読めるようにします。\n\n## 2 つの出力：標準出力と標準エラー\n\nコマンドの出力には、2 つの通り道があります。\n\n| 名前 | 番号 | 流れるもの | Python で言うと |\n|---|---|---|---|\n| **標準出力**（stdout） | 1 | 普通の結果 | `print(...)` |\n| **標準エラー**（stderr） | 2 | エラーや進み具合のメッセージ | `print(..., file=sys.stderr)` |\n| 標準入力（stdin） | 0 | コマンドへの入力 | `input()`、`sys.stdin` |\n\n画面ではどちらも同じように見えますが、**別々に扱えます**。\n\n```bash\nls nope > out.txt 2> err.txt\n# out.txt は空、err.txt に「ls: cannot access 'nope': No such file or directory」\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `> file` | 標準出力をファイルへ（上書き） |\n| `>> file` | 標準出力をファイルの末尾へ |\n| `2> file` | 標準エラーをファイルへ |\n| `> file 2>&1` | **両方** を同じファイルへ（「2 番を 1 番と同じ所へ」） |\n| `> /dev/null` | 捨てる（`/dev/null` は何でも吸い込んで消す特別な場所） |\n| `2> /dev/null` | エラーだけ捨てる |\n| `< file` | ファイルを標準入力にする |\n| `>&2` | 自分の出力を標準エラーへ（レッスン 3 のスクリプトのエラーメッセージ） |\n\n⚠️ `2>&1` は **書く順番** が大事です。`> file 2>&1` は両方がファイルへ行きますが、`2>&1 > file` は、エラーは画面に残ります。\n\nAI のコードの `command -v jq > /dev/null 2>&1` は、「出力もエラーも全部捨てて、**終了コード（あるかどうか）だけ** を使う」という意味です。\n\n## パイプ：左の出力を右の入力に\n\n```bash\ngrep \" 500 \" access.log | wc -l\n```\n\n`|` は、**左のコマンドの標準出力を、右のコマンドの標準入力につなぎます**。小さなコマンドをつないで、大きな処理を作るのがシェルの考え方です。\n\nPython で言うと、関数の結果を次の関数に渡し続けるのと同じです。\n\n```python\nlen([line for line in open(\"access.log\") if \" 500 \" in line])\n```\n\n## 例のログ\n\nWeb サーバーのアクセスログ（公開とクラウドのコースのレッスン 8）です。\n\n```text\n2026-11-23T09:00:01 GET /tasks 200 12ms\n2026-11-23T09:00:05 POST /orders 500 40ms\n2026-11-23T09:01:10 GET /tasks 200 9ms\n2026-11-23T09:02:00 GET /users/3 404 5ms\n2026-11-23T09:03:30 POST /orders 201 35ms\n2026-11-23T09:04:12 GET /tasks 200 11ms\n2026-11-23T09:05:00 POST /orders 500 52ms\n```\n\n空白で区切ると、1 列目が時刻、2 列目がメソッド、3 列目がパス、4 列目がステータス、5 列目が時間です。\n\n## grep：探す\n\n```bash\ngrep \" 500 \" access.log | wc -l      # 2   （500 エラーの行数）\n```\n\n| オプション | 意味 |\n|---|---|\n| `-i` | 大文字小文字を区別しない |\n| `-v` | 当てはまら **ない** 行 |\n| `-c` | 行数だけ |\n| `-n` | 行番号も |\n| `-r` | ディレクトリの中を全部 |\n| `-q` | 何も出さず、終了コードだけ（レッスン 3） |\n| `-E` | 正規表現（`grep -E \"500\\|404\"`） |\n\n## awk・cut：列を取り出す\n\n```bash\ncut -d' ' -f2,3 access.log | head -3\n# GET /tasks\n# POST /orders\n# GET /tasks\n\nawk '{print $3}' access.log           # 3 列目（パス）だけ\n```\n\n| コマンド | 意味 |\n|---|---|\n| `cut -d' ' -f2,3` | 区切り（`-d`）を空白にして、2・3 列目（`-f`） |\n| `awk '{print $3}'` | 空白で区切った 3 列目。⚠️ ここの `$3` はシェルの引数ではなく **awk の列**。だからシングルクォートで囲む（レッスン 2） |\n\nawk は小さなプログラミング言語で、計算もできます。\n\n```bash\nawk '{gsub(\"ms\", \"\", $5); s += $5} END {print \"平均\", s/NR, \"ms\"}' access.log\n# 平均 23.4286 ms\n```\n\n「5 列目から ms を消して足していき、最後（`END`）に行数（`NR`）で割る」。Python で言うと、こうです。\n\n```python\ntimes = [int(line.split()[4].removesuffix(\"ms\")) for line in open(\"access.log\")]\nprint(\"平均\", sum(times) / len(times), \"ms\")\n```\n\n## sort | uniq -c：数える定番\n\n```bash\nawk '{print $3}' access.log | sort | uniq -c | sort -rn\n```\n\n```text\n      3 /tasks\n      3 /orders\n      1 /users/3\n```\n\n| 段階 | 出力 |\n|---|---|\n| `awk '{print $3}'` | パスだけを 7 行 |\n| `sort` | 同じものが隣り合うように並べる |\n| `uniq -c` | **隣り合った** 同じ行をまとめて、数を付ける |\n| `sort -rn` | 数（`-n`）の大きい順（`-r`）に並べる |\n\n**「何が何回出てきたか」のランキング** です。`uniq` は隣り合ったものしかまとめないので、先に `sort` するのがポイントです。Python の `collections.Counter(paths).most_common()`、SQL の `GROUP BY ... ORDER BY COUNT(*) DESC`（SQL コースのレッスン 3）と同じことをしています。\n\n## sed：置き換える\n\n```bash\nsed 's/ms$/ ミリ秒/' access.log | tail -1\n# 2026-11-23T09:05:00 POST /orders 500 52 ミリ秒\n```\n\n`s/探す/置き換え/` は「行の中の最初の 1 つを置き換え」、`s/.../.../g` は全部です。`$` は「行の終わり」（正規表現）。\n\n⚠️ `sed -i` は **ファイルそのものを書き換えます**（Mac では `sed -i ''` と書く必要があるなど、OS で書き方が違う）。AI が `sed -i` を出してきたら、先に `-i` 無しで結果を確かめると安全です。\n\n## その他の定番\n\n| コマンド | 意味 | 例 |\n|---|---|---|\n| `wc -l` | 行数 | `wc -l < file` |\n| `head -n 5` / `tail -n 5` | 先頭／末尾の 5 行 | |\n| `tail -f app.log` | 追加される行を流し続けて見る（Ctrl+C で終わる） | ログの監視 |\n| `xargs` | 入力の各行を、次のコマンドの引数にする | `printf 'a.txt\\nb.txt\\n' \\| xargs -I{} echo \"処理: {}\"` |\n| `tee` | 画面にも出しつつファイルにも書く | `make 2>&1 \\| tee build.log` |\n| `jq` | JSON を扱う | `curl ... \\| jq '.orders \\| length'` |\n\n```bash\necho '{\"name\":\"Ryo\",\"orders\":[{\"id\":1},{\"id\":2}]}' | jq '.orders | length'\n# 2\n```\n\n`jq` は、API の返事（JSON）から値を取り出すときによく使われます（`.name` で name、`.orders[0].id` で最初の注文の id）。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `... \\| sort \\| uniq -c \\| sort -rn \\| head` | 何が何回出たかの上位 |\n| `> /dev/null 2>&1` | 出力を全部捨てて、成功・失敗だけを見る |\n| `2>/dev/null` がたくさん | ⚠️ エラーを隠している。失敗に気づけないかも |\n| `grep ... \\| awk '{print $2}' \\| xargs kill` | 見つけたプロセスの番号を取り出して止める。⚠️ 何に当たるか、先に `grep` だけ実行して確かめる |\n| `sed -i 's/.../.../g' *.py` | ⚠️ たくさんのファイルを直接書き換える。Git でコミットしてから |\n| `curl -s URL \\| jq -r '.token'` | API の返事から値を取り出す。`-r` は引用符なしの文字で |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`python app.py > app.log 2>&1` の意味は？",
+        "choices": [
+         "標準出力だけを app.log に書き、エラーは画面に出す",
+         "標準出力と標準エラーの両方を app.log に書く",
+         "app.log の内容を python app.py に渡す"
+        ],
+        "answer": 1,
+        "explain": "`2>&1` は「2 番（標準エラー）を 1 番（標準出力）と同じ所へ」です。1 番が app.log なので、両方がファイルに入ります。"
+       },
+       {
+        "question": "`awk '{print $3}' access.log | sort | uniq -c` で、`sort` が必要な理由は？",
+        "choices": [
+         "結果をきれいに見せるため",
+         "`uniq` は隣り合った同じ行しかまとめないので、先に同じものを並べる必要があるから",
+         "awk の出力は並べ替えないと読めないから"
+        ],
+        "answer": 1,
+        "explain": "sort で同じパスを隣に集めてから、uniq -c で数えます。sort が無いと、離れた同じ行が別々に数えられます。"
+       },
+       {
+        "question": "`awk '{print $3}'` をシングルクォートで囲む理由は？",
+        "choices": [
+         "`$3` をシェルの引数として置き換えずに、そのまま awk に渡すため",
+         "awk の命令は必ずシングルクォートで書く決まりだから",
+         "ダブルクォートでは日本語が使えないから"
+        ],
+        "answer": 0,
+        "explain": "ダブルクォートだと、シェルが先に `$3`（スクリプトの 3 つ目の引数）に置き換えてしまいます。awk の列の `$3` として渡すために、シングルクォートで囲みます。"
+       }
+      ]
+     ],
+     "id": "05-pipes-text"
+    },
+    {
+     "title": "安全なスクリプト ― set -euo pipefail・空の変数・trap",
+     "level": 3,
+     "minutes": 18,
+     "concepts": [
+      "errors",
+      "security",
+      "tooling"
+     ],
+     "summary": "シェルは失敗しても止まらずに次の行へ進む。それを止める set -e・-u・pipefail を 1 つずつ試し、空の変数で rm が暴走するのを ${VAR:?} で防ぎ、trap で後片付けをする。ShellCheck の紹介も。",
+     "body": "## このレッスンのゴール\n\n- シェルが「失敗しても止まらない」ことと、`set -euo pipefail` のそれぞれの意味を説明できる\n- 空の変数を使った `rm` の危険と、`${VAR:?}` での防ぎ方が分かる\n- `trap ... EXIT` と `mktemp` を使った後片付けのコードを読める\n\n## シェルは失敗しても止まらない\n\n```bash\n#!/usr/bin/env bash\ncd /no/such/dir\necho \"ここが実行されると困る（cd に失敗したのに続いている）\"\n```\n\n```text\nsafe.sh: line 2: cd: /no/such/dir: No such file or directory\nここが実行されると困る（cd に失敗したのに続いている）\n```\n\n`cd` に失敗したのに、**次の行が実行されました**。Python なら例外で止まりますが、シェルは **エラーを表示して、何事も無かったように次へ進みます**。\nもし次の行が `rm -rf *` だったら？ **`cd` に失敗して、元の場所のファイルを全部消す** ことになります。\n\n## set -e：失敗したら止まる\n\n```bash\n#!/usr/bin/env bash\nset -euo pipefail\ncd /no/such/dir\necho \"ここが実行されると困る\"\n```\n\n```text\nsafe.sh: line 3: cd: /no/such/dir: No such file or directory\n（ここで止まった。終了コード 1）\n```\n\n`set -e` は「**どれかのコマンドが失敗したら、そこでスクリプトを止める**」設定です。Python の「例外が起きたら止まる」に近い動きになります。\n\n⚠️ ただし、`if` の条件や `&&`・`||` の途中で失敗したものは止まりません（失敗するのが前提の書き方なので）。\n\n## set -u：無い変数を使ったら止まる\n\n```bash\nset -u\necho \"$TYPO_VAR\"\n# bash: line 1: TYPO_VAR: unbound variable\n```\n\nレッスン 2 で、無い変数は **空として扱われる** と学びました。打ち間違いでも黙って空になるので、とても危険です。`set -u` があると、**定義されていない変数を使った時点で止まります**。\n\nわざと「無ければ空」にしたいところは、`\"${VAR:-}\"`（無ければ空文字）と書きます。\n\n## set -o pipefail：パイプの途中の失敗に気づく\n\n```bash\nfalse | true; echo \"pipefail なし: $?\"     # 0\nset -o pipefail\nfalse | true; echo \"pipefail あり: $?\"     # 1\n```\n\nパイプの終了コードは、初期設定では **最後のコマンドのもの** だけです。途中で失敗しても、最後が成功すれば「成功」になります。たとえば `curl URL | jq .` で、ダウンロードに失敗しても気づけません。\n`pipefail` があると、**途中のどれかが失敗したら、パイプ全体が失敗** になります。\n\n## 3 つまとめて\n\n```bash\n#!/usr/bin/env bash\nset -euo pipefail\n```\n\n| 部分 | 意味 |\n|---|---|\n| `-e` | 失敗したら止まる |\n| `-u` | 定義されていない変数を使ったら止まる |\n| `-o pipefail` | パイプの途中の失敗も失敗にする |\n\nAI が書くシェルスクリプトの 2 行目によく入っている、**お決まりの 1 行** です。無いスクリプトは、失敗しても気づけない作りになっていると考えて読みます。\n\n## ⚠️ 空の変数と rm\n\n```bash\nDIR=\"\"\nrm -rf $DIR/*       # → rm -rf /*   （コンピュータ全体を消そうとする！）\n```\n\n`DIR` が空だと、`$DIR/*` は `/*` になります。設定の読み込み忘れ・打ち間違い・前の行の失敗など、**変数が空になる理由はいくらでもあります**。実際に、有名なソフトのアンインストール用のスクリプトでこれが起き、利用者のファイルが消えた事件が何度もありました。\n\n（この教材を作っているときも、Claude Code の安全装置が、作業用のフォルダを消そうとした `rm -rf $D` を「変数が空なら `rm -rf /` になる」と止めました。それくらい危ない形です）\n\n### 防ぎ方\n\n```bash\n: \"${DIR:?DIR が空です}\"            # DIR が空なら、メッセージを出して止まる\nrm -rf -- \"${DIR:?DIR が空です}/build\"\n```\n\n```text\nbash: line 1: DIR: DIR が空です\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `${DIR:?メッセージ}` | DIR が空か未定義なら、メッセージを出して **その場で止まる** |\n| `\"...\"` で囲む | スペースで分かれるのを防ぐ（レッスン 2） |\n| `--` | 「ここから後はオプションではなくファイル名」。`-rf` という名前のファイルがあっても安全 |\n| `set -u` | 未定義の変数で止まる（ただし **空文字の変数は止まらない** ので、`:?` も必要） |\n\n## trap：終わるときに必ず後片付け\n\n一時的なファイルを作るスクリプトは、**途中で失敗しても** 後片付けをしたいものです。\n\n```bash\n#!/usr/bin/env bash\nset -euo pipefail\ntmp=\"$(mktemp -d)\"\ntrap 'echo \"後片付け: $tmp を消します\"; rm -r -- \"$tmp\"' EXIT\necho \"作業中: $tmp\"\nfalse                         # ここで失敗する\necho \"ここには来ない\"\n```\n\n```text\n作業中: /tmp/tmp.XXXX\n後片付け: /tmp/tmp.XXXX を消します     ← 失敗して止まったのに、後片付けは実行された\n（終了コード 1）\n```\n\n| 部分 | 意味 | Python で言うと |\n|---|---|---|\n| `mktemp -d` | 他と重ならない名前の一時ディレクトリを作る | `tempfile.mkdtemp()` |\n| `trap 'コマンド' EXIT` | スクリプトが **どんな理由で終わっても**、最後にコマンドを実行する | `try: ... finally:` |\n\n`trap '...' INT` なら Ctrl+C で止められたとき、`ERR` なら失敗したとき、のようにきっかけを選べます。\n\n## ShellCheck：シェルスクリプトの検査\n\n**ShellCheck** は、シェルスクリプトのよくある間違い（引用符の付け忘れ、`for f in $(ls)`、`[ $x = y ]` など）を指摘してくれる道具です。VS Code の拡張機能もあります。\n\n```text\nSC2086: Double quote to prevent globbing and word splitting.\n（ダブルクォートで囲んで、単語分割とグロブを防いでください）\n```\n\nこの警告が出たら、レッスン 2 の「変数は `\"$var\"`」の話です。AI のシェルスクリプトを動かす前に通すと安心です。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 判定 |\n|---|---|\n| `set -euo pipefail` が無い | ⚠️ 失敗しても続く。特に `cd` の後に `rm` があるなら危険 |\n| `cd \"$dir\"` の後に `rm` / `mv` | `set -e` か `cd \"$dir\" \\|\\| exit 1` があるか |\n| `rm -rf $VAR/` / `rm -rf \"$VAR\"/*` | ⚠️⚠️ VAR が空だと `/` を消す。`${VAR:?}` に |\n| `trap 'rm -rf \"$tmp\"' EXIT` | ✅ 後片付け |\n| `/tmp/myapp.tmp` のような決め打ちの一時ファイル | 同時に動かすとぶつかる。`mktemp` |\n| `curl ... \\| sh` に `set -o pipefail` が無い | ダウンロードに失敗しても、途中までのスクリプトが実行されうる |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`set -e` が無いスクリプトで、`cd build` が失敗した。次の行の `rm -rf *` はどうなる？",
+        "choices": [
+         "cd が失敗したので、rm も自動で止まる",
+         "実行される。元のディレクトリのファイルが消えてしまう",
+         "エラーになって何も消えない"
+        ],
+        "answer": 1,
+        "explain": "シェルは失敗しても次の行へ進みます。`set -e` を付けるか、`cd build || exit 1` のように失敗したら止まるようにします。"
+       },
+       {
+        "question": "`rm -rf \"${BUILD_DIR:?}/dist\"` の `:?` の役割は？",
+        "choices": [
+         "BUILD_DIR が空か未定義なら、rm を実行せずにその場で止める",
+         "BUILD_DIR が空なら、今のディレクトリを使う",
+         "BUILD_DIR の中身を確認する画面を出す"
+        ],
+        "answer": 0,
+        "explain": "変数が空だと `/dist` を消すことになります。`:?` があれば、空のときはエラーで止まります。"
+       },
+       {
+        "question": "`trap 'rm -r -- \"$tmp\"' EXIT` の意味は？",
+        "choices": [
+         "今すぐ tmp を消す",
+         "スクリプトが失敗しても成功しても、終わるときに tmp を消す",
+         "tmp が消されないように守る"
+        ],
+        "answer": 1,
+        "explain": "EXIT のきっかけで、終わり方に関係なく後片付けが実行されます。Python の `finally` に当たります。"
+       }
+      ]
+     ],
+     "id": "06-safe-scripts"
+    },
+    {
+     "title": "実際のスクリプトを読む ― バックアップを自動で取る",
+     "level": 3,
+     "minutes": 18,
+     "concepts": [
+      "tooling",
+      "reading",
+      "errors",
+      "ai_coding"
+     ],
+     "summary": "AI に頼んだら出てきそうな「SQLite のバックアップを取って、古いものを消す」スクリプトを 1 行ずつ読む。実際に動かした出力つき。読めるようになったうえで、潜んでいた 1 つの弱点を見つけて直す。",
+     "body": "## このレッスンのゴール\n\n- このコースの知識だけで、40 行ほどのシェルスクリプトを 1 行ずつ説明できる\n- スクリプトを動かす前に、何が消えたり変わったりするかを予想できる\n- よくある弱点を見つけ、直し方を提案できる\n\n## 頼んだこと\n\n> SQLite のデータベース（app.db）を毎日バックアップするシェルスクリプトを作って。バックアップは新しい 5 個だけ残して、古いものは消して。\n\n出てきた（という想定の）スクリプトです。\n\n```bash\n#!/usr/bin/env bash\n# SQLite のデータベースをバックアップし、新しいものを 5 個だけ残す\nset -euo pipefail\n\nDB_PATH=\"${DB_PATH:-./app.db}\"\nBACKUP_DIR=\"${BACKUP_DIR:-./backups}\"\nKEEP=\"${KEEP:-5}\"\n\nlog() {\n  echo \"[$(date '+%H:%M:%S')] $*\"\n}\n\nif [[ ! -f \"$DB_PATH\" ]]; then\n  log \"データベースが見つかりません: $DB_PATH\" >&2\n  exit 1\nfi\n\nmkdir -p \"$BACKUP_DIR\"\ndest=\"$BACKUP_DIR/app-$(date +%Y-%m-%d).db\"\n\npython3 -c \"import sqlite3, sys; sqlite3.connect(sys.argv[1]).backup(sqlite3.connect(sys.argv[2]))\" \"$DB_PATH\" \"$dest\"\nlog \"バックアップしました: $dest ($(du -h \"$dest\" | cut -f1))\"\n\ncount=0\nfor f in $(ls -1t \"$BACKUP_DIR\"/app-*.db); do\n  count=$((count + 1))\n  if (( count > KEEP )); then\n    log \"古いバックアップを削除: $f\"\n    rm -- \"$f\"\n  fi\ndone\n\nlog \"完了（残り $(ls \"$BACKUP_DIR\"/app-*.db | wc -l) 個）\"\n```\n\n✏️ 先を読む前に、**このスクリプトを実行すると何が起きるか**、上から順に自分の言葉で説明してみましょう。\n\n## 1 行ずつ読む\n\n### 準備（1〜7 行目）\n\n```bash\n#!/usr/bin/env bash\nset -euo pipefail\n```\n\nbash で動かす（レッスン 1）。失敗・未定義の変数・パイプの途中の失敗で止まる（レッスン 6）。\n\n```bash\nDB_PATH=\"${DB_PATH:-./app.db}\"\nBACKUP_DIR=\"${BACKUP_DIR:-./backups}\"\nKEEP=\"${KEEP:-5}\"\n```\n\n**環境変数があればそれを使い、無ければ初期値**（レッスン 2 の `${x:-値}`）。`KEEP=10 ./backup.sh` と実行すれば、10 個残すように変えられます。\n\n### 関数（9〜11 行目）\n\n```bash\nlog() {\n  echo \"[$(date '+%H:%M:%S')] $*\"\n}\n```\n\n時刻を付けて表示する関数（レッスン 4）。`$*` は渡された引数をまとめた 1 つの文字列で、表示するだけなのでここではこれで十分です。\n\n### 確認（13〜16 行目）\n\n```bash\nif [[ ! -f \"$DB_PATH\" ]]; then\n  log \"データベースが見つかりません: $DB_PATH\" >&2\n  exit 1\nfi\n```\n\nデータベースのファイルが **無ければ**（`!`）、エラーの出力へメッセージを出して（`>&2`、レッスン 5）、終了コード 1 で終わる（レッスン 3）。\n\n```text\n$ DB_PATH=./none.db ./backup.sh\n[15:21:42] データベースが見つかりません: ./none.db\n（終了コード 1）\n```\n\n### バックアップ（18〜22 行目）\n\n```bash\nmkdir -p \"$BACKUP_DIR\"\ndest=\"$BACKUP_DIR/app-$(date +%Y-%m-%d).db\"\n```\n\n保存先のディレクトリを作り（`-p` はすでにあってもエラーにしない）、`./backups/app-2026-11-23.db` のような名前を作る。\n\n```bash\npython3 -c \"import sqlite3, sys; ...\" \"$DB_PATH\" \"$dest\"\n```\n\n**シェルから Python を 1 行だけ実行** しています。`sqlite3` の `backup()` は、データベースを使っている途中でも安全にコピーできる方法です（ただの `cp` だと、書き込みの途中を写して壊れたコピーになることがある）。シェルの変数は、Python の `sys.argv` として渡しています（レッスン 4 の引数と同じ仕組み）。\nシェルが苦手なこと（データベースの扱い）だけを Python に任せる、という **よい分担** です。\n\n### 古いものを消す（24〜31 行目）\n\n```bash\ncount=0\nfor f in $(ls -1t \"$BACKUP_DIR\"/app-*.db); do\n  count=$((count + 1))\n  if (( count > KEEP )); then\n    log \"古いバックアップを削除: $f\"\n    rm -- \"$f\"\n  fi\ndone\n```\n\n`ls -1t` は「1 行に 1 つ、**新しい順**（`-t`）」。上から数えて、`KEEP`（5）個目より後ろを消します。\n\n## 実際に動かす\n\n`backups/` に 11 月 10 日〜22 日の古いバックアップを 7 つ置いて、実行しました。\n\n```text\n[03:00:00] バックアップしました: ./backups/app-2026-11-23.db (8.0K)\n[03:00:00] 古いバックアップを削除: ./backups/app-2026-11-14.db\n[03:00:00] 古いバックアップを削除: ./backups/app-2026-11-12.db\n[03:00:00] 古いバックアップを削除: ./backups/app-2026-11-10.db\n[03:00:00] 完了（残り 5 個）\n```\n\n```text\n$ ls backups\napp-2026-11-16.db\napp-2026-11-18.db\napp-2026-11-20.db\napp-2026-11-22.db\napp-2026-11-23.db\n```\n\n新しく 1 つ増えて 8 個になり、古い 3 つが消えて、5 個になりました。頼んだとおりに動いています。\n\n## 弱点を探す\n\nちゃんと動きましたが、このコースの知識で見ると、**1 か所、気になるところ** があります。\n\n```bash\nfor f in $(ls -1t \"$BACKUP_DIR\"/app-*.db); do\n```\n\n`$(ls ...)` の結果を、引用符なしで `for` に渡しています。レッスン 4 で見た「`for f in $(ls)` はスペースを含むファイル名で分かれる」形です。\n実際に、スペースを含む `./My Backups` に同じ 7 つのファイルを置いて試しました。\n\n```text\n$ BACKUP_DIR=\"./My Backups\" ./backup.sh\n[...] バックアップしました: ./My Backups/app-2026-11-23.db (8.0K)\n[...] 古いバックアップを削除: Backups/app-2026-11-20.db\nrm: cannot remove 'Backups/app-2026-11-20.db': No such file or directory\n（終了コード 1）\n```\n\nファイル名が `./My` と `Backups/app-...db` に分かれたので、**数え方が狂い**（`./My` と `Backups/...` を別々に 1 個と数えた）、**本当は残すはずの 11 月 20 日の分を消そうとしました**。今回は分かれた名前のファイルが存在しなかったので `rm` が失敗し、`set -e`（レッスン 6）のおかげでそこで止まりましたが、たまたま助かっただけです。\n\n### 直し方\n\n新しい順に並べる必要があるので、グロブ（`for f in *`）をそのまま使うだけでは足りません。ファイル名がこの形（`app-YYYY-MM-DD.db`）に決まっているなら、**名前の順＝日付の順** なので、グロブが使えます。\n\n```bash\nbackups=(\"$BACKUP_DIR\"/app-*.db)           # 配列に入れる（スペースがあっても 1 つずつ）\ntotal=${#backups[@]}                       # 個数\nfor ((i = 0; i < total - KEEP; i++)); do   # 古い方（名前の順で前）から、多い分だけ\n  log \"古いバックアップを削除: ${backups[i]}\"\n  rm -- \"${backups[i]}\"\ndone\n```\n\n| 書き方 | 意味 | Python で言うと |\n|---|---|---|\n| `arr=(a b c)` | 配列 | `arr = [\"a\", \"b\", \"c\"]` |\n| `(\"$DIR\"/app-*.db)` | グロブの結果を、そのまま配列に（分かれない） | `sorted(Path(dir).glob(\"app-*.db\"))` |\n| `${#arr[@]}` | 個数 | `len(arr)` |\n| `${arr[i]}` | i 番目 | `arr[i]` |\n\n同じ `./My Backups2` で直した版を動かすと、11 月 10・12・14 日の 3 つが正しく消えて、残り 5 個になりました。\n\nもう 1 つの考え方は、**ここだけ Python にする** ことです。このスクリプトはすでにバックアップで Python を使っているので、全部を Python で書いても自然です。\n\n```python\nbackups = sorted(Path(backup_dir).glob(\"app-*.db\"))\nfor old in backups[:-keep]:\n    old.unlink()\n```\n\n**シェルは「コマンドを順に実行する」のが得意で、データを扱うのは苦手**。ファイル名を数えて並べ替えるような処理が増えてきたら、Python に任せるのが読みやすく安全です。\n\n## AI のスクリプトを動かす前のチェックリスト\n\n| 確認 | このスクリプトでは |\n|---|---|\n| ① `set -euo pipefail` はあるか | ✅ |\n| ② 何を **消す・上書きする** か | `rm` は `backups/` の中の `app-*.db` だけ。✅ |\n| ③ 変数が空のときに危なくないか | `BACKUP_DIR` は初期値があり、`rm` は `\"$f\"` に `--` 付き。✅ |\n| ④ 変数は引用符で囲まれているか | `$(ls ...)` の 1 か所だけ ⚠️ |\n| ⑤ 入力（環境変数・引数）で動きが変わるところ | `DB_PATH`・`BACKUP_DIR`・`KEEP` |\n| ⑥ まず安全な場所で試したか | 試し用のディレクトリで実行して確認した |\n\n毎日動かすには、cron（Linux・Mac の「決まった時間に実行」の仕組み）や GitHub Actions の `schedule`（公開とクラウドのコースのレッスン 7）に登録します。\n\n```text\n0 3 * * * cd /home/ryo/app && ./backup.sh >> backup.log 2>&1\n（毎日 3 時 0 分に実行し、出力もエラーも backup.log に追記）\n```\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "このスクリプトを `KEEP=10 ./backup.sh` で実行すると？",
+        "choices": [
+         "新しいバックアップを 10 個まで残す",
+         "10 回バックアップを取る",
+         "エラーになる（KEEP はスクリプトの中で決めているので）"
+        ],
+        "answer": 0,
+        "explain": "`KEEP=\"${KEEP:-5}\"` は「環境変数 KEEP があればそれを、無ければ 5」です。前に書いた KEEP=10 が使われます。"
+       },
+       {
+        "question": "バックアップに `cp` ではなく Python の `sqlite3` の `backup()` を使っている理由は？",
+        "choices": [
+         "cp では日本語のファイル名が扱えないから",
+         "データベースを使っている途中でも、安全に正しいコピーが取れるから",
+         "cp よりファイルが小さくなるから"
+        ],
+        "answer": 1,
+        "explain": "書き込みの途中のファイルをそのままコピーすると、壊れたコピーになることがあります。backup() はそれを避けてコピーします。"
+       },
+       {
+        "question": "`for f in $(ls -1t \"$BACKUP_DIR\"/app-*.db)` の弱点は？",
+        "choices": [
+         "新しい順に並ばない",
+         "BACKUP_DIR にスペースが含まれると、ファイル名が分かれてしまう",
+         "ファイルが 5 個未満だとエラーになる"
+        ],
+        "answer": 1,
+        "explain": "`$(ls ...)` の結果を引用符なしで使うと、スペースで分かれます（単語分割）。グロブを配列に入れるか、その部分を Python で書くと安全です。"
+       }
+      ]
+     ],
+     "id": "07-reading-a-script"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "Go",
