@@ -6295,20 +6295,257 @@ window.SITE_DATA = {
   },
   {
    "title": "Swift",
-   "icon": "🕊️",
+   "icon": "🐦",
    "order": 96,
    "category": "language",
-   "status": "planned",
-   "description": "iPhone・Mac アプリの言語。",
-   "outline": [
-    "let と var",
-    "オプショナル",
-    "struct と class",
-    "クロージャ",
-    "SwiftUI を読む"
-   ],
+   "description": "iPhone・Mac のアプリの言語。let と var、オプショナル（? と if let と guard）、struct と class（値と参照の違い）、クロージャ・プロトコル・エラー、最後に SwiftUI の画面のコードを読む。Swift 6.0（Linux）で実行して確かめたもの。",
+   "levels": {
+    "1": "入門：let とオプショナル",
+    "2": "基礎：struct とクロージャ",
+    "3": "実践：SwiftUI を読む"
+   },
    "id": "96-swift",
-   "lessons": []
+   "lessons": [
+    {
+     "title": "let と var ― Swift の第一歩",
+     "level": 1,
+     "minutes": 15,
+     "concepts": [
+      "variables",
+      "types",
+      "functions",
+      "basics"
+     ],
+     "summary": "let（変えられない）と var、\"\\(name)\" の文字列、引数ラベル付きの関数 withTax(price:)、配列と辞書、... と ..< の範囲、switch。整数があふれるとプログラムが止まる（&+ でわざと回り込ませる）。",
+     "body": "## このレッスンのゴール\n\n- `let` と `var` の違いを説明できる\n- `\"\\(name)\"`・引数ラベル（`withTax(price: 120)`）・`_` を読める\n- 配列・辞書・範囲（`1...3`・`0..<3`）・`switch` を読める\n\n## Swift とは\n\n**Swift** は Apple が作った言語で、**iPhone・iPad・Mac・Apple Watch のアプリ** を作るのに使われます（昔は Objective-C という言語だった）。安全さ（オプショナル。レッスン 2）と読みやすさを大事にしていて、Kotlin・Rust とよく似た考え方をしています。Mac だけでなく、Linux でも動きます（このコースの例は Linux で実行しました）。\n\n## 最初のプログラム\n\n```swift\nfunc greet(_ name: String) -> String {\n    return \"こんにちは、\\(name) さん\"\n}\n\nlet price = 120\nvar count = 1\ncount += 2\nprint(greet(\"Ryo\"))\nprint(\"合計 \\(price * count) 円\")\nprint(7 / 2, 7.0 / 2, 7 % 2)\n```\n\n```text\nこんにちは、Ryo さん\n合計 360 円\n3 3.5 1\n```\n\n（このコースの出力とエラーは、すべて Swift 6.0 で実際にコンパイル・実行したものです）\n\n| Swift | 意味 | Python で言うと |\n|---|---|---|\n| `func greet(_ name: String) -> String` | 関数。型は後ろ、戻り値は `->` | `def greet(name: str) -> str:` |\n| `\"...\\(name)...\"` | 埋め込み（**`\\( )`** を使う） | `f\"...{name}...\"` |\n| `print(a, b, c)` | 表示（スペース区切り） | `print(a, b, c)` |\n| 文の終わりの `;` | いらない | いらない |\n| ファイルの一番上に書いた文 | そのまま実行される（main 関数が要らない） | Python と同じ |\n\n`->` で戻り値の型を書くのは、Python の型ヒントや Rust と同じです。\n\n## let と var\n\n```swift\nlet price = 120\nprice = 200\n```\n\n```text\ns1b.swift:2:1: error: cannot assign to value: 'price' is a 'let' constant\n```\n\n| Swift | 意味 | Kotlin | Rust | JavaScript |\n|---|---|---|---|---|\n| `let` | **変えられない** | `val` | `let` | `const` |\n| `var` | 変えられる | `var` | `let mut` | `let` |\n\n⚠️ JavaScript の `let` は「変えられる」なので、**Swift の `let` とは逆** です。Swift では、**基本は `let`、変える必要があるときだけ `var`**（Kotlin・Rust と同じ考え方）。\n\n## 型\n\n```swift\nlet r: Int = 120 * 0.1\n// error: cannot convert value of type 'Double' to specified type 'Int'\n```\n\n| Swift | 中身 |\n|---|---|\n| `Int` | 整数（64 ビット） |\n| `Double` | 小数 |\n| `Bool` | `true` / `false` |\n| `String` | 文字列 |\n| `[String]` | 文字列の配列 |\n| `[String: Int]` | 文字列 → 整数の辞書 |\n\nGo・Rust・Kotlin と同じく、**Int と Double を混ぜて計算できません**。`Double(price) * 1.1` のように変換します。\n\n### 整数があふれると止まる\n\n```swift\nvar x = Int.max      // 9223372036854775807\nx += 1\nprint(x)\n```\n\n```text\n*** Program crashed: Illegal instruction at 0x... ***\n```\n\nSwift は、整数があふれると **プログラムを止めます**。Java のように黙ってマイナスになったり（Java コースのレッスン 2）、C のように「未定義」になったり（C 言語コースのレッスン 2）しません。**おかしな値のまま進むより、止まったほうが安全** という考え方です。\n\nわざと回り込ませたいときは、`&+` を使います。\n\n```swift\nvar x = Int.max\nx = x &+ 1\nprint(x)    // -9223372036854775808\n```\n\n## 関数の引数ラベル\n\n```swift\nfunc withTax(price: Int, rate: Double = 0.1) -> Int {\n    Int(Double(price) * (1 + rate))\n}\n\nprint(withTax(price: 120), withTax(price: 120, rate: 0.08))   // 132 129\n```\n\nSwift の関数は、**呼ぶときに引数の名前（ラベル）を書く** のが普通です（Python のキーワード引数を、いつも使う感じ）。英語の文のように読めるのが Swift の流儀です。\n\n| 定義 | 呼び方 |\n|---|---|\n| `func withTax(price: Int)` | `withTax(price: 120)` |\n| `func greet(_ name: String)` | `greet(\"Ryo\")`（**`_` でラベルを省略**） |\n| `func move(to point: Point)` | `move(to: p)`（外の名前 `to`、中の名前 `point`） |\n\n関数の最後の式が 1 つなら、`return` を省略できます（`withTax` の中身）。\n\n## 文字列\n\n```swift\nlet a = \"りんご\"\nlet b = String(\"りんご\")\nprint(a == b, a.count, a.utf8.count)    // true 3 9\n```\n\n`==` は **中身** で比べます（C#・Kotlin と同じ）。`count` は **人が見た文字の数**（3）、`utf8.count` は UTF-8 のバイト数（9）です。Swift は、絵文字や「が」のような組み合わせの文字も、見た目どおりに 1 文字と数えるように作られています（JavaScript の `\"😀\".length` が 2 になる問題が起きにくい。コンピュータの基礎コースの「文字コード」）。\n\n## 配列・辞書・範囲\n\n```swift\nvar fruits = [\"りんご\", \"バナナ\"]\nfruits.append(\"みかん\")\nprint(fruits, fruits.count, fruits[0])    // [\"りんご\", \"バナナ\", \"みかん\"] 3 りんご\n\nvar stock: [String: Int] = [\"りんご\": 10]\nstock[\"バナナ\"] = 3\nprint(stock[\"りんご\"] as Any, stock[\"ぶどう\"] as Any, stock[\"ぶどう\", default: 0])\n// Optional(10) nil 0\n```\n\n辞書から読むと、`10` ではなく **`Optional(10)`** と表示されました。「無いキーかもしれない」ので、辞書の値は **オプショナル**（レッスン 2）で返ってくるのです。`default: 0` を付けると、無ければ 0 になります。\n\n```swift\nfor i in 1...3 { print(i, terminator: \" \") }     // 1 2 3\nfor i in 0..<3 { print(i, terminator: \" \") }     // 0 1 2\n```\n\n| Swift | 意味 | Kotlin | Python |\n|---|---|---|---|\n| `1...3` | 1 から 3（**3 を含む**） | `1..3` | `range(1, 4)` |\n| `0..<3` | 0 から 3 の手前まで | `0 until 3` | `range(3)` |\n\n## switch\n\n```swift\nlet label = price > 100 ? \"高い\" : \"安い\"\nswitch count {\ncase 0: print(\"ゼロ\")\ncase 1...9: print(\"1 桁\", label)\ndefault: print(\"それ以上\")\n}\n// 1 桁 高い\n```\n\nSwift の `switch` は、**`break` を書かなくても次の case に進みません**（C や Java の switch の「break 忘れ」が起きない）。そして、**すべての場合を書かないとコンパイルエラー** です（`default` か、全部の case が必要。Rust の match と同じ）。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方 |\n|---|---|\n| `let` だらけで `var` が少ない | Swift らしい書き方 |\n| `func fetch(from url: URL) async throws -> Data` | 外のラベル from・中の名前 url、非同期で、失敗しうる（レッスン 4） |\n| `import SwiftUI` / `import Foundation` | Apple の画面の部品／基本のライブラリ |\n| `.swift` と `Package.swift` | Swift のファイル／Swift のパッケージの設定（Swift Package Manager） |\n| `Xcode` | Apple のアプリを作る道具（Mac だけ） |\n| `&+` / `&*` | わざと回り込ませる計算（ハッシュの計算など） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Swift の `let x = 1` の後に `x = 2` と書くと？",
+        "choices": [
+         "コンパイルエラー（let は変えられない）",
+         "x が 2 になる",
+         "警告が出るが 2 になる"
+        ],
+        "answer": 0,
+        "explain": "Swift の let は変えられない値です。JavaScript の let とは逆なので注意します。"
+       },
+       {
+        "question": "`func withTax(price: Int) -> Int` を呼ぶ正しい書き方は？",
+        "choices": [
+         "`withTax(120)`",
+         "`withTax(price: 120)`",
+         "`withTax(Int: 120)`"
+        ],
+        "answer": 1,
+        "explain": "Swift では、呼ぶときに引数のラベルを書くのが基本です。ラベルを省略したいなら、定義で `_ price: Int` と書きます。"
+       },
+       {
+        "question": "Swift で `Int.max + 1` を計算すると？",
+        "choices": [
+         "マイナスの数になる",
+         "プログラムが止まる",
+         "そのまま大きな数になる"
+        ],
+        "answer": 1,
+        "explain": "Swift は整数のあふれを見つけると止めます。わざと回り込ませたいときは `&+` を使います。"
+       }
+      ]
+     ],
+     "id": "01-let-var"
+    },
+    {
+     "title": "オプショナル ― ? と if let と guard",
+     "level": 1,
+     "minutes": 16,
+     "concepts": [
+      "types",
+      "errors",
+      "conditionals"
+     ],
+     "summary": "nil かもしれない値の型 String?、?. と ??、取り出す if let と guard let、Int(\"12a\") が nil を返す、compactMap、強制的に取り出す ! で止まる。オプショナルをそのまま使うとコンパイルエラー。",
+     "body": "## このレッスンのゴール\n\n- `String` と `String?` の違いを説明できる\n- `?.`・`??`・`if let`・`guard let ... else` を読める\n- `!` で強制的に取り出す危険が分かる\n\n## オプショナル：無いかもしれない値\n\n```swift\nfunc findName(_ id: Int) -> String? { id == 1 ? \"Ryo\" : nil }\n```\n\n`String?` は「**String があるかもしれないし、無い（nil）かもしれない**」型で、**オプショナル** と呼びます。Kotlin の `String?`（Kotlin コースのレッスン 2）とほぼ同じ書き方で、Rust の `Option<String>` と同じ考え方です。\n\n```swift\nlet name = findName(2)\nprint(name.count)\nlet s: String = nil\n```\n\n```text\ns2b.swift:3:7: error: value of optional type 'String?' must be unwrapped to refer to member 'count' of wrapped base type 'String'\ns2b.swift:4:17: error: 'nil' cannot initialize specified type 'String'\n```\n\n| エラー | 意味 |\n|---|---|\n| 1 つ目 | 「オプショナルの `String?` は、**取り出さないと**（unwrap）`count` を使えません」 |\n| 2 つ目 | 「`String` には nil を入れられません」 |\n\nKotlin と同じく、**nil を確かめずに使うと、コンパイルできません**。\n\n## 安全な使い方\n\n```swift\nlet name: String? = findName(2)\nprint(name as Any)            // nil\nprint(name?.count as Any)     // nil\nprint(name ?? \"なし\")          // なし\n```\n\n| 書き方 | 意味 | Kotlin | C# |\n|---|---|---|---|\n| `name?.count` | nil なら nil、そうでなければ count（オプショナル連鎖） | `?.` | `?.` |\n| `name ?? \"なし\"` | nil なら右 | `?:` | `??` |\n| `name!` | **強制的に取り出す**。nil なら止まる | `!!` | `!` |\n\n（`as Any` は、オプショナルをそのまま print したときの警告を消すための書き方です）\n\n## if let：あれば取り出す\n\n```swift\nif let n = findName(1) {\n    print(\"if let: \\(n.count)\")      // if let: 3\n}\n```\n\n`if let n = オプショナル { ... }` は、「**中身があれば、それを n に取り出して、中の処理をする**」という意味です。中では n は普通の `String` として使えます（Kotlin のスマートキャストと同じ役割）。Swift でいちばんよく見る書き方です。\n\nPython で書くとこうです。\n\n```python\nn = find_name(1)\nif n is not None:\n    print(f\"if let: {len(n)}\")\n```\n\n## guard let：無ければ先に抜ける\n\n```swift\nfunc show(_ id: Int) {\n    guard let n = findName(id) else {\n        print(\"guard: 見つからないので終わり\")\n        return\n    }\n    print(\"guard の後: \\(n)\")\n}\nshow(1); show(2)\n// guard の後: Ryo\n// guard: 見つからないので終わり\n```\n\n`guard let n = ... else { return }` は、「**取り出せなければ、ここで抜ける。取り出せたら、この後ずっと n を使える**」という書き方です。\n\n| | `if let` | `guard let` |\n|---|---|---|\n| 取り出した値が使える範囲 | `{ }` の中だけ | **guard の後、関数の最後まで** |\n| よく使う場面 | あったら何かする | **関数の最初に「必要なものがそろっているか」を確かめる** |\n\n`guard` の `else` の中では、**必ず `return` などで抜けないとコンパイルエラー** になります。Python の「早めの return」（`if n is None: return`）を、文法で強制したものです。\n\n## nil を返す便利な関数\n\n```swift\nlet num = Int(\"12a\")\nprint(num as Any, Int(\"42\") as Any)      // nil Optional(42)\n\nlet list: [String?] = [\"a\", nil, \"c\"]\nprint(list.compactMap { $0 })            // [\"a\", \"c\"]\n```\n\n| 書き方 | 意味 | 他の言語では |\n|---|---|---|\n| `Int(\"12a\")` | 数にできなければ **nil**（例外ではない） | Kotlin の `toIntOrNull()` |\n| `dict[\"key\"]` | 無ければ nil（レッスン 1） | |\n| `array.first` | 空なら nil | |\n| `compactMap { $0 }` | nil を取り除く（`$0` はクロージャの最初の引数。レッスン 4） | Kotlin の `filterNotNull()` |\n\n## ⚠️ ! で強制的に取り出す\n\n```swift\nlet forced = findName(2)!\n```\n\n```text\nFatal error: Unexpectedly found nil while unwrapping an Optional value\n```\n\n`!` は「**絶対に nil ではない**」と言い切って取り出す書き方で、nil なら **その場でプログラムが止まります**（iPhone のアプリなら、アプリが落ちる）。Kotlin の `!!`、Rust の `unwrap()` と同じです。\n\n| 書き方 | 判定 |\n|---|---|\n| `if let x = ...` / `guard let x = ... else { ... }` | ✅ |\n| `x ?? 初期値` | ✅ |\n| `x?.foo` | ✅ |\n| `x!` | ⚠️ 本当に nil にならないと言い切れる場所だけ |\n| `var x: String!`（型に `!`） | ⚠️ 「暗黙に取り出されるオプショナル」。古いコードや画面の部品の接続でよく見る |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `URL(string: s)!` / `try!` / `as!` | ⚠️ 失敗すると落ちる。外からの値（入力・API）に使っていないか |\n| `guard let user = user else { return }` | ✅ 必要なものが無ければ抜ける |\n| `guard let url = URL(string: s) else { throw ... }` | ✅ 無効な URL ならエラーにする |\n| `if let name { ... }`（`= name` が無い） | Swift 5.7 からの短い書き方。`if let name = name` と同じ |\n| `user?.profile?.name ?? \"ゲスト\"` | 途中のどれかが nil なら \"ゲスト\" |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "Swift の `let n: Int? = Int(\"abc\")` の n の値は？",
+        "choices": [
+         "0",
+         "nil",
+         "エラーで止まる"
+        ],
+        "answer": 1,
+        "explain": "Int(\"...\") は数にできない文字列なら nil を返します。だから戻り値の型が Int? です。"
+       },
+       {
+        "question": "`guard let user = findUser(id) else { return }` の後で、user はどう使える？",
+        "choices": [
+         "関数の最後まで、普通の（オプショナルでない）値として使える",
+         "else の中でだけ使える",
+         "オプショナルのままなので、毎回 ?. が必要"
+        ],
+        "answer": 0,
+        "explain": "guard let は、取り出せなければ抜け、取り出せたらその後ずっと値として使えます。"
+       },
+       {
+        "question": "`findName(2)!` で findName が nil を返したら？",
+        "choices": [
+         "空文字が返る",
+         "nil が返る",
+         "プログラムが止まる（Fatal error）"
+        ],
+        "answer": 2,
+        "explain": "`!` は強制的に取り出す書き方で、nil なら止まります。実際に `Unexpectedly found nil while unwrapping` で止まりました。"
+       }
+      ]
+     ],
+     "id": "02-optionals"
+    },
+    {
+     "title": "struct と class ― 値と参照の違い",
+     "level": 2,
+     "minutes": 18,
+     "concepts": [
+      "classes",
+      "memory",
+      "types"
+     ],
+     "summary": "struct は代入するとコピー（値型）、class は同じものを指す（参照型）ことを実験で確かめる。struct のプロパティと計算プロパティ、mutating、Swift の配列も値型、データを持てる enum と switch。",
+     "body": "## このレッスンのゴール\n\n- struct（値型）と class（参照型）の違いを、実験の結果で説明できる\n- struct のプロパティ・計算プロパティ・`mutating` を読める\n- データを持てる enum と `switch` を読める\n\n## struct と class\n\n同じ形のものを、struct と class で作って比べました。\n\n```swift\nstruct PointS { var x: Int; var y: Int }\nfinal class PointC {\n    var x: Int; var y: Int\n    init(x: Int, y: Int) { self.x = x; self.y = y }\n}\n\nvar s1 = PointS(x: 1, y: 2)\nvar s2 = s1\ns2.x = 99\nprint(\"struct: s1.x=\\(s1.x) s2.x=\\(s2.x)\")\n\nlet c1 = PointC(x: 1, y: 2)\nlet c2 = c1\nc2.x = 99\nprint(\"class:  c1.x=\\(c1.x) c2.x=\\(c2.x)  同じもの? \\(c1 === c2)\")\n```\n\n```text\nstruct: s1.x=1 s2.x=99\nclass:  c1.x=99 c2.x=99  同じもの? true\n```\n\n| | struct（**値型**） | class（**参照型**） |\n|---|---|---|\n| `s2 = s1` | **コピー** される | **同じもの** を指す |\n| s2 を変えると | s1 は変わらない | c1 も変わる（同じものだから） |\n| `===`（同じものか） | 使えない | 使える |\n| 継承 | できない | できる |\n\nclass の動きは、Python・Java のオブジェクトと同じです（Java コースの「参照型」）。struct は、Go の構造体（Go コースのレッスン 3 の「値のレシーバーはコピー」）や、C++ の普通のオブジェクトと同じく、**代入でコピー** されます。\n\n**Swift では、ふつうは struct を使い、「同じものを共有したい」ときだけ class を使う** のが推奨です。コピーなので、「別の場所で知らないうちに変えられていた」というバグが起きません。\n\n### 配列も値型\n\n```swift\nvar arr = [1, 2]\nvar arr2 = arr\narr2.append(3)\nprint(\"配列も値: \\(arr) \\(arr2)\")     // 配列も値: [1, 2] [1, 2, 3]\n```\n\nSwift の **配列・辞書・文字列も struct**（値型）です。Python で `arr2 = arr; arr2.append(3)` とすると、**arr も変わってしまいます**（同じリストを指すので）。Swift では、そうなりません。\n\n（毎回コピーすると遅そうですが、Swift は **書き換えるときになって初めてコピーする**（コピーオンライト）ので、ふつうは速いままです）\n\n## struct のプロパティとメソッド\n\n```swift\nstruct Product: CustomStringConvertible, Equatable {\n    let name: String\n    private(set) var basePrice: Int\n    var stock = 0\n\n    var price: Int { basePrice * 110 / 100 }\n\n    mutating func discount(_ yen: Int) { basePrice -= yen }\n\n    var description: String { \"\\(name)（\\(price) 円）\" }\n}\n\nvar apple = Product(name: \"りんご\", basePrice: 120)\napple.discount(20)\napple.stock += 1\nprint(apple, apple.stock, apple == Product(name: \"りんご\", basePrice: 100, stock: 1))\n// りんご（110 円） 1 true\n```\n\n| 部分 | 意味 | 他の言語では |\n|---|---|---|\n| `Product(name: ..., basePrice: ...)` | struct は、**コンストラクタ（init）を自動で作ってくれる** | Kotlin の data class |\n| `let name` / `var stock = 0` | 変えられない／変えられるプロパティ | |\n| `private(set) var basePrice` | 外からは読めるが、書けるのは中だけ | C# の `{ get; private set; }` |\n| `var price: Int { ... }` | 計算プロパティ | C# の `=>`、Python の `@property` |\n| `mutating func` | **自分の中身を変えるメソッド**（struct のときだけ必要） | Rust の `&mut self` |\n| `: CustomStringConvertible` ＋ `description` | 表示の仕方 | `__str__` |\n| `: Equatable` | `==` で比べられるようにする（中身は自動で作られる） | Rust の `derive(PartialEq)` |\n\n### mutating\n\n```swift\nstruct P { var x = 0; func inc() { x += 1 } }\n// error: left side of mutating operator isn't mutable: 'self' is immutable\n\nstruct P { var x = 0; mutating func inc() { x += 1 } }\nlet p = P()\np.inc()\n// error: cannot use mutating member on immutable value: 'p' is a 'let' constant\n```\n\nstruct のメソッドが中身を変えるには `mutating` が必要で、さらに **`let` の変数には mutating のメソッドを呼べません**。Rust の「`&mut self` のメソッドを呼ぶには `let mut` が必要」と、まったく同じ考え方です（Rust コースのレッスン 3）。\n\n## enum：データを持てる状態\n\n```swift\nenum Status {\n    case paid\n    case shipped(tracking: String)\n    case cancelled(reason: String)\n}\n\nfunc describe(_ s: Status) -> String {\n    switch s {\n    case .paid: return \"支払い済み\"\n    case .shipped(let t): return \"発送済み（\\(t)）\"\n    case .cancelled(let r): return \"キャンセル：\\(r)\"\n    }\n}\n```\n\n```text\n支払い済み\n発送済み（AB123）\nキャンセル：在庫切れ\n```\n\nRust の enum・Kotlin の sealed class と同じく、**状態ごとに違うデータを持てて**、`switch` で全部の場合を書かないとコンパイルエラーになります（レッスン 1）。`.paid` のように、**型が分かっている場所では型名を省略** して `.` から書けるのが Swift の特徴です。\n\n実は、レッスン 2 の **オプショナルも enum** です（`case none` と `case some(値)`）。\n\n## class を使うとき\n\n```swift\nfinal class Session {\n    var token: String\n    init(token: String) { self.token = token }\n}\n```\n\n| class を使う場面 | 例 |\n|---|---|\n| 1 つのものを、いくつもの場所で共有したい | ログイン中のセッション、データの保存先 |\n| 継承が必要 | Apple の古い画面の部品（UIKit の `UIViewController`） |\n| 同じものかどうか（`===`）に意味がある | |\n\n`final` は「継承させない」印です（Kotlin の初期設定と同じ）。class では、struct のように init を自動で作ってくれないので、自分で書きます。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `struct User: Codable, Identifiable` | JSON に変換できて（Codable）、id を持つ（SwiftUI の一覧で使う）データ |\n| `mutating func` | struct の中身を変えるメソッド |\n| `class ViewModel: ObservableObject` | 画面と共有する状態（レッスン 5）。共有するので class |\n| `[weak self]` | class を参照するときの「弱い参照」（レッスン 4） |\n| struct を関数に渡して中で変えたのに、元が変わらない | 値型なのでコピー。変えたいなら `inout`（C++ の参照に近い）か、戻り値で返す |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`var a = PointS(x: 1, y: 2); var b = a; b.x = 99`（PointS は struct）の後、`a.x` は？",
+        "choices": [
+         "1（struct は代入でコピーされる）",
+         "99（同じものを指している）",
+         "エラー"
+        ],
+        "answer": 0,
+        "explain": "struct は値型で、代入するとコピーされます。class なら同じものを指すので、a.x も 99 になります。"
+       },
+       {
+        "question": "Swift の struct で、中身を変えるメソッドに必要なキーワードは？",
+        "choices": [
+         "static",
+         "mutating",
+         "override"
+        ],
+        "answer": 1,
+        "explain": "struct のメソッドは、中身を変えるなら mutating を付けます。let の変数には呼べません（Rust の &mut self と同じ考え方）。"
+       },
+       {
+        "question": "Python の `b = a; b.append(3)` と、Swift の配列の `var b = a; b.append(3)` の違いは？",
+        "choices": [
+         "同じ。どちらも a も変わる",
+         "Python は a も変わる（同じリスト）が、Swift は a が変わらない（配列は値型でコピーされる）",
+         "Swift はエラーになる"
+        ],
+        "answer": 1,
+        "explain": "Swift の配列・辞書・文字列は struct なので、代入するとコピーされます。"
+       }
+      ]
+     ],
+     "id": "03-struct-class"
+    },
+    {
+     "title": "クロージャ・プロトコル・エラー",
+     "level": 2,
+     "minutes": 20,
+     "concepts": [
+      "higher_order",
+      "generics",
+      "errors",
+      "collections"
+     ],
+     "summary": "{ (x: Int) -> Int in ... } と $0、最後のクロージャを外に出す書き方、filter・map・reduce・sorted・\\.price、外の変数を覚えるクロージャ。protocol と extension（既存の Int にも足せる）、throws・try・do-catch・try?・Result。[weak self] の意味。",
+     "body": "## このレッスンのゴール\n\n- クロージャの書き方（`in`・`$0`・`\\.price`）と、コレクションの操作を読める\n- `protocol` と `extension` の意味が分かる\n- `throws`・`try`・`do / catch`・`try?` を読める\n\n## クロージャ\n\n```swift\nlet withTax = { (price: Int) -> Int in price * 110 / 100 }\nprint(withTax(120))    // 132\n```\n\n| 部分 | 意味 |\n|---|---|\n| `{ (price: Int) -> Int in 本体 }` | 引数と戻り値の型を書いて、`in` の後に本体 |\n| `{ $0.price < 200 }` | 引数を名前の代わりに **`$0`・`$1`** で使う短い書き方 |\n\nKotlin の `it`、Python の `lambda`、Rust の `|x|` に当たります。Swift では、型が分かっていれば、ほとんど省略できます。\n\n```swift\nproducts.sorted(by: { (a: Product, b: Product) -> Bool in return a.price > b.price })\nproducts.sorted(by: { a, b in a.price > b.price })\nproducts.sorted { $0.price > $1.price }      // 最後のクロージャはかっこの外へ（Kotlin と同じ）\n```\n\n3 つとも同じ意味です。AI のコードでは、いちばん短い形がよく出てきます。\n\n## コレクションの操作\n\nSQL コースと同じ 6 つの商品です。\n\n```swift\nprint(products.filter { $0.price < 200 }.map { $0.name })     // [\"りんご\", \"バナナ\", \"クロワッサン\"]\nprint(products.map(\\.price).reduce(0, +))                     // 2040\nprint(products.sorted { $0.price > $1.price }.prefix(3).map(\\.name))   // [\"コーヒー豆\", \"食パン\", \"牛乳\"]\nlet byCat = Dictionary(grouping: products, by: { $0.category })\n// パン 2 / 果物 2 / 飲み物 2\nprint(products.first { $0.price > 5000 }?.name ?? \"なし\")      // なし\n```\n\n| Swift | Kotlin | Python |\n|---|---|---|\n| `filter { $0.price < 200 }` | `filter { it.price < 200 }` | `[p for p in ... if p.price < 200]` |\n| `map { $0.name }` / `map(\\.name)` | `map { it.name }` | `[p.name for p in ...]` |\n| `reduce(0, +)` | `sumOf { }` / `reduce` | `sum(...)` |\n| `sorted { $0.price > $1.price }` | `sortedByDescending { it.price }` | `sorted(..., key=..., reverse=True)` |\n| `prefix(3)` | `take(3)` | `[:3]` |\n| `Dictionary(grouping:by:)` | `groupBy { }` | defaultdict |\n| `first { 条件 }` → オプショナル | `firstOrNull { }` | `next(..., None)` |\n\n`\\.price` は **キーパス**（「price というプロパティへの道」）で、`{ $0.price }` の短い書き方です（Java の `Product::price`、Ruby の `&:price`）。`reduce(0, +)` は、「0 から始めて `+` で足していく」。`+` という演算子も関数として渡せます。\n\n### 外の変数を覚えるクロージャ\n\n```swift\nfunc makeCounter() -> () -> Int {\n    var count = 0\n    return { count += 1; return count }\n}\nlet next = makeCounter()\nprint(next(), next(), next())    // 1 2 3\n```\n\n`makeCounter` が終わった後も、返したクロージャは **`count` を覚えていて**、呼ぶたびに増えます（**キャプチャ**。C++ のラムダの `[ ]`（C++ コースのレッスン 5）を、Swift は自動でやる）。\n\n`() -> Int` は「引数無しで Int を返す関数」という型です。\n\n### [weak self]\n\n画面のコード（レッスン 5）では、こんな書き方をよく見ます。\n\n```swift\napi.fetch { [weak self] result in\n    self?.items = result\n}\n```\n\nclass（レッスン 3）の中で、後で呼ばれるクロージャが **self をキャプチャすると、お互いを持ち合って、どちらも片付かない**（メモリリーク）ことがあります（C++ の shared_ptr の循環参照と同じ。C++ コースのレッスン 4）。`[weak self]` は「self を **弱く**（持ち主の数に入れずに）覚えて」という指定で、self はオプショナル（`self?.`）になります。\n\n## プロトコルと extension\n\n```swift\nprotocol HasPrice { var price: Int { get } }\nextension HasPrice { var label: String { \"\\(price) 円\" } }\nextension Product: HasPrice {}\n\nlet items: [any HasPrice] = products\nprint(items.first!.label)    // 120 円\n\nextension Int { var withTax: Int { self * 110 / 100 } }\nprint(120.withTax)           // 132\n```\n\n| 書き方 | 意味 | 他の言語では |\n|---|---|---|\n| `protocol HasPrice { var price: Int { get } }` | 「price を持つ」という約束 | Java の interface、Rust の trait、Go の interface |\n| `extension HasPrice { ... }` | プロトコルに **中身付きのメソッド** を足す | Java の default メソッド、Rust のトレイトのデフォルト |\n| `extension Product: HasPrice {}` | Product が HasPrice を守ると、**後から** 宣言する | Rust の `impl HasPrice for Product` |\n| `[any HasPrice]` | HasPrice を守るものなら何でも入る配列 | Rust の `Vec<Box<dyn HasPrice>>` |\n| `extension Int { ... }` | **既存の型（Int）にも** プロパティやメソッドを足せる | Ruby のモンキーパッチ、Kotlin の拡張関数 |\n\nProduct はすでに `price` を持っていたので、`extension Product: HasPrice {}` と書くだけで、`label` まで使えるようになりました。Swift は「**プロトコル中心**」の言語と言われ、Apple の部品の多くがこの形でできています（`Codable`・`Identifiable`・`View` など）。\n\n## エラー：throws・try・do / catch\n\n```swift\nenum ShopError: Error { case notFound(String), outOfStock }\n\nfunc findPrice(_ name: String) throws -> Int {\n    guard let p = products.first(where: { $0.name == name }) else { throw ShopError.notFound(name) }\n    return p.price\n}\n\ndo {\n    print(try findPrice(\"りんご\"))    // 120\n    print(try findPrice(\"ぶどう\"))\n} catch ShopError.notFound(let n) {\n    print(\"見つかりません: \\(n)\")      // 見つかりません: ぶどう\n} catch {\n    print(\"その他: \\(error)\")\n}\n```\n\n| 書き方 | 意味 | Python で言うと |\n|---|---|---|\n| `func f() throws -> Int` | 失敗しうる関数（失敗は **戻り値の型の一部** として宣言） | （宣言しない） |\n| `throw ShopError.notFound(name)` | 失敗を投げる | `raise NotFound(name)` |\n| `try f()` | 「ここで失敗しうる」という **印**（必須） | （書かない） |\n| `do { ... } catch パターン { ... }` | 受け止める | `try: ... except ...:` |\n| `catch { ... }` | それ以外全部（`error` という名前で使える） | `except Exception as error:` |\n\n```swift\nlet v = f()\n// error: call can throw but is not marked with 'try'\n```\n\n`throws` の関数を呼ぶとき、**`try` を書かないとコンパイルエラー** です。Rust の `?` と同じく、**どこで失敗しうるかが、コードに `try` として見える** ようになっています。Java の検査例外（Java コースのレッスン 4）とも近い考え方です。\n\n### try? と Result\n\n```swift\nprint((try? findPrice(\"ぶどう\")) as Any)          // nil\n\nlet r: Result<Int, Error> = Result { try findPrice(\"牛乳\") }\nswitch r { case .success(let v): print(\"成功\", v); case .failure(let e): print(\"失敗\", e) }\n// 成功 200\n```\n\n| 書き方 | 失敗したとき |\n|---|---|\n| `try f()`（do の中） | catch へ |\n| `try? f()` | **nil**（オプショナルで返る。レッスン 2） |\n| `try! f()` | ⚠️ 止まる（`!` の仲間） |\n| `Result { try f() }` | `.failure(エラー)` という値になる（Rust の Result と同じ） |\n\n## AI のコードではこう出てくる\n\n| 見かけたら | 読み方・チェック |\n|---|---|\n| `users.map(\\.name)` | 全員の名前 |\n| `.sorted { $0.date > $1.date }` | 新しい順 |\n| `{ [weak self] in self?.reload() }` | self を弱く覚えるクロージャ（循環参照を防ぐ） |\n| `extension View { func card() -> some View { ... } }` | SwiftUI の部品に、自分のメソッドを足す（レッスン 5） |\n| `try?` で結果を捨てている | 失敗を黙って無視していないか |\n| `try!` | ⚠️ 失敗すると落ちる |\n| `func load() async throws -> [Item]` | 非同期で、失敗しうる（`try await load()` で呼ぶ） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "`products.filter { $0.price < 200 }` の `$0` は？",
+        "choices": [
+         "クロージャに渡された最初の引数（ここでは各 Product）",
+         "products の 0 番目の要素",
+         "0 円"
+        ],
+        "answer": 0,
+        "explain": "`$0`・`$1` は、クロージャの引数を名前の代わりに使う短い書き方です。Kotlin の it に当たります。"
+       },
+       {
+        "question": "`throws` が付いた関数 `findPrice` を、`try` を書かずに `let v = findPrice(\"x\")` と呼ぶと？",
+        "choices": [
+         "v に nil が入る",
+         "コンパイルエラー（失敗しうる呼び出しには try が必要）",
+         "失敗したら止まる"
+        ],
+        "answer": 1,
+        "explain": "Swift では、失敗しうる関数を呼ぶ場所に必ず try を書きます。どこで失敗しうるかがコードで分かります。"
+       },
+       {
+        "question": "`extension Int { var withTax: Int { self * 110 / 100 } }` の後、`120.withTax` は？",
+        "choices": [
+         "エラー（Int は変えられない）",
+         "132",
+         "120"
+        ],
+        "answer": 1,
+        "explain": "extension で、既存の型にも後からプロパティやメソッドを足せます。"
+       }
+      ]
+     ],
+     "id": "04-closures-protocols"
+    },
+    {
+     "title": "SwiftUI を読む ― iPhone の画面のコード",
+     "level": 3,
+     "minutes": 20,
+     "concepts": [
+      "dom_ui",
+      "async",
+      "reading",
+      "ai_coding"
+     ],
+     "summary": "Apple の今の画面の作り方 SwiftUI。struct の View と body、VStack・HStack・Text・Button、modifier の .padding() の連鎖、@State と @Binding、@Observable のモデル、List と ForEach、.task と async/await。Jetpack Compose・React と並べて読む。",
+     "body": "## このレッスンのゴール\n\n- `struct ContentView: View { var body: some View { ... } }` の形を読める\n- `VStack`・`HStack`・`Text`・`Button` と、`.padding()` などの modifier を読める\n- `@State`・`@Binding`・`@Observable` が何をしているか説明できる\n\nこのレッスンのコードは、SwiftUI の書き方の説明のための抜粋です（iPhone のアプリをここでは動かしていません。SwiftUI は Apple の機械の上でしか動きません）。\n\n## SwiftUI とは\n\n**SwiftUI** は、iPhone・Mac のアプリの画面を **Swift のコードで** 作る、Apple の今の標準の方法です。Android の Jetpack Compose（Kotlin コースのレッスン 5）や React と同じく、「**状態から画面を作る**」考え方です。3 つを並べて見ると、驚くほど似ています。\n\n## 画面は struct\n\n```swift\nimport SwiftUI\n\nstruct GreetingView: View {\n    let name: String\n\n    var body: some View {\n        Text(\"こんにちは、\\(name) さん\")\n    }\n}\n```\n\n| 部分 | 意味 | Compose | React |\n|---|---|---|---|\n| `struct GreetingView: View` | 画面の部品。**View プロトコル**（レッスン 4）を守る struct（レッスン 3） | `@Composable fun Greeting` | `function Greeting` |\n| `let name: String` | 外から受け取る値 | 引数 | props |\n| `var body: some View { ... }` | **この部品の見た目**（計算プロパティ） | 関数の中身 | `return (...)` |\n| `Text(\"...\")` | 文字 | `Text(...)` | `<p>` |\n\n`some View` は「**何かの View**（具体的な型は Swift が決める）」という意味です。中身が複雑になると型がとても長くなるので、こう書きます。\n\n## 並べる：VStack と HStack\n\n```swift\nstruct ProductRow: View {\n    let product: Product\n    let onAdd: () -> Void\n\n    var body: some View {\n        HStack {\n            VStack(alignment: .leading) {\n                Text(product.name)\n                    .font(.headline)\n                Text(\"\\(product.price) 円\")\n                    .foregroundStyle(.secondary)\n            }\n            Spacer()\n            Button(\"カートに入れる\", action: onAdd)\n                .buttonStyle(.borderedProminent)\n        }\n        .padding()\n    }\n}\n```\n\n| SwiftUI | 意味 | Compose | CSS |\n|---|---|---|---|\n| `VStack { }` | 縦に並べる | `Column { }` | `flex-direction: column` |\n| `HStack { }` | 横に並べる | `Row { }` | `display: flex` |\n| `ZStack { }` | 重ねる | `Box { }` | `position: absolute` |\n| `Spacer()` | 残りの場所を埋める（右に押しやる） | `Spacer(Modifier.weight(1f))` | `flex: 1` |\n| `VStack(alignment: .leading)` | 左寄せ | `horizontalAlignment = Start` | `align-items: flex-start` |\n| `Button(\"...\", action: onAdd)` | ボタン | `Button(onClick = ...)` | `<button onClick>` |\n| `let onAdd: () -> Void` | 「引数無しで何も返さない」関数を受け取る（レッスン 4。Void は Kotlin の Unit） | `() -> Unit` | `() => void` |\n\n`HStack { ... }` の `{ }` は、レッスン 4 の **「最後のクロージャはかっこの外に」** です。\n\n## modifier：. でつなげて見た目を変える\n\n```swift\nText(product.name)\n    .font(.headline)\n    .foregroundStyle(.secondary)\n    .padding()\n```\n\n`.font(...)`・`.padding()` のように、**部品の後ろに `.` でつなげて** 見た目を変えます（**modifier**）。CSS のプロパティ、Compose の `Modifier`、Tailwind の class（HTML/CSS コースのレッスン 7）に当たります。\n\n⚠️ **順番で結果が変わります**。`.padding().background(.yellow)` は「余白を付けてから背景」（余白にも色が付く）、`.background(.yellow).padding()` は「背景を付けてから余白」（余白は透明）です。\n\n`.font(.headline)` の `.headline` は、レッスン 3 の「型が分かっている場所では `.` から書ける」enum の書き方です。\n\n## 状態：@State\n\n```swift\nstruct CounterView: View {\n    @State private var count = 0\n\n    var body: some View {\n        VStack {\n            Text(\"\\(count) 回押されました\")\n            Button(\"押す\") {\n                count += 1\n            }\n        }\n    }\n}\n```\n\n| SwiftUI | Compose | React |\n|---|---|---|\n| `@State private var count = 0` | `var count by remember { mutableStateOf(0) }` | `const [count, setCount] = useState(0)` |\n| `count += 1` → 画面が描き直される | `count++` | `setCount(count + 1)` |\n\n`@State` の `@` は **プロパティラッパー** という Swift の仕組みで、「この値は SwiftUI が覚えておいて、**変わったら body を作り直して**」という印です。View は struct（レッスン 3。値型で、普通は中身を変えられない）なので、`@State` を付けないと `count += 1` はできません。\n\n## 子に渡して変えてもらう：@Binding\n\n```swift\nstruct SettingsView: View {\n    @State private var notificationsOn = true\n\n    var body: some View {\n        ToggleRow(title: \"通知\", isOn: $notificationsOn)\n    }\n}\n\nstruct ToggleRow: View {\n    let title: String\n    @Binding var isOn: Bool\n\n    var body: some View {\n        Toggle(title, isOn: $isOn)\n    }\n}\n```\n\n| 書き方 | 意味 |\n|---|---|\n| `$notificationsOn` | `@State` の値への **つながり**（Binding）を渡す |\n| `@Binding var isOn: Bool` | 親の値につながった変数。子で変えると **親の値が変わる** |\n\nReact で「`value` と `onChange` を両方子に渡す」のを、`$` 1 文字で書けるようにしたものです。レッスン 3 の「struct はコピー」の例外を、SwiftUI の仕組みで作っています。\n\n## モデル：@Observable\n\nアプリのデータは、画面の外のクラスに置きます。\n\n```swift\n@Observable\nfinal class ProductStore {\n    var products: [Product] = []\n    var isLoading = false\n    var errorMessage: String?\n\n    func load() async {\n        isLoading = true\n        defer { isLoading = false }\n        do {\n            products = try await api.fetchProducts()\n        } catch {\n            errorMessage = \"読み込めませんでした\"\n        }\n    }\n}\n\nstruct ProductListView: View {\n    @State private var store = ProductStore()\n\n    var body: some View {\n        List(store.products) { product in\n            ProductRow(product: product, onAdd: { })\n        }\n        .overlay {\n            if store.isLoading { ProgressView() }\n        }\n        .task {\n            await store.load()\n        }\n    }\n}\n```\n\n| 部分 | 意味 |\n|---|---|\n| `@Observable final class ProductStore` | **プロパティが変わると、それを使っている画面が描き直される** クラス（Compose の ViewModel ＋ StateFlow に当たる）。共有するので class（レッスン 3） |\n| `func load() async` | 非同期の関数（C# コースのレッスン 4 と同じ async/await） |\n| `try await api.fetchProducts()` | 待って、失敗しうる（レッスン 4 の try） |\n| `defer { isLoading = false }` | 関数を抜けるときに必ず実行（Go の defer と同じ） |\n| `List(store.products) { product in ... }` | 一覧。`Identifiable`（id を持つ）なデータを並べる |\n| `.task { await store.load() }` | 画面が表示されたら実行。画面が消えたら **自動で取り消し**（Compose の `LaunchedEffect`・`viewModelScope`） |\n| `.overlay { if ... { ProgressView() } }` | 読み込み中なら、上にくるくるを重ねる |\n\n古いコードでは、`class ProductStore: ObservableObject` ＋ `@Published var products` ＋ 画面の側で `@StateObject` / `@ObservedObject` という書き方でした（iOS 17 から `@Observable` が使える）。AI のコードでどちらも見るので、**同じ役割の古い書き方と新しい書き方** として覚えておきます。\n\n## 3 つの画面の書き方を並べると\n\n| | SwiftUI（iPhone） | Jetpack Compose（Android） | React（Web） |\n|---|---|---|---|\n| 部品 | `struct X: View { var body }` | `@Composable fun X()` | `function X()` |\n| 縦・横 | `VStack` / `HStack` | `Column` / `Row` | `flex-direction` |\n| 見た目 | `.padding()` などの modifier | `Modifier.padding()` | CSS / Tailwind |\n| 状態 | `@State` | `remember { mutableStateOf() }` | `useState` |\n| 共有のデータ | `@Observable` クラス | ViewModel ＋ StateFlow | Context / ストア |\n| 表示されたら非同期の処理 | `.task { }` | `LaunchedEffect { }` | `useEffect` |\n\n**「状態が変わると、それを使う部品が作り直される」** という考え方は、3 つとも同じです。どれか 1 つが読めれば、他も読めるようになります。\n\n## AI のコードではこう出てくる\n\n| 見かけたら | チェック |\n|---|---|\n| `@State var` が `private` でない | 外から渡すものなら `let` か `@Binding`。@State はその部品が持つもの |\n| `body` の中で重い計算・通信 | ⚠️ 描き直しのたびに呼ばれる。`.task` やモデルに |\n| `DispatchQueue.main.async { ... }` | 画面の更新を画面のスレッドでする、古い書き方。今は `@MainActor` と async/await |\n| `.onAppear { Task { await load() } }` | 動くが、画面が消えても取り消されない。`.task` が推奨 |\n| `ForEach(items, id: \\.self)` | 同じ値が 2 つあると表示がおかしくなる。`Identifiable` な id を使う |\n| `@ObservedObject var store = Store()` | ⚠️ 描き直すたびに作り直される。作る側は `@StateObject`（新しい書き方なら `@State`） |\n\n<div class=\"quiz\" data-quiz=\"0\"></div>",
+     "quizzes": [
+      [
+       {
+        "question": "SwiftUI の `var body: some View { ... }` は何？",
+        "choices": [
+         "その部品の見た目を返す計算プロパティ",
+         "画面のデータを保存する場所",
+         "画面の名前"
+        ],
+        "answer": 0,
+        "explain": "body は View プロトコルが必要とするもので、その部品の中身（見た目）を返します。"
+       },
+       {
+        "question": "`@State private var count = 0` の `@State` を付ける理由は？",
+        "choices": [
+         "count を定数にするため",
+         "SwiftUI に値を覚えてもらい、変わったら画面を描き直してもらうため",
+         "count を他の画面と共有するため"
+        ],
+        "answer": 1,
+        "explain": "View は struct なので、普通は中身を変えられません。@State は SwiftUI が管理する状態で、変わると body が作り直されます。Compose の remember { mutableStateOf } に当たります。"
+       },
+       {
+        "question": "`ToggleRow(isOn: $notificationsOn)` の `$` の意味は？",
+        "choices": [
+         "値をドルに変換する",
+         "子が値を変えると親の値も変わるように、つながり（Binding）を渡す",
+         "値をコピーして渡す"
+        ],
+        "answer": 1,
+        "explain": "`$` を付けると Binding が渡され、子の `@Binding var isOn` を変えると親の @State が変わります。"
+       }
+      ]
+     ],
+     "id": "05-swiftui"
+    }
+   ],
+   "status": "open"
   },
   {
    "title": "Ruby",

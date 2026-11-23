@@ -1,15 +1,12 @@
 {
  "title": "Swift",
- "icon": "🕊️",
+ "icon": "🐦",
  "order": 96,
  "category": "language",
- "status": "planned",
- "description": "iPhone・Mac アプリの言語。",
- "outline": [
-  "let と var",
-  "オプショナル",
-  "struct と class",
-  "クロージャ",
-  "SwiftUI を読む"
- ]
+ "description": "iPhone・Mac のアプリの言語。let と var、オプショナル（? と if let と guard）、struct と class（値と参照の違い）、クロージャ・プロトコル・エラー、最後に SwiftUI の画面のコードを読む。Swift 6.0（Linux）で実行して確かめたもの。",
+ "levels": {
+  "1": "入門：let とオプショナル",
+  "2": "基礎：struct とクロージャ",
+  "3": "実践：SwiftUI を読む"
+ }
 }
