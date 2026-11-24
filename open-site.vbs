@@ -1,4 +1,4 @@
-' Code Reading Dojo: update from GitHub without a console window, then open the site.
+' Readable: update from GitHub without a console window, then open the site.
 Option Explicit
 Dim sh, fso, dir
 Set sh = CreateObject("WScript.Shell")

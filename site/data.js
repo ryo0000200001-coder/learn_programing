@@ -7856,7 +7856,7 @@ window.SITE_DATA = {
      "quizzes": [
       [
        {
-        "question": "このサイト（Code Reading Dojo）が「静的サイト」と言える理由は？",
+        "question": "このサイト（Readable）が「静的サイト」と言える理由は？",
         "choices": [
          "JavaScript を使っていないから",
          "サーバーはファイルを返すだけで、クイズの採点なども利用者のブラウザで動いているから",

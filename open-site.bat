@@ -1,5 +1,5 @@
 @echo off
-rem Code Reading Dojo: get the latest version from GitHub, then open the site.
+rem Readable: get the latest version from GitHub, then open the site.
 cd /d "%~dp0"
 
 where git >nul 2>nul
